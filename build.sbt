@@ -25,9 +25,10 @@ lazy val sparks = Seq(
 )
 
 if (sys.props.getOrElse("mode", default = "local") == "cluster") {
+  println("cluster!")
   libraryDependencies ++= sparks.map(_ % "provided")
 } else {
-  libraryDependencies ++= Seq()
+  libraryDependencies ++= sparks
 }
 
 libraryDependencies += "se.lth.cs.nlp" % "docforia" % "1.0-SNAPSHOT"

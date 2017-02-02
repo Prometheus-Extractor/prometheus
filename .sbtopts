@@ -1,0 +1,5 @@
+-J-Xmx4g
+-J-XX:+AggressiveOpts
+-J-XX:+UseG1GC
+-J-XX:+UnlockDiagnosticVMOptions
+-J-XX:InitiatingHeapOccupancyPercent=35
