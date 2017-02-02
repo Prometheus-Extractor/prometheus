@@ -19,4 +19,4 @@ To run on the cluster use:
 ./run-cluster
 ```
 
-That command creates a jar containing the program and all dependencies by running `sbt -Dmode=cluster assembly` then uploads them to cluster and runs `spark-submit`.
+That command creates a jar containing the program and all dependencies by running `sbt -Dmode=cluster assembly` then uploads it to cluster and runs `spark-submit`.
