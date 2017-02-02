@@ -33,7 +33,7 @@ function test {
 }
 
 echo " == Synchronizing dependencies and executables =="
-# test rsync -av –rsync-path="mkdir -p $CLUSTER_WORK_PATH && rsync" --delete -e ssh --progress target/lib/ $CLUSTER_SSH:$CLUSTER_WORK_PATH/lib/
+test rsync -av --delete -e ssh --progress target/lib/ $CLUSTER_SSH:$CLUSTER_WORK_PATH/lib/
 test scp target/$JAR_NAME $CLUSTER_SSH:$CLUSTER_WORK_PATH/$JAR_NAME
 
 #Runs python inline to construct the classpath list.
