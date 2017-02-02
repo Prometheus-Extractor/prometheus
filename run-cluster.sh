@@ -2,6 +2,9 @@
 TERM=xterm-color
 args=$@
 
+# Build jar
+sbt -Dmode=cluster assembly
+
 #Cluster credentials, normally user@host, if you have SSH aliases they can be used.
 CLUSTER_SSH="sem4"
 
