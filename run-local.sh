@@ -3,7 +3,7 @@ TERM=xterm-color
 args=$@
 
 #The jar to execute
-JAR_NAME="mini-spark-1.0-SNAPSHOT.jar"
+JAR_NAME="fact-extractor-1.0-SNAPSHOT.jar"
 
 #Userdefined args
 JAR_USER_ARGS="--local"
