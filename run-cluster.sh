@@ -12,7 +12,7 @@ CLUSTER_SSH="sem4"
 CLUSTER_WORK_PATH="~/projects/fact-extractor"
 
 #The jar to execute
-JAR_NAME="fact-extractor-assembly-1.0.0-SNAPSHOT.jar"
+JAR_NAME="fact-extractor-assembly-0.0.1-SNAPSHOT.jar"
 
 #Userdefined args
 JAR_USER_ARGS=""

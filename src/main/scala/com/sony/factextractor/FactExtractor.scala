@@ -1,3 +1,5 @@
+import java.io.IOError
+
 import org.apache.log4j.LogManager
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{Accumulator, SparkConf, SparkContext}
@@ -10,7 +12,7 @@ object FactExtractor{
 
     val log = LogManager.getRootLogger
     val conf = new SparkConf().setAppName("Fact Extractor")
-    conf.setIfMissing("master", "local[*]")
+    //conf.setMaster("local[*]")
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
@@ -22,11 +24,18 @@ object FactExtractor{
 
     // we might need to filter for only articles here but that wouldn't be a generelized solution.
 
-    df.flatMap(row => {
-      val doc: Document = MemoryDocumentIO.getInstance().fromBytes(row.getAs(5):Array[Byte])
-      return doc
-    })
+    val docs = df.flatMap{row =>
+      try{
+        val doc: Document = MemoryDocumentIO.getInstance().fromBytes(row.getAs(5): Array[Byte])
+        List(doc)
+      }catch{
+        case e:IOError =>
+          ioErrors.add(1)
+          List()
+      }
+    }.map(x => x.getEnd()).reduce(math.max(_,_))
 
+    println(docs)
 
     // code to do stuff
     sc.stop()

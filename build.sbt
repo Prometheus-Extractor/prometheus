@@ -26,7 +26,7 @@ lazy val sparks = Seq(
 )
 
 if (sys.props.getOrElse("mode", default = "local") == "cluster") {
-  println("cluster!")
+  println("Running for cluster!")
   libraryDependencies ++= sparks.map(_ % "provided")
 } else {
   libraryDependencies ++= sparks
