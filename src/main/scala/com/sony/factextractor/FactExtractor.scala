@@ -5,6 +5,7 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{Accumulator, SparkConf, SparkContext}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
+import scala.util.Properties.envOrNone
 
 object FactExtractor{
 
@@ -12,7 +13,7 @@ object FactExtractor{
 
     val log = LogManager.getRootLogger
     val conf = new SparkConf().setAppName("Fact Extractor")
-    //conf.setMaster("local[*]")
+    envOrNone("SPARK_MASTER").foreach(m => conf.setMaster(m))
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
@@ -34,8 +35,6 @@ object FactExtractor{
           List()
       }
     }.map(x => x.getEnd()).reduce(math.max(_,_))
-
-    println(docs)
 
     // code to do stuff
     sc.stop()

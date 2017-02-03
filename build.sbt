@@ -14,6 +14,7 @@ libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.2.
 libraryDependencies += "com.fasterxml.jackson.module" % "jackson-module-scala_2.10" % "2.2.3"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
+
 lazy val spark_core_version = "1.6.0-cdh5.10.0"
 lazy val spark_sql_version = "1.6.0-cdh5.10.0"
 lazy val spark_mlib_version = "1.6.0-cdh5.10.0"
