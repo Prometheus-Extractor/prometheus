@@ -1,4 +1,5 @@
 # Fact Extractor
+*Fact Extractor is a relationship extractor that extract facts from annotated Docforia documents.*
 
 ## Installation
 This program depends on several libraries using SBT as its dependency manager
@@ -20,3 +21,7 @@ To run on the cluster use:
 ```
 
 That command creates a jar containing the program and all dependencies by running `sbt -Dmode=cluster assembly` then uploads it to cluster and runs `spark-submit`.
+
+## Developers
+- [Axel Larsson](https://github.com/AxelTLarsson)
+- [Erik Gärtner](https://gartner.io)

@@ -1,6 +1,6 @@
 name := """fact-extractor"""
 
-version := "1.0.0-SNAPSHOT"
+version := "0.0.1-SNAPSHOT"
 
 scalaVersion := "2.10.6"
 ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
