@@ -10,8 +10,8 @@ resolvers += Resolver.mavenLocal
 resolvers += "Akka repository" at "http://repo.akka.io/releases"
 resolvers += "cloudera" at "https://repository.cloudera.com/artifactory/cloudera-repos/"
 
-libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.2.3"
-libraryDependencies += "com.fasterxml.jackson.module" % "jackson-module-scala_2.10" % "2.2.3"
+libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.6"
+libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.6"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 
 

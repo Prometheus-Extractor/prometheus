@@ -10,7 +10,7 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import scala.util.Properties.envOrNone
 
-object FactExtractor{
+object FactExtractor {
 
   def main(args: Array[String]): Unit = {
 
@@ -20,6 +20,7 @@ object FactExtractor{
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
+    val relations = RelationsReader.readRelations(sqlContext, args(1))
     val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0))
 
     // code to do stuff
