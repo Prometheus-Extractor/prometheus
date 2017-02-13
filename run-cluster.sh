@@ -2,9 +2,6 @@
 TERM=xterm-color
 args=$@
 
-# Build jar
-sbt -Dmode=cluster assembly
-
 #Cluster credentials, normally user@host, if you have SSH aliases they can be used.
 CLUSTER_SSH="sem4"
 
@@ -34,6 +31,10 @@ function test {
 
 	return $status
 }
+
+# Build jar
+echo " == Building fat jar =="
+test sbt -Dmode=cluster assembly
 
 echo " == Synchronizing dependencies and executables =="
 #test rsync -av --delete -e ssh --progress target/lib/ $CLUSTER_SSH:$CLUSTER_WORK_PATH/lib/

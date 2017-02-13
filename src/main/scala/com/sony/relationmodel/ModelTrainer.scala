@@ -17,8 +17,15 @@ import se.lth.cs.docforia.query.QueryCollectors
 import scala.util.Properties.envOrNone
 
 object ModelTrainer {
+  val usage = """
+  Usage: ModelTrainer <path/to/corpus> <path/to/relations parquet file>
+  """
 
   def main(args: Array[String]): Unit = {
+    if (args.length != 2) {
+      println(usage)
+      sys.exit(1)
+    }
 
     val log = LogManager.getRootLogger
     val conf = new SparkConf().setAppName("Fact Extractor")
