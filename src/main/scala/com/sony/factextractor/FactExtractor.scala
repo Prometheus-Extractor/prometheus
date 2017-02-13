@@ -20,10 +20,20 @@ object FactExtractor {
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
-    val relations = RelationsReader.readRelations(sqlContext, args(1))
+    val relations: RDD[RelationRow] = RelationsReader.readRelations(sqlContext, args(1))
     val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0))
 
-    // code to do stuff
+    // Global feature extraction?
+
+
+
+    // Train models
+    relations.foreach(relation => {
+
+      val model = RelationModel.train(relation, docs)
+
+    })
+
     sc.stop()
   }
 
