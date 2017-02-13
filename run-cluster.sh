@@ -9,10 +9,10 @@ sbt -Dmode=cluster assembly
 CLUSTER_SSH="sem4"
 
 #The remote working directory for the application
-CLUSTER_WORK_PATH="~/projects/fact-extractor"
+CLUSTER_WORK_PATH="~/projects/prometheus-relation-model"
 
 #The jar to execute
-JAR_NAME="fact-extractor-assembly-0.0.1-SNAPSHOT.jar"
+JAR_NAME="prometheus-relation-model-assembly-0.0.1-SNAPSHOT.jar"
 
 #Userdefined args
 JAR_USER_ARGS=""

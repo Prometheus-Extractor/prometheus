@@ -1,3 +1,6 @@
+.ipynb_checkpoints/
+metastore_db/
+
 *.swp
 # Created by https://www.gitignore.io/api/scala,macos
 

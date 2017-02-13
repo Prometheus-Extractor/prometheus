@@ -1,4 +1,4 @@
-package com.sony.factextractor
+package com.sony.relationmodel
 
 import org.apache.spark.rdd.RDD
 
@@ -10,7 +10,7 @@ object RelationModel {
   def train(relation: RDD[RelationRow], docs: RDD[RelationRow]): RelationModel = {
     return new RelationModel()
   }
-  
+
 }
 
 class RelationModel {

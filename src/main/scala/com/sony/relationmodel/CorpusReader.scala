@@ -1,4 +1,4 @@
-package com.sony.factextractor
+package com.sony.relationmodel
 
 import java.io.IOError
 

@@ -1,4 +1,4 @@
-package com.sony.factextractor
+package com.sony.relationmodel
 
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.rdd.RDD
