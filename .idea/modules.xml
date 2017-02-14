@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/fact-extractor-build.iml" filepath="$PROJECT_DIR$/.idea/modules/fact-extractor-build.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/prometheus-relation-model.iml" filepath="$PROJECT_DIR$/.idea/modules/prometheus-relation-model.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/prometheus-relation-model-build.iml" filepath="$PROJECT_DIR$/.idea/modules/prometheus-relation-model-build.iml" />
     </modules>
   </component>
 </project>

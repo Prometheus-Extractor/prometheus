@@ -6,11 +6,11 @@ import java.util.regex.Pattern
 
 import org.apache.log4j.LogManager
 import org.apache.spark.ml.feature.{HashingTF, OneHotEncoder, StringIndexer, Word2Vec}
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.{Accumulator, SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
 import se.lth.cs.docforia.Document
-import se.lth.cs.docforia.graph.text.Token
+import se.lth.cs.docforia.graph.text.{Sentence, Token}
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import se.lth.cs.docforia.query.QueryCollectors
 
@@ -28,12 +28,12 @@ object ModelTrainer {
     }
 
     val log = LogManager.getRootLogger
-    val conf = new SparkConf().setAppName("Fact Extractor")
+    val conf = new SparkConf().setAppName("Prometheus Relation Model")
     envOrNone("SPARK_MASTER").foreach(m => conf.setMaster(m))
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
-    val relations: RDD[RelationRow] = RelationsReader.readRelations(sqlContext, args(1))
+    val relations: Dataset[Relation] = RelationsReader.readRelations(sqlContext, args(1))
     val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0))
 
     val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
@@ -63,8 +63,8 @@ object ModelTrainer {
     val encoded = encoder.transform(indexed)
     encoded.select("tokens", "categoryVec").show(10, false)
 
-
-
+    val relation = relations.first()
+    println(relation)
 
     sc.stop()
   }

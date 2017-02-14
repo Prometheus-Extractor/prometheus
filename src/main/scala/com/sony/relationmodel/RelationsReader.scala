@@ -1,15 +1,15 @@
 package com.sony.relationmodel
 
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.rdd.RDD
 
-case class RelationRow(relationName: String, relationId: String, entity1: String, entity2: String)
+case class Relation(name: String, id: String, entities: Option[Seq[EntityPair]] = None)
+case class EntityPair(source: String, dest: String)
 
 object RelationsReader {
-  def readRelations(sqlContext: SQLContext, file: String):RDD[RelationRow] = {
-    sqlContext.read.parquet(file).map(row => {
-      RelationRow(row.getString(0), row.getString(1), row.getString(2), row.getString(3))
-    })
+  def readRelations(sqlContext: SQLContext, file: String):Dataset[Relation] = {
+    import sqlContext.implicits._
+    sqlContext.read.parquet(file).as[Relation]
   }
 }
 
