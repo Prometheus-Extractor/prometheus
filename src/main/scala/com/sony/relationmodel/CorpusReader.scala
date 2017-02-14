@@ -10,15 +10,15 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
 object CorpusReader {
-  def readCorpus(sqlContext: SQLContext, sc: SparkContext, file: String): RDD[Document] = {
+  def readCorpus(sqlContext: SQLContext, sc: SparkContext, file: String, sampleSize: Double = 1.0): RDD[Document] = {
     val log = LogManager.getRootLogger
-    val df: DataFrame = sqlContext.read.parquet(file)
-    log.debug(df.schema.mkString)
+    var df: DataFrame = sqlContext.read.parquet(file)
+    df = df.where(df("type").equalTo("ARTICLE"))
 
     val ioErrors: Accumulator[Int] = sc.accumulator(0, "IO_ERRORS")
 
     // we might need to filter for only articles here but that wouldn't be a generelized solution.
-    val docs = df.flatMap{row =>
+    val docs = (if(sampleSize == 1.0) df else df.sample(false, sampleSize)).flatMap{row =>
       try {
         val doc: Document = MemoryDocumentIO.getInstance().fromBytes(row.getAs(5): Array[Byte])
         List(doc)

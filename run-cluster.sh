@@ -1,5 +1,6 @@
 #!/bin/bash
 TERM=xterm-color
+VERSION=0.0.1-SNAPSHOT
 args=$@
 
 #Cluster credentials, normally user@host, if you have SSH aliases they can be used.
@@ -9,7 +10,7 @@ CLUSTER_SSH="sem4"
 CLUSTER_WORK_PATH="~/projects/prometheus-relation-model"
 
 #The jar to execute
-JAR_NAME="prometheus-relation-model-assembly-0.0.1-SNAPSHOT.jar"
+JAR_NAME="prometheus-relation-model-assembly-"$VERSION".jar"
 
 #Userdefined args
 JAR_USER_ARGS=""
