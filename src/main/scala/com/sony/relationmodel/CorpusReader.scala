@@ -10,7 +10,11 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
 object CorpusReader {
-  def readCorpus(sqlContext: SQLContext, sc: SparkContext, file: String, sampleSize: Double = 1.0): RDD[Document] = {
+  def readCorpus(sqlContext: SQLContext,
+                 sc: SparkContext,
+                 file: String,
+                 sampleSize: Double = 1.0): RDD[Document] = {
+
     val log = LogManager.getRootLogger
     var df: DataFrame = sqlContext.read.parquet(file)
     df = df.where(df("type").equalTo("ARTICLE"))

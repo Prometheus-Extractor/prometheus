@@ -19,8 +19,6 @@ import scala.util.Properties.envOrNone
 
 object ModelTrainer {
 
-  val SENTENCE_MAX_LENGTH = 500
-  val SENTENCE_MIN_LENGTH = 5
   val USAGE = """
   Usage: ModelTrainer <path/to/corpus> <path/to/relations parquet file>
   """
@@ -40,11 +38,14 @@ object ModelTrainer {
     val relations: Array[Relation] = RelationsReader.readRelations(sqlContext, args(1)).rdd.collect()
     val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0), 1.0)
 
-    val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
+    val trainingData = TrainingDataExtractor.extract(docs, relations)
 
-    import sqlContext.implicits._
+    trainingData(0)._2.collect()
+
 
 //    // Tokenization
+//    val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
+//
 //    val T = Token.`var`()
 //    val docsDF = docs.flatMap(doc => {
 //      doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
@@ -66,36 +67,7 @@ object ModelTrainer {
 //      .setOutputCol("categoryVec")
 //    val encoded = encoder.transform(indexed)
 
-    val trainingData: Array[(Relation, RDD[TrainingSentence])] = relations.map(relation => {
-      val data = docs.flatMap(doc => {
 
-        val S = Sentence.`var`()
-        val NED = NamedEntityDisambiguation.`var`()
-
-        val trainingSentences = doc.select(S, NED)
-          .where(NED)
-          .coveredBy(S)
-          .stream()
-          .collect(QueryCollectors.groupBy(doc, S).values(NED).collector()).asScala
-          .filter(pg => SENTENCE_MIN_LENGTH <= pg.key(S).length() && pg.key(S).length() <= SENTENCE_MAX_LENGTH)
-          .flatMap(pg => {
-            val neds: Set[String] = pg.values().asScala.map(_.get(NED).getIdentifier.split(":").last).toSet
-            relation.entities.filter(p => neds.contains(p.source) && neds.contains(p.dest))
-              .map(p => {
-              if(doc.id() == null)
-                doc.setId("<null_id>")
-              val s = pg.key(S)
-              TrainingSentence(doc.subDocument(s.getStart, s.getEnd), p)
-            })
-          })
-
-        trainingSentences
-      })
-
-      Tuple2(relation, data)
-    })
-
-    val x = trainingData(0)._2.collect()
 
     sc.stop()
   }
