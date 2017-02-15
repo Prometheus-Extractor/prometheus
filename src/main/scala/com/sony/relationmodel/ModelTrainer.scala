@@ -19,7 +19,8 @@ import scala.util.Properties.envOrNone
 
 object ModelTrainer {
 
-  val SENTENCE_MAX_LENGTH = 200
+  val SENTENCE_MAX_LENGTH = 500
+  val SENTENCE_MIN_LENGTH = 5
   val USAGE = """
   Usage: ModelTrainer <path/to/corpus> <path/to/relations parquet file>
   """
@@ -37,37 +38,35 @@ object ModelTrainer {
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
     val relations: Array[Relation] = RelationsReader.readRelations(sqlContext, args(1)).rdd.collect()
-    val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0), 0.01)
-
-
+    val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0), 1.0)
 
     val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
 
     import sqlContext.implicits._
 
-    // Tokenization
-    val T = Token.`var`()
-    val docsDF = docs.flatMap(doc => {
-      doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
-    }).filter(t => wordPattern.matcher(t).matches())
-      .map(token => (token, 1))
-      .reduceByKey(_+_)
-      .filter(tup => tup._2 >= 3)
-      .map(_._1)
-      .toDF("tokens")
+//    // Tokenization
+//    val T = Token.`var`()
+//    val docsDF = docs.flatMap(doc => {
+//      doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
+//    }).filter(t => wordPattern.matcher(t).matches())
+//      .map(token => (token, 1))
+//      .reduceByKey(_+_)
+//      .filter(tup => tup._2 >= 3)
+//      .map(_._1)
+//      .toDF("tokens")
+//
+//    val indexer = new StringIndexer()
+//      .setInputCol("tokens")
+//      .setOutputCol("categoryIndex")
+//      .fit(docsDF)
+//    val indexed = indexer.transform(docsDF)
+//
+//    val encoder = new OneHotEncoder()
+//      .setInputCol("categoryIndex")
+//      .setOutputCol("categoryVec")
+//    val encoded = encoder.transform(indexed)
 
-    val indexer = new StringIndexer()
-      .setInputCol("tokens")
-      .setOutputCol("categoryIndex")
-      .fit(docsDF)
-    val indexed = indexer.transform(docsDF)
-
-    val encoder = new OneHotEncoder()
-      .setInputCol("categoryIndex")
-      .setOutputCol("categoryVec")
-    val encoded = encoder.transform(indexed)
-
-    val trainingData = relations.map(relation => {
+    val trainingData: Array[(Relation, RDD[TrainingSentence])] = relations.map(relation => {
       val data = docs.flatMap(doc => {
 
         val S = Sentence.`var`()
@@ -78,10 +77,13 @@ object ModelTrainer {
           .coveredBy(S)
           .stream()
           .collect(QueryCollectors.groupBy(doc, S).values(NED).collector()).asScala
-          .filter(_.key(S).length() <= SENTENCE_MAX_LENGTH)
+          .filter(pg => SENTENCE_MIN_LENGTH <= pg.key(S).length() && pg.key(S).length() <= SENTENCE_MAX_LENGTH)
           .flatMap(pg => {
             val neds: Set[String] = pg.values().asScala.map(_.get(NED).getIdentifier.split(":").last).toSet
-            relation.entities.filter(p => neds.contains(p.source) && neds.contains(p.dest)).map(p => {
+            relation.entities.filter(p => neds.contains(p.source) && neds.contains(p.dest))
+              .map(p => {
+              if(doc.id() == null)
+                doc.setId("<null_id>")
               val s = pg.key(S)
               TrainingSentence(doc.subDocument(s.getStart, s.getEnd), p)
             })
@@ -93,12 +95,7 @@ object ModelTrainer {
       Tuple2(relation, data)
     })
 
-    println(trainingData)
-
-    // för varje relation
-    //    träna en model
-    //      på datan av meningar som innehåller de entiterna
-    //    spara ned modellen till fil.
+    val x = trainingData(0)._2.collect()
 
     sc.stop()
   }
