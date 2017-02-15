@@ -36,7 +36,7 @@ object ModelTrainer {
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
-    val relations: RDD[Relation] = RelationsReader.readRelations(sqlContext, args(1)).rdd
+    val relations: Array[Relation] = RelationsReader.readRelations(sqlContext, args(1)).rdd.collect()
     val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0), 0.01)
 
 
@@ -67,15 +67,13 @@ object ModelTrainer {
       .setOutputCol("categoryVec")
     val encoded = encoder.transform(indexed)
 
-
-    val S = Sentence.`var`()
-    val NED = NamedEntityDisambiguation.`var`()
-
-    import sqlContext.implicits._
-
-    val trainingData = relations.flatMap(relation => {
+    val trainingData = relations.map(relation => {
       val data = docs.flatMap(doc => {
-        doc.select(S, NED)
+
+        val S = Sentence.`var`()
+        val NED = NamedEntityDisambiguation.`var`()
+
+        val trainingSentences = doc.select(S, NED)
           .where(NED)
           .coveredBy(S)
           .stream()
@@ -88,12 +86,14 @@ object ModelTrainer {
               TrainingSentence(doc.subDocument(s.getStart, s.getEnd), p)
             })
           })
+
+        trainingSentences
       })
 
-    data.collect().toSeq
+      Tuple2(relation, data)
     })
 
-    trainingData.toDF().show()
+    println(trainingData)
 
     // för varje relation
     //    träna en model
