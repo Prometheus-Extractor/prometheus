@@ -35,7 +35,7 @@ object ModelTrainer {
 
     val sc = new SparkContext(conf)
     val sqlContext = new SQLContext(sc)
-    val relations: Array[Relation] = RelationsReader.readRelations(sqlContext, args(1)).rdd.collect()
+    val relations: Array[Relation] = RelationsReader.readRelations(sqlContext, args(1)).collect()
     val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, args(0), 1.0)
 
     val trainingData = TrainingDataExtractor.extract(docs, relations)

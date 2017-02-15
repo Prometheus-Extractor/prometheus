@@ -7,9 +7,9 @@ case class Relation(name: String, id: String, entities: Seq[EntityPair] = List()
 case class EntityPair(source: String, dest: String)
 
 object RelationsReader {
-  def readRelations(sqlContext: SQLContext, file: String):Dataset[Relation] = {
+  def readRelations(sqlContext: SQLContext, file: String):RDD[Relation] = {
     import sqlContext.implicits._
-    sqlContext.read.parquet(file).as[Relation]
+    sqlContext.read.parquet(file).as[Relation].rdd
   }
 }
 
