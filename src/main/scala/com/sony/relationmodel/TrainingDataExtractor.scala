@@ -19,12 +19,12 @@ object TrainingDataExtractor {
   def extract(docs: RDD[Document], relations: Array[Relation]): Array[(Relation, RDD[TrainingSentence])] = {
 
     val trainingData: Array[(Relation, RDD[TrainingSentence])] = relations.map(relation => {
-      val data = docs.flatMap(doc => {
+      val data: RDD[TrainingSentence] = docs.flatMap(doc => {
 
         val S = Sentence.`var`()
         val NED = NamedEntityDisambiguation.`var`()
 
-        val trainingSentences = doc.select(S, NED)
+        val trainingSentences:Seq[TrainingSentence] = doc.select(S, NED)
           .where(NED)
           .coveredBy(S)
           .stream()
