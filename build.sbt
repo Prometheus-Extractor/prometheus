@@ -2,13 +2,18 @@ name := """prometheus-relation-model"""
 
 version := "0.0.1-SNAPSHOT"
 
+organization := "sonymobile"
+
 scalaVersion := "2.10.6"
 ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 dependencyOverrides += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
+
 
 resolvers += Resolver.mavenLocal
 resolvers += "Akka repository" at "http://repo.akka.io/releases"
 resolvers += "cloudera" at "https://repository.cloudera.com/artifactory/cloudera-repos/"
+resolvers += "JBoss" at "https://repository.jboss.org/"
 
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.6"
 libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.6"
