@@ -40,8 +40,6 @@ object ModelTrainer {
 
     val trainingData = TrainingDataExtractor.extract(docs, relations)
 
-    trainingData(0)._2.collect()
-
 
 //    // Tokenization
 //    val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
@@ -74,4 +72,3 @@ object ModelTrainer {
 
 }
 
-case class TrainingSentence(sentenceDoc: Document, entityPair: EntityPair)

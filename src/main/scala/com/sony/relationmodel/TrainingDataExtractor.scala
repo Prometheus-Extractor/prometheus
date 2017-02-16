@@ -53,3 +53,5 @@ object TrainingDataExtractor {
   }
 
 }
+
+case class TrainingSentence(sentenceDoc: Document, entityPair: EntityPair)
