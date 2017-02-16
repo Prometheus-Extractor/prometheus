@@ -23,17 +23,20 @@ object ModelTrainer {
 
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: ModelTrainer [--force] corpus-path relations-path
+    banner("""Usage: ModelTrainer [--force] [--sample-size=0.f] corpus-path relations-path
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
     val corpusPath = trailArg[String](descr = "path to the corpus to train on")
     val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
     val force = opt[Boolean](descr = "set this to invalidate cached intermediate results")
+    val sampleSize = opt[Double](descr = "use this sample a fraction of the corpus", validate = x => (x > 0 && x < 1), default = Option(1.0))
+
     verify()
 
     override def onError(e: Throwable): Unit = e match {
       case ScallopException(message) =>
+        println(message)
         printHelp
         sys.exit(1)
       case ex => super.onError(ex)
@@ -52,7 +55,7 @@ object ModelTrainer {
 
     // want to do get relations, docs, trainingData
     val relations: Array[Relation] = RelationsReader.readRelations(conf.relationsPath()).collect()
-    val docs: RDD[Document] = CorpusReader.readCorpus(conf.corpusPath(), 1.0)
+    val docs: RDD[Document] = CorpusReader.readCorpus(conf.corpusPath(), conf.sampleSize())
 
     val trainingData = TrainingDataExtractor.extract(docs, relations)
 
