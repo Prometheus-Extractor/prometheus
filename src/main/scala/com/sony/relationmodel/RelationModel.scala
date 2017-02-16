@@ -10,7 +10,7 @@ import se.lth.cs.docforia.Document
 object RelationModel {
 
   def train(relation: Dataset[Relation], docs: RDD[Document]): RelationModel = {
-    return new RelationModel()
+    new RelationModel()
   }
 
 }
