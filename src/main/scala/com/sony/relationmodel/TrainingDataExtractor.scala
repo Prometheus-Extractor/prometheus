@@ -53,15 +53,15 @@ object TrainingDataExtractor {
     trainingData
   }
 
-  def load(path: String, sqlContext: SQLContext): Array[(Relation, RDD[TrainingSentence])] = {
+  // def load(path: String, sqlContext: SQLContext): Array[(Relation, RDD[TrainingSentence])] = {
 
-    import sqlContext.implicits._
-    val rawData = sqlContext.read.parquet(path).as[SerializedTrainingSentence].rdd
-    val a = rawData.map(st => {
-      (st.relation, TrainingSentence(MemoryDocumentIO.getInstance().fromBytes(st.sentenceDoc), st.entityPair))
-    }).groupByKey()
+    // import sqlContext.implicits._
+    // val rawData = sqlContext.read.parquet(path).as[SerializedTrainingSentence].rdd
+    // val a = rawData.map(st => {
+      // (st.relation, TrainingSentence(MemoryDocumentIO.getInstance().fromBytes(st.sentenceDoc), st.entityPair))
+    // }).groupByKey()
 
-  }
+  // }
 
   def save(data: Array[(Relation, RDD[TrainingSentence])], path: String, sqlContext: SQLContext): Unit = {
 

@@ -31,7 +31,8 @@ object ModelTrainer {
     val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
     val force = opt[Boolean](descr = "set this to invalidate cached intermediate results")
     verify()
-    override def onError(e: Throwable) = e match {
+
+    override def onError(e: Throwable): Unit = e match {
       case ScallopException(message) =>
         printHelp
         sys.exit(1)
@@ -46,11 +47,12 @@ object ModelTrainer {
     val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
 
-    val sc = new SparkContext(sparkConf)
-    val sqlContext = new SQLContext(sc)
+    implicit val sc = new SparkContext(sparkConf)
+    implicit val sqlContext = new SQLContext(sc)
 
-    val relations: Array[Relation] = RelationsReader.readRelations(sqlContext, conf.relationsPath()).collect()
-    val docs: RDD[Document] = CorpusReader.readCorpus(sqlContext, sc, conf.corpusPath(), 1.0)
+    // want to do get relations, docs, trainingData
+    val relations: Array[Relation] = RelationsReader.readRelations(conf.relationsPath()).collect()
+    val docs: RDD[Document] = CorpusReader.readCorpus(conf.corpusPath(), 1.0)
 
     val trainingData = TrainingDataExtractor.extract(docs, relations)
 
