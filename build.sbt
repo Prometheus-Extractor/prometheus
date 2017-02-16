@@ -18,6 +18,7 @@ resolvers += "JBoss" at "https://repository.jboss.org/"
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.6"
 libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.6"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
 
 
 lazy val spark_core_version = "1.6.0-cdh5.10.0"
