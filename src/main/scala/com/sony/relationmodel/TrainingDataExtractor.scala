@@ -12,12 +12,29 @@ import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Sentence
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import se.lth.cs.docforia.query.QueryCollectors
-
 import scala.collection.mutable
 
-/**
-  * Created by erik on 2017-02-15.
-  */
+class TrainingDataExtractorStage(
+  path: String,
+  corpusData: Data,
+  relationsData: Data)
+  (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+
+  override def getData(force: Boolean = false): String = {
+    if (!exists(path) || force) {
+      run()
+    }
+    path
+  }
+
+  override def run(): Unit = {
+    val relations = RelationsReader.readRelations(relationsData.getData())
+    val docs = CorpusReader.readCorpus(corpusData.getData())
+    val sentences = TrainingDataExtractor.extract(docs, relations)
+    TrainingDataExtractor.save(sentences, path)
+  }
+}
+
 object TrainingDataExtractor {
 
   val SENTENCE_MAX_LENGTH = 500

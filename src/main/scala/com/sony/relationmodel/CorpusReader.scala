@@ -9,6 +9,16 @@ import org.apache.spark.rdd.RDD
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
+class CorpusData(path: String) extends Data {
+  override def getData(force: Boolean = false): String = {
+    if (exists(path)) {
+      path
+    } else {
+      throw new Exception("Corpus data missing")
+    }
+  }
+}
+
 object CorpusReader {
   def readCorpus(
     file: String,

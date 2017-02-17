@@ -55,12 +55,13 @@ object ModelTrainer {
     implicit val sqlContext = new SQLContext(sc)
 
     // want to do get relations, docs, trainingData
-    val relations: RDD[Relation] = RelationsReader.readRelations(conf.relationsPath())
-    val docs: RDD[Document] = CorpusReader.readCorpus(conf.corpusPath(), conf.sampleSize())
 
-    val trainingData = TrainingDataExtractor.extract(docs, relations)
+    val trainingTask = new TrainingDataExtractorStage(
+      conf.tempDataPath() + "/training_sentences",
+      corpusData = new Data{def getData(force: Boolean) = conf.corpusPath()},
+      relationsData = new Data{def getData(force: Boolean) = conf.relationsPath()})
 
-    TrainingDataExtractor.save(trainingData, conf.tempDataPath() + "/training_sentences")
+    trainingTask.run()
 
     sc.stop()
   }
