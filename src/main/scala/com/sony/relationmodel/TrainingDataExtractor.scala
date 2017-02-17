@@ -44,7 +44,7 @@ object TrainingDataExtractor {
             val trainingData = broadcastedRelations.value.flatMap(relation => {
 
               val neds = new mutable.HashSet() ++ pg.list(NED).asScala.map(_.getIdentifier.split(":").last)
-              relation.entities.filter(p => neds.contains(p.source) && neds.contains(p.dest))
+              relation.entities.toStream.filter(p => neds.contains(p.source) && neds.contains(p.dest))
                 .map(p => {
                   if (doc.id() == null) {
                     // This is a work around for a bug in Docforia.
