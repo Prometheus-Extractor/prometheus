@@ -23,12 +23,13 @@ object ModelTrainer {
 
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: ModelTrainer [--force] [--sample-size=0.f] corpus-path relations-path
+    banner("""Usage: ModelTrainer [--force] [--sample-size=0.f] corpus-path relations-path temp-data-path
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
     val corpusPath = trailArg[String](descr = "path to the corpus to train on")
     val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
+    val tempDataPath= trailArg[String](descr= "path to a folder that will contain intermediate results")
     val force = opt[Boolean](descr = "set this to invalidate cached intermediate results")
     val sampleSize = opt[Double](descr = "use this sample a fraction of the corpus", validate = x => (x > 0 && x < 1), default = Option(1.0))
 
@@ -54,37 +55,12 @@ object ModelTrainer {
     implicit val sqlContext = new SQLContext(sc)
 
     // want to do get relations, docs, trainingData
-    val relations: Array[Relation] = RelationsReader.readRelations(conf.relationsPath()).collect()
+    val relations: RDD[Relation] = RelationsReader.readRelations(conf.relationsPath())
     val docs: RDD[Document] = CorpusReader.readCorpus(conf.corpusPath(), conf.sampleSize())
 
     val trainingData = TrainingDataExtractor.extract(docs, relations)
 
-
-//    // Tokenization
-//    val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
-//
-//    val T = Token.`var`()
-//    val docsDF = docs.flatMap(doc => {
-//      doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
-//    }).filter(t => wordPattern.matcher(t).matches())
-//      .map(token => (token, 1))
-//      .reduceByKey(_+_)
-//      .filter(tup => tup._2 >= 3)
-//      .map(_._1)
-//      .toDF("tokens")
-//
-//    val indexer = new StringIndexer()
-//      .setInputCol("tokens")
-//      .setOutputCol("categoryIndex")
-//      .fit(docsDF)
-//    val indexed = indexer.transform(docsDF)
-//
-//    val encoder = new OneHotEncoder()
-//      .setInputCol("categoryIndex")
-//      .setOutputCol("categoryVec")
-//    val encoded = encoder.transform(indexed)
-
-
+    TrainingDataExtractor.save(trainingData, conf.tempDataPath() + "/training_sentences")
 
     sc.stop()
   }

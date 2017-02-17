@@ -9,7 +9,7 @@ import se.lth.cs.docforia.Document
   */
 object RelationModel {
 
-  def train(relation: Dataset[Relation], docs: RDD[Document]): RelationModel = {
+  def train(relation: Relation, trainingData: RDD[TrainingSentence]): RelationModel = {
     new RelationModel()
   }
 

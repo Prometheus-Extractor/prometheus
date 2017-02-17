@@ -1,5 +1,9 @@
 package com.sony.relationmodel
 
+import breeze.linalg.Broadcaster
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
+
 import scala.collection.JavaConverters._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -16,11 +20,12 @@ object TrainingDataExtractor {
 
   val SENTENCE_MAX_LENGTH = 500
   val SENTENCE_MIN_LENGTH = 5
+  val PARTIONS = 432
 
-  def extract(docs: RDD[Document], relations: Array[Relation]): Array[(Relation, RDD[TrainingSentence])] = {
+  def extract(docs: RDD[Document], relations: RDD[Relation]): RDD[TrainingSentence] = {
 
-    val trainingData: Array[(Relation, RDD[TrainingSentence])] = relations.map(relation => {
-      val data: RDD[TrainingSentence] = docs.flatMap(doc => {
+    val trainingData = relations.collect().map(relation => {
+      val data = docs.flatMap(doc => {
 
         val S = Sentence.`var`()
         val NED = NamedEntityDisambiguation.`var`()
@@ -40,39 +45,40 @@ object TrainingDataExtractor {
                   doc.setId("<null_id>")
                 }
                 val s = pg.key(S)
-                TrainingSentence(doc.subDocument(s.getStart, s.getEnd), p)
+                TrainingSentence(relation.id, relation.name, doc.subDocument(s.getStart, s.getEnd), p)
               })
           })
 
         trainingSentences
       })
 
-      Tuple2(relation, data)
+        data.repartition(PARTIONS)
     })
 
-    trainingData
+    trainingData.reduce(_ union _)
   }
 
-  // def load(path: String, sqlContext: SQLContext): Array[(Relation, RDD[TrainingSentence])] = {
-
-    // import sqlContext.implicits._
-    // val rawData = sqlContext.read.parquet(path).as[SerializedTrainingSentence].rdd
-    // val a = rawData.map(st => {
-      // (st.relation, TrainingSentence(MemoryDocumentIO.getInstance().fromBytes(st.sentenceDoc), st.entityPair))
-    // }).groupByKey()
-
-  // }
-
-  def save(data: Array[(Relation, RDD[TrainingSentence])], path: String, sqlContext: SQLContext): Unit = {
+  def load(path: String)(implicit sqlContext: SQLContext): RDD[TrainingSentence] = {
 
     import sqlContext.implicits._
-    data.map(r => r._2.map(t => SerializedTrainingSentence(r._1, t.sentenceDoc.toBytes(), t.entityPair))).reduce((x, y) =>{
-      x ++ y
-    }).toDF().write.parquet(path)
+    val rawData = sqlContext.read.parquet(path).as[SerializedTrainingSentence].rdd
+    rawData.map(st => {
+      TrainingSentence(st.relationId, st.relationName, MemoryDocumentIO.getInstance().fromBytes(st.sentenceDoc),
+                       st.entityPair)
+    })
 
+  }
+
+  def save(data: RDD[TrainingSentence], path: String)(implicit sqlContext: SQLContext): Unit = {
+
+    import sqlContext.implicits._
+    val serializable = data.map(ts => {
+      SerializedTrainingSentence(ts.relationId, ts.relationName, ts.sentenceDoc.toBytes(), ts.entityPair)
+    }).toDF()
+    serializable.write.parquet(path)
   }
 
 }
 
-case class TrainingSentence(sentenceDoc: Document, entityPair: EntityPair)
-private case class SerializedTrainingSentence(relation: Relation, sentenceDoc: Array[Byte], entityPair: EntityPair)
+case class TrainingSentence(relationId: String, relationName: String, sentenceDoc: Document, entityPair: EntityPair)
+private case class SerializedTrainingSentence(relationId: String, relationName: String, sentenceDoc: Array[Byte], entityPair: EntityPair)
