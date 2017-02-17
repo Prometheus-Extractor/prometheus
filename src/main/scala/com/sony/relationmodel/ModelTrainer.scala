@@ -31,7 +31,7 @@ object ModelTrainer {
     val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
     val tempDataPath= trailArg[String](descr= "path to a folder that will contain intermediate results")
     val force = opt[Boolean](descr = "set this to invalidate cached intermediate results")
-    val sampleSize = opt[Double](descr = "use this sample a fraction of the corpus", validate = x => (x > 0 && x < 1), default = Option(1.0))
+    val sampleSize = opt[Double](descr = "use this sample a fraction of the corpus", validate = x => (x > 0 && x <= 1), default = Option(1.0))
 
     verify()
 

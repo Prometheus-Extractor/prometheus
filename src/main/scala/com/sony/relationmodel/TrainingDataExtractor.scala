@@ -13,6 +13,8 @@ import se.lth.cs.docforia.graph.text.Sentence
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import se.lth.cs.docforia.query.QueryCollectors
 
+import scala.collection.mutable
+
 /**
   * Created by erik on 2017-02-15.
   */
@@ -22,10 +24,11 @@ object TrainingDataExtractor {
   val SENTENCE_MIN_LENGTH = 5
   val PARTIONS = 432
 
-  def extract(docs: RDD[Document], relations: RDD[Relation]): RDD[TrainingSentence] = {
+  def extract(docs: RDD[Document], relations: RDD[Relation])(implicit sparkContext: SparkContext): RDD[TrainingSentence] = {
 
-    val trainingData = relations.collect().map(relation => {
-      val data = docs.flatMap(doc => {
+    val broadcastedRelations = relations.sparkContext.broadcast(relations.collect())
+
+    val data:RDD[TrainingSentence] = docs.flatMap(doc => {
 
         val S = Sentence.`var`()
         val NED = NamedEntityDisambiguation.`var`()
@@ -37,25 +40,30 @@ object TrainingDataExtractor {
           .collect(QueryCollectors.groupBy(doc, S).values(NED).collector()).asScala
           .filter(pg => SENTENCE_MIN_LENGTH <= pg.key(S).length() && pg.key(S).length() <= SENTENCE_MAX_LENGTH)
           .flatMap(pg => {
-            val neds: Set[String] = pg.values().asScala.map(_.get(NED).getIdentifier.split(":").last).toSet
-            relation.entities.filter(p => neds.contains(p.source) && neds.contains(p.dest))
-              .map(p => {
-                if(doc.id() == null) {
-                  // This is a work around for a bug in Docforia.
-                  doc.setId("<null_id>")
-                }
-                val s = pg.key(S)
-                TrainingSentence(relation.id, relation.name, doc.subDocument(s.getStart, s.getEnd), p)
-              })
+
+            val trainingData = broadcastedRelations.value.flatMap(relation => {
+
+              val neds = new mutable.HashSet() ++ pg.list(NED).asScala.map(_.getIdentifier.split(":").last)
+              relation.entities.filter(p => neds.contains(p.source) && neds.contains(p.dest))
+                .map(p => {
+                  if (doc.id() == null) {
+                    // This is a work around for a bug in Docforia.
+                    doc.setId("<null_id>")
+                  }
+                  val s = pg.key(S)
+                  TrainingSentence(relation.id, relation.name, doc.subDocument(s.getStart, s.getEnd), p)
+                })
+            })
+
+            trainingData
           })
 
         trainingSentences
+
       })
 
-        data.repartition(PARTIONS)
-    })
+    data
 
-    trainingData.reduce(_ union _)
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[TrainingSentence] = {
