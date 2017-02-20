@@ -1,23 +1,12 @@
 package com.sony.relationmodel
 
-import scala.collection.JavaConverters._
-import java.io.IOError
-import java.util.regex.Pattern
-
 import org.apache.log4j.LogManager
-import org.apache.spark.ml.feature.{HashingTF, OneHotEncoder, StringIndexer, Word2Vec}
-import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
-import org.apache.spark.{Accumulator, SparkConf, SparkContext}
-import org.apache.spark.rdd.RDD
-import se.lth.cs.docforia.Document
-import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
-import se.lth.cs.docforia.graph.text.{NamedEntity, Sentence, Token}
-import se.lth.cs.docforia.memstore.MemoryDocumentIO
-import se.lth.cs.docforia.query.QueryCollectors
+import org.apache.spark.sql.SQLContext
+import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
+
 import scala.util.Properties.envOrNone
-import java.nio.file.{Paths, Files}
 
 object ModelTrainer {
 
@@ -55,13 +44,14 @@ object ModelTrainer {
     implicit val sqlContext = new SQLContext(sc)
 
     // want to do get relations, docs, trainingData
-
+    val corpusData = new Data{def getData(force: Boolean) = conf.corpusPath()}
     val trainingTask = new TrainingDataExtractorStage(
       conf.tempDataPath() + "/training_sentences",
-      corpusData = new Data{def getData(force: Boolean) = conf.corpusPath()},
+      corpusData = corpusData,
       relationsData = new Data{def getData(force: Boolean) = conf.relationsPath()})
+    val featureTransformerTask = new FeatureTransformerStage(conf.tempDataPath() + "/feature_model", corpusData)
 
-    trainingTask.run()
+    featureTransformerTask.run()
 
     sc.stop()
   }
