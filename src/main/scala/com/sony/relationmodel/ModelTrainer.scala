@@ -50,8 +50,9 @@ object ModelTrainer {
       corpusData = corpusData,
       relationsData = new Data{def getData(force: Boolean) = conf.relationsPath()})
     val featureTransformerTask = new FeatureTransformerStage(conf.tempDataPath() + "/feature_model", corpusData)
+    val featureExtractionTask = new FeatureExtractorStage(conf.tempDataPath() + "/featues", featureTransformerTask, trainingTask)
 
-    featureTransformerTask.run()
+    featureExtractionTask.run()
 
     sc.stop()
   }
