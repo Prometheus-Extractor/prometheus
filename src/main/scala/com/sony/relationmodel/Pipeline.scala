@@ -8,7 +8,7 @@ trait Task {
 }
 
 trait Data {
-  def getData(force: Boolean = false): String
+  def getData(): String
   def exists(path: String)(implicit sc: SparkContext): Boolean = {
     if (path.split(":")(0) == "hdfs") {
       val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)

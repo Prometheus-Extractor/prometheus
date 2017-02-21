@@ -17,8 +17,8 @@ class FeatureTransformerStage(
   corpusData: Data)
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
-  override def getData(force: Boolean = false): String = {
-    if (!exists(path) || force) {
+  override def getData(): String = {
+    if (!exists(path)) {
       run()
     }
     path

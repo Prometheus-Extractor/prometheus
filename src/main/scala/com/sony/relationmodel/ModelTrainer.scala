@@ -12,14 +12,13 @@ object ModelTrainer {
 
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: ModelTrainer [--force] [--sample-size=0.f] corpus-path relations-path temp-data-path
+    banner("""Usage: ModelTrainer [--sample-size=0.f] corpus-path relations-path temp-data-path
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
     val corpusPath = trailArg[String](descr = "path to the corpus to train on")
     val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
     val tempDataPath= trailArg[String](descr= "path to a folder that will contain intermediate results")
-    val force = opt[Boolean](descr = "set this to invalidate cached intermediate results")
     val sampleSize = opt[Double](descr = "use this sample a fraction of the corpus", validate = x => (x > 0 && x <= 1), default = Option(1.0))
 
     verify()

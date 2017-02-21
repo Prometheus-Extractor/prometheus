@@ -8,7 +8,7 @@ case class Relation(name: String, id: String, entities: Seq[EntityPair] = List()
 case class EntityPair(source: String, dest: String)
 
 class RelationsData(path: String)(implicit sc: SparkContext) extends Data {
-  override def getData(force: Boolean = false): String = {
+  override def getData(): String = {
     if (exists(path)) {
       path
     } else {
@@ -16,6 +16,7 @@ class RelationsData(path: String)(implicit sc: SparkContext) extends Data {
     }
   }
 }
+
 object RelationsReader {
   def readRelations(file: String)(implicit sqlContext: SQLContext): RDD[Relation] = {
     import sqlContext.implicits._

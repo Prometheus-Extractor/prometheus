@@ -10,7 +10,7 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
 class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
-  override def getData(force: Boolean = false): String = {
+  override def getData(): String = {
     if (exists(path)) {
       path
     } else {
