@@ -3,6 +3,7 @@ package com.sony.relationmodel
 import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.SparkContext
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.query.QueryCollectors
@@ -18,7 +19,7 @@ class FeatureExtractorStage(
    path: String,
    featureTransformer: Data,
    trainingDataExtractor: Data)
-   (implicit sqlContext: SQLContext) extends Task with Data {
+   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(force: Boolean = false): String = {
     if (!exists(path) || force) {
