@@ -44,7 +44,7 @@ object FeatureExtractor {
     pipelineModel.transform(df)
   }
 
-  private def featureArray(trainingSentence: TrainingSentence): Array[String] = {
+  private def featureArray(trainingSentence: TrainingSentence): Seq[String] = {
     val doc = trainingSentence.sentenceDoc
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
@@ -74,7 +74,7 @@ object FeatureExtractor {
         val wordsAfter = doc.nodes(classOf[Token]).asScala.toSeq.slice(end + NBR_WORDS_AFTER, end + NBR_WORDS_AFTER + 1)
         // TODO: source or dest wordsBefore
        Array(wordsBefore.map(_.text()), wordsAfter.map(_.text()))
-      })
+      }).flatten
   }
 
 }
