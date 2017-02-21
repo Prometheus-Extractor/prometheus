@@ -48,7 +48,7 @@ object ModelTrainer {
     val trainingTask = new TrainingDataExtractorStage(
       conf.tempDataPath() + "/training_sentences",
       corpusData = corpusData,
-      relationsData = new RelationsData(conf.relationsPath())
+      relationsData = new RelationsData(conf.relationsPath()))
     val featureTransformerTask = new FeatureTransformerStage(conf.tempDataPath() + "/feature_model", corpusData)
     val featureExtractionTask = new FeatureExtractorStage(conf.tempDataPath() + "/featues", featureTransformerTask, trainingTask)
 
