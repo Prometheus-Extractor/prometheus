@@ -56,7 +56,7 @@ object FeatureTransformer {
 
     val encoder = new OneHotEncoder()
       .setInputCol("categoryIndex")
-      .setOutputCol("categoryVec")
+      .setOutputCol("vector")
     pipeline.setStages(Array(indexer, encoder))
     pipeline.fit(docsDF)
   }

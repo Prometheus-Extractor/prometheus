@@ -31,7 +31,8 @@ class FeatureExtractorStage(
   override def run(): Unit = {
     val trainingSentences = TrainingDataExtractor.load(trainingDataExtractor.getData())
     val pipelineModel = PipelineModel.load(featureTransformer.getData())
-    FeatureExtractor.extract(pipelineModel, trainingSentences).write.parquet(path)
+    val data = FeatureExtractor.extract(pipelineModel, trainingSentences)
+    FeatureExtractor.save(data, path)
   }
 }
 
@@ -40,23 +41,26 @@ object FeatureExtractor {
   val NBR_WORDS_AFTER = 1
 
   def extract(pipelineModel: PipelineModel, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
+
     import sqlContext.implicits._
-    val df = trainingSentences.map(featureArray).map(Tuple1.apply).toDF("tokens")
+    val df = trainingSentences.map(featureArray).toDF("relationId", "relationName", "tokens")
+    df.show()
     pipelineModel.transform(df)
+
   }
 
-  private def featureArray(trainingSentence: TrainingSentence): Seq[String] = {
+  private def featureArray(trainingSentence: TrainingSentence): (String, String, Seq[String]) = {
     val doc = trainingSentence.sentenceDoc
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
 
-     doc.nodes(classOf[Token])
+    doc.nodes(classOf[Token])
       .asScala
       .toSeq
       .zipWithIndex
       .foreach(t => t._1.putTag("idx", t._2))
 
-    doc.select(NED, T)
+    val features = doc.select(NED, T)
       .where(T)
       .coveredBy(NED)
       .stream()
@@ -74,8 +78,20 @@ object FeatureExtractor {
         val wordsBefore = doc.nodes(classOf[Token]).asScala.toSeq.slice(start - NBR_WORDS_BEFORE, start)
         val wordsAfter = doc.nodes(classOf[Token]).asScala.toSeq.slice(end + NBR_WORDS_AFTER, end + NBR_WORDS_AFTER + 1)
         // TODO: source or dest wordsBefore
-       Array(wordsBefore.map(_.text()), wordsAfter.map(_.text()))
+        Seq(wordsBefore.map(_.text()), wordsAfter.map(_.text()))
       }).flatten
+
+    (trainingSentence.relationId, trainingSentence.relationName, features)
+  }
+
+  def save(data: DataFrame, path: String)(implicit sqlContext: SQLContext): Unit = {
+    import sqlContext.implicits._
+    data.toDF().write.parquet(path)
+    data.show()
+  }
+
+  def load(path: String)(implicit sqlContext: SQLContext): DataFrame = {
+    sqlContext.read.parquet(path)
   }
 
 }
