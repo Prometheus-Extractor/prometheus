@@ -4,6 +4,7 @@ import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.SparkContext
+import org.apache.spark.mllib.linalg.{SparseVector, Vectors}
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.query.QueryCollectors
@@ -43,13 +44,21 @@ object FeatureExtractor {
   def extract(pipelineModel: PipelineModel, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
 
     import sqlContext.implicits._
-    val df = trainingSentences.map(featureArray).toDF("relationId", "relationName", "tokens")
-    df.show()
-    pipelineModel.transform(df)
+    var df = trainingSentences.zipWithIndex().flatMap(t => featureArray(t._2, t._1)).toDF("idx", "rel_id", "rel_name", "tokens")
 
+    df = pipelineModel.transform(df)
+    df.show()
+
+    df = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getDouble(4), row.getAs[SparseVector](5).size))).groupByKey().map{
+      case (trainingSentence:Long, rows:Iterable[(String, String, Double, Int)]) =>
+        val featureList:Seq[Double] = rows.map(_._3).toSeq
+        (rows.head._1, rows.head._2, featureList)
+    }.toDF()
+    df.show()
+    df
   }
 
-  private def featureArray(trainingSentence: TrainingSentence): (String, String, Seq[String]) = {
+  private def featureArray(indx: Long, trainingSentence: TrainingSentence) = {
     val doc = trainingSentence.sentenceDoc
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
@@ -79,15 +88,17 @@ object FeatureExtractor {
         val wordsAfter = doc.nodes(classOf[Token]).asScala.toSeq.slice(end + NBR_WORDS_AFTER, end + NBR_WORDS_AFTER + 1)
         // TODO: source or dest wordsBefore
         Seq(wordsBefore.map(_.text()), wordsAfter.map(_.text()))
-      }).flatten
+      }).flatten.filter(Filters.wordFilter)
 
-    (trainingSentence.relationId, trainingSentence.relationName, features)
+    features.map(f => {
+      (indx, trainingSentence.relationId, trainingSentence.relationName, f)
+    })
+
   }
 
   def save(data: DataFrame, path: String)(implicit sqlContext: SQLContext): Unit = {
     import sqlContext.implicits._
     data.toDF().write.parquet(path)
-    data.show()
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): DataFrame = {

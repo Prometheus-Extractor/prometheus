@@ -1,7 +1,5 @@
 package com.sony.relationmodel
 
-import java.util.regex.Pattern
-
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.{Pipeline, PipelineModel, Transformer}
 import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
@@ -36,14 +34,13 @@ object FeatureTransformer {
   def transform(docs: RDD[Document])(implicit sqlContext: SQLContext): PipelineModel = {
 
     // Tokenisation
-    val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
     import sqlContext.implicits._
     val pipeline = new Pipeline("featuretransformer")
 
     val T = Token.`var`()
     val docsDF = docs.flatMap(doc => {
       doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
-    }).filter(t => wordPattern.matcher(t).matches())
+    }).filter(Filters.wordFilter)
       .map(token => (token, 1))
       .reduceByKey(_ + _)
       .filter(tup => tup._2 >= 3)
@@ -53,6 +50,7 @@ object FeatureTransformer {
     val indexer = new StringIndexer()
       .setInputCol("tokens")
       .setOutputCol("categoryIndex")
+      .setHandleInvalid("skip")
 
     val encoder = new OneHotEncoder()
       .setInputCol("categoryIndex")
