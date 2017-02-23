@@ -1,10 +1,9 @@
 package com.sony.relationmodel
 
 import org.apache.spark.SparkContext
-import org.apache.spark.ml.{Pipeline, PipelineModel, Transformer}
-import org.apache.spark.ml.feature.{OneHotEncoder, StringIndexer}
+import org.apache.spark.ml.feature.{StringIndexer, StringIndexerModel}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{DataFrame, SQLContext}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.text.Token
 
@@ -24,18 +23,17 @@ class FeatureTransformerStage(
 
   override def run(): Unit = {
     val docs = CorpusReader.readCorpus(corpusData.getData())
-    val model = FeatureTransformer.transform(docs)
+    val model = FeatureTransformer(docs)
     model.save(path)
   }
 }
 
 object FeatureTransformer {
 
-  def transform(docs: RDD[Document])(implicit sqlContext: SQLContext): PipelineModel = {
+  def apply(docs: RDD[Document])(implicit sqlContext: SQLContext): FeatureTransformer = {
 
     // Tokenisation
     import sqlContext.implicits._
-    val pipeline = new Pipeline("featuretransformer")
 
     val T = Token.`var`()
     val docsDF = docs.flatMap(doc => {
@@ -49,13 +47,32 @@ object FeatureTransformer {
 
     val indexer = new StringIndexer()
       .setInputCol("tokens")
-      .setOutputCol("categoryIndex")
+      .setOutputCol("vector")
       .setHandleInvalid("skip")
 
-    val encoder = new OneHotEncoder()
-      .setInputCol("categoryIndex")
-      .setOutputCol("vector")
-    pipeline.setStages(Array(indexer, encoder))
-    pipeline.fit(docsDF)
+    val model = indexer.fit(docsDF)
+    new FeatureTransformer(model)
   }
+
+  def load(path: String): FeatureTransformer = {
+    val indexer = StringIndexerModel.load(path + "/indexer")
+    new FeatureTransformer(indexer)
+  }
+
+}
+
+class FeatureTransformer(indexer: StringIndexerModel) {
+
+  def vocabSize() = {
+    indexer.labels.size
+  }
+
+  def transform(dataframe: DataFrame): DataFrame = {
+    indexer.transform(dataframe)
+  }
+
+  def save(path: String): Unit = {
+    indexer.save(path + "/indexer")
+  }
+
 }

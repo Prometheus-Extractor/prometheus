@@ -49,7 +49,7 @@ object ModelTrainer {
       corpusData = corpusData,
       relationsData = new RelationsData(conf.relationsPath()))
     val featureTransformerTask = new FeatureTransformerStage(conf.tempDataPath() + "/feature_model", corpusData)
-    val featureExtractionTask = new FeatureExtractorStage(conf.tempDataPath() + "/featues", featureTransformerTask, trainingTask)
+    val featureExtractionTask = new FeatureExtractorStage(conf.tempDataPath() + "/features", featureTransformerTask, trainingTask)
 
     featureExtractionTask.run()
 

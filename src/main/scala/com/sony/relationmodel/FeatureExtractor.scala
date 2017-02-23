@@ -31,8 +31,8 @@ class FeatureExtractorStage(
 
   override def run(): Unit = {
     val trainingSentences = TrainingDataExtractor.load(trainingDataExtractor.getData())
-    val pipelineModel = PipelineModel.load(featureTransformer.getData())
-    val data = FeatureExtractor.extract(pipelineModel, trainingSentences)
+    val ft = FeatureTransformer.load(featureTransformer.getData())
+    val data = FeatureExtractor.extract(ft, trainingSentences)
     FeatureExtractor.save(data, path)
   }
 }
@@ -41,16 +41,16 @@ object FeatureExtractor {
   val NBR_WORDS_BEFORE = 1
   val NBR_WORDS_AFTER = 1
 
-  def extract(pipelineModel: PipelineModel, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
+  def extract(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
 
     import sqlContext.implicits._
     var df = trainingSentences.zipWithIndex().flatMap(t => featureArray(t._2, t._1)).toDF("idx", "rel_id", "rel_name", "tokens")
 
-    df = pipelineModel.transform(df)
+    df = ft.transform(df)
     df.show()
 
-    df = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getDouble(4), row.getAs[SparseVector](5).size))).groupByKey().map{
-      case (trainingSentence:Long, rows:Iterable[(String, String, Double, Int)]) =>
+    df = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getDouble(4)))).groupByKey().map{
+      case (trainingSentence:Long, rows:Iterable[(String, String, Double)]) =>
         val featureList:Seq[Double] = rows.map(_._3).toSeq
         (rows.head._1, rows.head._2, featureList)
     }.toDF()
