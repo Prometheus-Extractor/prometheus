@@ -98,11 +98,11 @@ object FeatureExtractor {
 
   def save(data: DataFrame, path: String)(implicit sqlContext: SQLContext): Unit = {
     import sqlContext.implicits._
-    data.toDF().write.parquet(path)
+    data.toDF().write.json(path)
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): DataFrame = {
-    sqlContext.read.parquet(path)
+    sqlContext.read.json(path)
   }
 
 }
