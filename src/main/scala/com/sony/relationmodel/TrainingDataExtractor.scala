@@ -68,7 +68,8 @@ object TrainingDataExtractor {
                     doc.setId("<null_id>")
                   }
                   val s = pg.key(S)
-                  TrainingSentence(relation.id, relation.name, doc.subDocument(s.getStart, s.getEnd), p)
+                  TrainingSentence(relation.id, relation.name, relation.classIdx,
+                                   doc.subDocument(s.getStart, s.getEnd), p)
                 })
             })
 
@@ -88,8 +89,8 @@ object TrainingDataExtractor {
     import sqlContext.implicits._
     val rawData = sqlContext.read.parquet(path).as[SerializedTrainingSentence].rdd
     rawData.map(st => {
-      TrainingSentence(st.relationId, st.relationName, MemoryDocumentIO.getInstance().fromBytes(st.sentenceDoc),
-                       st.entityPair)
+      TrainingSentence(st.relationId, st.relationName, st.relationClass,
+                       MemoryDocumentIO.getInstance().fromBytes(st.sentenceDoc), st.entityPair)
     })
 
   }
@@ -98,12 +99,13 @@ object TrainingDataExtractor {
 
     import sqlContext.implicits._
     val serializable = data.map(ts => {
-      SerializedTrainingSentence(ts.relationId, ts.relationName, ts.sentenceDoc.toBytes(), ts.entityPair)
+      SerializedTrainingSentence(ts.relationId, ts.relationName, ts.relationClass,
+                                 ts.sentenceDoc.toBytes(), ts.entityPair)
     }).toDF()
     serializable.write.parquet(path)
   }
 
 }
 
-case class TrainingSentence(relationId: String, relationName: String, sentenceDoc: Document, entityPair: EntityPair)
-private case class SerializedTrainingSentence(relationId: String, relationName: String, sentenceDoc: Array[Byte], entityPair: EntityPair)
+case class TrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Document, entityPair: EntityPair)
+private case class SerializedTrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Array[Byte], entityPair: EntityPair)

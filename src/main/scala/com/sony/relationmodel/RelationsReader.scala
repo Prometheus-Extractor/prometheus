@@ -4,7 +4,7 @@ import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext
 
-case class Relation(name: String, id: String, entities: Seq[EntityPair] = List())
+case class Relation(name: String, id: String, classIdx: Int, entities: Seq[EntityPair] = List())
 case class EntityPair(source: String, dest: String)
 
 class RelationsData(path: String)(implicit sc: SparkContext) extends Data {

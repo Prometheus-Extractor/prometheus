@@ -20,6 +20,10 @@ libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
 
+libraryDependencies += "de.bwaldvogel" % "liblinear" % "1.95"
+libraryDependencies += "org.deeplearning4j" % "deeplearning4j-core" % "0.7.2"
+libraryDependencies += "org.deeplearning4j" % "deeplearning4j-nlp" % "0.7.2"
+
 
 lazy val spark_core_version = "1.6.0-cdh5.10.0"
 lazy val spark_sql_version = "1.6.0-cdh5.10.0"

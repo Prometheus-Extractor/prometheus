@@ -44,15 +44,18 @@ object FeatureExtractor {
   def extract(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
 
     import sqlContext.implicits._
-    var df = trainingSentences.zipWithIndex().flatMap(t => featureArray(t._2, t._1)).toDF("idx", "rel_id", "rel_name", "tokens")
+    var df = trainingSentences.zipWithIndex()
+      .flatMap(t => featureArray(t._2, t._1))
+      .toDF("idx", "rel_id", "rel_name", "relation_idx", "tokens")
 
     df = ft.transform(df)
     df.show()
 
-    df = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getDouble(4)))).groupByKey().map{
-      case (trainingSentence:Long, rows:Iterable[(String, String, Double)]) =>
-        val featureList:Seq[Double] = rows.map(_._3).toSeq
-        (rows.head._1, rows.head._2, featureList)
+    df = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getInt(3), row.getDouble(5))))
+      .groupByKey().map{
+        case (trainingSentence:Long, rows:Iterable[(String, String, Int, Double)]) =>
+          val featureList:Seq[Double] = rows.map(_._4).toSeq
+          (rows.head._1, rows.head._2, rows.head._3, featureList)
     }.toDF()
     df.show()
     df
@@ -91,7 +94,7 @@ object FeatureExtractor {
       }).flatten.filter(Filters.wordFilter)
 
     features.map(f => {
-      (indx, trainingSentence.relationId, trainingSentence.relationName, f)
+      (indx, trainingSentence.relationId, trainingSentence.relationName, trainingSentence.relationClass, f)
     })
 
   }
