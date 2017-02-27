@@ -1,60 +1,74 @@
 package com.sony.relationmodel
 
-import org.apache.log4j.LogManager
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
-import org.rogach.scallop._
-import org.rogach.scallop.exceptions._
+import org.apache.log4j.Logger
+import org.apache.spark.SparkContext
+import org.apache.spark.ml.classification.{LogisticRegression, OneVsRest}
+import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
+import org.deeplearning4j.nn.api.OptimizationAlgorithm
+import org.deeplearning4j.nn.conf.layers.{DenseLayer, OutputLayer}
+import org.deeplearning4j.nn.conf.{MultiLayerConfiguration, NeuralNetConfiguration}
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.deeplearning4j.nn.weights.WeightInit
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener
+import org.nd4j.linalg.activations.Activation
+import org.nd4j.linalg.activations.impl.{ActivationReLU, ActivationSigmoid}
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
+import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 
-import scala.util.Properties.envOrNone
+
+class ModelTrainerStage(path: String, featureExtractor: Data)
+                        (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+
+  override def getData(): String = {
+    if (!exists(path)) {
+      run()
+    }
+    path
+  }
+
+  override def run(): Unit = {
+
+    val data:DataFrame = FeatureExtractor.load(featureExtractor.getData())
+
+
+
+
+    ModelTrainer(data)
+
+
+
+  }
+}
 
 object ModelTrainer {
 
-  class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
-    version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: ModelTrainer [--sample-size=0.f] corpus-path relations-path temp-data-path
-           |Prometheus model trainer trains a relation extractor
-           |Options:
-           |""".stripMargin)
-    val corpusPath = trailArg[String](descr = "path to the corpus to train on")
-    val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
-    val tempDataPath= trailArg[String](descr= "path to a folder that will contain intermediate results")
-    val sampleSize = opt[Double](descr = "use this sample a fraction of the corpus", validate = x => (x > 0 && x <= 1), default = Option(1.0))
+  def apply(data: DataFrame): ModelTrainer = {
 
-    verify()
+    data.map(row => {
 
-    override def onError(e: Throwable): Unit = e match {
-      case ScallopException(message) =>
-        println(message)
-        printHelp
-        sys.exit(1)
-      case ex => super.onError(ex)
-    }
-  }
+    })
 
-  def main(args: Array[String]): Unit = {
-    val conf = new Conf(args)
 
-    val log = LogManager.getRootLogger
-    val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
-    envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
+    // Set parameters for the algorithm.
+    // Here, we limit the number of iterations to 10.
+    // instantiate the base classifier
+    val classifier = new LogisticRegression()
+      .setMaxIter(10)
 
-    implicit val sc = new SparkContext(sparkConf)
-    implicit val sqlContext = new SQLContext(sc)
+    val ovr = new OneVsRest()
+    ovr.setClassifier(classifier)
 
-    // want to do get relations, docs, trainingData
-    val corpusData = new CorpusData(conf.corpusPath())
-    val trainingTask = new TrainingDataExtractorStage(
-      conf.tempDataPath() + "/training_sentences",
-      corpusData = corpusData,
-      relationsData = new RelationsData(conf.relationsPath()))
-    val featureTransformerTask = new FeatureTransformerStage(conf.tempDataPath() + "/feature_model", corpusData)
-    val featureExtractionTask = new FeatureExtractorStage(conf.tempDataPath() + "/features", featureTransformerTask, trainingTask)
 
-    featureExtractionTask.run()
 
-    sc.stop()
+    // train the multiclass model.
+    val ovrModel = ovr.fit(data)
+
+    new ModelTrainer("ASD")
   }
 
 }
 
+class ModelTrainer(relationId: String) {
+
+}
