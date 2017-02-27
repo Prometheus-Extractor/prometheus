@@ -22,7 +22,8 @@ class ModelTrainerStage(path: String, featureExtractor: Data, featureTransformer
     val data:DataFrame = FeatureExtractor.load(featureExtractor.getData())
     val vocabSize = FeatureTransformer.load(featureTransformerStage.getData()).vocabSize()
 
-    ModelTrainer(data, vocabSize)
+    val model = ModelTrainer(data, vocabSize)
+    model.save(path, data.sqlContext.sparkContext)
 
   }
 }
@@ -44,11 +45,16 @@ object ModelTrainer {
     val classifier = new LogisticRegressionWithLBFGS()
     classifier.setNumClasses(2)
     val model = classifier.run(labeledData)
+    
     new ModelTrainer(model)
   }
 
 }
 
 class ModelTrainer(model: LogisticRegressionModel) {
+
+  def save(path: String, context: SparkContext): Unit = {
+    model.save(context, path)
+  }
 
 }
