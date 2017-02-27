@@ -45,8 +45,12 @@ object ModelTrainer {
     val classifier = new LogisticRegressionWithLBFGS()
     classifier.setNumClasses(2)
     val model = classifier.run(labeledData)
-    
+
     new ModelTrainer(model)
+  }
+
+  def load(path: String, context: SparkContext): ModelTrainer = {
+    new ModelTrainer(LogisticRegressionModel.load(context, path))
   }
 
 }
