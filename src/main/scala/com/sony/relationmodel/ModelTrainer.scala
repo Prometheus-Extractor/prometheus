@@ -3,22 +3,12 @@ package com.sony.relationmodel
 import org.apache.log4j.Logger
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.classification.{LogisticRegression, OneVsRest}
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
-import org.deeplearning4j.nn.api.OptimizationAlgorithm
-import org.deeplearning4j.nn.conf.layers.{DenseLayer, OutputLayer}
-import org.deeplearning4j.nn.conf.{MultiLayerConfiguration, NeuralNetConfiguration}
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
-import org.deeplearning4j.nn.weights.WeightInit
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener
-import org.nd4j.linalg.activations.Activation
-import org.nd4j.linalg.activations.impl.{ActivationReLU, ActivationSigmoid}
-import org.nd4j.linalg.api.ndarray.INDArray
-import org.nd4j.linalg.factory.Nd4j
-import org.nd4j.linalg.lossfunctions.LossFunctions.LossFunction
 
 
-class ModelTrainerStage(path: String, featureExtractor: Data)
-                        (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+class ModelTrainerStage(path: String, featureExtractor: Data, featureTransformerStage: Data)
+                       (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
     if (!exists(path)) {
@@ -30,25 +20,25 @@ class ModelTrainerStage(path: String, featureExtractor: Data)
   override def run(): Unit = {
 
     val data:DataFrame = FeatureExtractor.load(featureExtractor.getData())
+    val vocabSize = FeatureTransformer.load(featureTransformerStage.getData()).vocabSize()
 
-
-
-
-    ModelTrainer(data)
-
-
+    ModelTrainer(data, vocabSize)
 
   }
 }
 
 object ModelTrainer {
 
-  def apply(data: DataFrame): ModelTrainer = {
+  def apply(data: DataFrame, vocabSize: Int)(implicit sqlContext: SQLContext): ModelTrainer = {
 
-    data.map(row => {
+    import sqlContext.implicits._
+    val labeledData = data.map(row => {
 
-    })
+      /* Perform one-hot encoding */
+      val features = row.getAs[Seq[Double]](3).distinct.map(idx => (idx.toInt, 1.0))
+      (row.getLong(2).toDouble, Vectors.sparse(vocabSize, features))
 
+    }).toDF("label", "features")
 
     // Set parameters for the algorithm.
     // Here, we limit the number of iterations to 10.
@@ -59,10 +49,8 @@ object ModelTrainer {
     val ovr = new OneVsRest()
     ovr.setClassifier(classifier)
 
-
-
     // train the multiclass model.
-    val ovrModel = ovr.fit(data)
+    val ovrModel = ovr.fit(labeledData)
 
     new ModelTrainer("ASD")
   }

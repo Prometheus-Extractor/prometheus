@@ -50,8 +50,9 @@ object RelationModel {
       relationsData = new RelationsData(conf.relationsPath()))
     val featureTransformerTask = new FeatureTransformerStage(conf.tempDataPath() + "/feature_model", corpusData)
     val featureExtractionTask = new FeatureExtractorStage(conf.tempDataPath() + "/features", featureTransformerTask, trainingTask)
+    val modelTrainingTask = new ModelTrainerStage(conf.tempDataPath() + "/models", featureExtractionTask, featureTransformerTask)
 
-    featureExtractionTask.run()
+    modelTrainingTask.getData()
 
     sc.stop()
   }

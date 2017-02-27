@@ -100,7 +100,6 @@ object FeatureExtractor {
   }
 
   def save(data: DataFrame, path: String)(implicit sqlContext: SQLContext): Unit = {
-    import sqlContext.implicits._
     data.toDF().write.json(path)
   }
 
