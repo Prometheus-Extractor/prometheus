@@ -1,10 +1,10 @@
 package com.sony.relationmodel
 
-import org.apache.log4j.Logger
 import org.apache.spark.SparkContext
-import org.apache.spark.ml.classification.{LogisticRegression, OneVsRest}
 import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
+import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
 
 class ModelTrainerStage(path: String, featureExtractor: Data, featureTransformerStage: Data)
@@ -31,32 +31,24 @@ object ModelTrainer {
 
   def apply(data: DataFrame, vocabSize: Int)(implicit sqlContext: SQLContext): ModelTrainer = {
 
-    import sqlContext.implicits._
-    val labeledData = data.map(row => {
+    var labeledData = data.map(row => {
 
       /* Perform one-hot encoding */
       val features = row.getAs[Seq[Double]](3).distinct.map(idx => (idx.toInt, 1.0))
-      (row.getLong(2).toDouble, Vectors.sparse(vocabSize, features))
+      LabeledPoint(row.getLong(2).toDouble - 1.0, Vectors.sparse(vocabSize, features))
 
-    }).toDF("label", "features")
+    })
+    labeledData.cache()
 
-    // Set parameters for the algorithm.
-    // Here, we limit the number of iterations to 10.
-    // instantiate the base classifier
-    val classifier = new LogisticRegression()
-      .setMaxIter(10)
 
-    val ovr = new OneVsRest()
-    ovr.setClassifier(classifier)
-
-    // train the multiclass model.
-    val ovrModel = ovr.fit(labeledData)
-
-    new ModelTrainer("ASD")
+    val classifier = new LogisticRegressionWithLBFGS()
+    classifier.setNumClasses(2)
+    val model = classifier.run(labeledData)
+    new ModelTrainer(model)
   }
 
 }
 
-class ModelTrainer(relationId: String) {
+class ModelTrainer(model: LogisticRegressionModel) {
 
 }
