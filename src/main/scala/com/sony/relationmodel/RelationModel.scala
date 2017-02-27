@@ -19,7 +19,10 @@ object RelationModel {
     val corpusPath = trailArg[String](descr = "path to the corpus to train on")
     val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
     val tempDataPath= trailArg[String](descr= "path to a folder that will contain intermediate results")
-    val sampleSize = opt[Double](descr = "use this sample a fraction of the corpus", validate = x => (x > 0 && x <= 1), default = Option(1.0))
+    val sampleSize = opt[Double](
+      descr = "use this sample a fraction of the corpus",
+      validate = x => (x > 0 && x <= 1),
+      default = Option(1.0))
 
     verify()
 
@@ -48,11 +51,20 @@ object RelationModel {
       conf.tempDataPath() + "/training_sentences",
       corpusData = corpusData,
       relationsData = new RelationsData(conf.relationsPath()))
-    val featureTransformerTask = new FeatureTransformerStage(conf.tempDataPath() + "/feature_model", corpusData)
-    val featureExtractionTask = new FeatureExtractorStage(conf.tempDataPath() + "/features", featureTransformerTask, trainingTask)
-    val modelTrainingTask = new ModelTrainerStage(conf.tempDataPath() + "/models", featureExtractionTask, featureTransformerTask)
+    val featureTransformerTask = new FeatureTransformerStage(
+      conf.tempDataPath() + "/feature_model",
+      corpusData)
+    val featureExtractionTask = new FeatureExtractorStage(
+      conf.tempDataPath() + "/features",
+      featureTransformerTask,
+      trainingTask)
+    val modelTrainingTask = new ModelTrainerStage(
+      conf.tempDataPath() + "/models",
+      featureExtractionTask,
+      featureTransformerTask)
 
-    modelTrainingTask.getData()
+    val path = modelTrainingTask.getData()
+    log.info(s"Saved model to $path")
 
     sc.stop()
   }

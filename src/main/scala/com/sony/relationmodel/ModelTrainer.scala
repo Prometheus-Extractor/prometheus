@@ -24,7 +24,6 @@ class ModelTrainerStage(path: String, featureExtractor: Data, featureTransformer
 
     val model = ModelTrainer(data, vocabSize)
     model.save(path, data.sqlContext.sparkContext)
-
   }
 }
 
