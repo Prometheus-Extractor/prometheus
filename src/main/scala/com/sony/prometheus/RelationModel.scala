@@ -4,6 +4,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 
 
@@ -19,23 +20,23 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
 
   override def run(): Unit = {
 
-    val data:DataFrame = FeatureExtractor.load(featureExtractor.getData())
+    val data:RDD[TrainingDataPoint] = FeatureExtractor.load(featureExtractor.getData())
     val vocabSize = FeatureTransformer.load(featureTransformerStage.getData()).vocabSize()
 
     val model = RelationModel(data, vocabSize)
-    model.save(path, data.sqlContext.sparkContext)
+    model.save(path, data.sparkContext)
   }
 }
 
 object RelationModel {
 
-  def apply(data: DataFrame, vocabSize: Int)(implicit sqlContext: SQLContext): RelationModel = {
+  def apply(data: RDD[TrainingDataPoint], vocabSize: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
-    var labeledData = data.map(row => {
+    var labeledData = data.map(t => {
 
       /* Perform one-hot encoding */
-      val features = row.getAs[Seq[Double]](3).distinct.map(idx => (idx.toInt, 1.0))
-      LabeledPoint(row.getLong(2).toDouble - 1.0, Vectors.sparse(vocabSize, features))
+      val features = t.features.distinct.map(idx => (idx.toInt, 1.0))
+      LabeledPoint(t.relationClass.toDouble - 1.0, Vectors.sparse(vocabSize, features))
 
     })
     labeledData.cache()

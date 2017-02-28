@@ -31,7 +31,7 @@ class FeatureExtractorStage(
   override def run(): Unit = {
     val trainingSentences = TrainingDataExtractor.load(trainingDataExtractor.getData())
     val ft = FeatureTransformer.load(featureTransformer.getData())
-    val data = FeatureExtractor.extractTrainingData(ft, trainingSentences)
+    val data = FeatureExtractor.trainingData(ft, trainingSentences)
     FeatureExtractor.save(data, path)
   }
 }
@@ -40,7 +40,7 @@ object FeatureExtractor {
   val NBR_WORDS_BEFORE = 1
   val NBR_WORDS_AFTER = 1
 
-  def extractTrainingData(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
+  def trainingData(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
     import sqlContext.implicits._
     var df = trainingSentences.zipWithIndex()
@@ -55,14 +55,13 @@ object FeatureExtractor {
     df = ft.transform(df)
     df.show()
 
-    df = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getInt(3), row.getDouble(5))))
+    val trainingData = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getInt(3), row.getDouble(5))))
       .groupByKey().map{
         case (trainingSentence:Long, rows:Iterable[(String, String, Int, Double)]) =>
           val featureList:Seq[Double] = rows.map(_._4).toSeq
-          (rows.head._1, rows.head._2, rows.head._3, featureList)
-    }.toDF()
-    df.show()
-    df
+          TrainingDataPoint(rows.head._1, rows.head._2, rows.head._3, featureList)
+    }
+    trainingData
   }
 
   private def featureArray(sentence: Document, sourceQID: String, destQID: String) = {
@@ -101,12 +100,16 @@ object FeatureExtractor {
 
   }
 
-  def save(data: DataFrame, path: String)(implicit sqlContext: SQLContext): Unit = {
+  def save(data: RDD[TrainingDataPoint], path: String)(implicit sqlContext: SQLContext): Unit = {
+    import sqlContext.implicits._
     data.toDF().write.json(path)
   }
 
-  def load(path: String)(implicit sqlContext: SQLContext): DataFrame = {
-    sqlContext.read.json(path)
+  def load(path: String)(implicit sqlContext: SQLContext): RDD[TrainingDataPoint]  = {
+    import sqlContext.implicits._
+    sqlContext.read.json(path).as[TrainingDataPoint].rdd
   }
 
 }
+
+case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Int, features: Seq[Double])
