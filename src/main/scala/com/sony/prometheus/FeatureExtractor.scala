@@ -3,6 +3,7 @@ package com.sony.prometheus
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.SparkContext
+import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.query.QueryCollectors
@@ -30,7 +31,7 @@ class FeatureExtractorStage(
   override def run(): Unit = {
     val trainingSentences = TrainingDataExtractor.load(trainingDataExtractor.getData())
     val ft = FeatureTransformer.load(featureTransformer.getData())
-    val data = FeatureExtractor.extract(ft, trainingSentences)
+    val data = FeatureExtractor.extractTrainingData(ft, trainingSentences)
     FeatureExtractor.save(data, path)
   }
 }
@@ -39,12 +40,17 @@ object FeatureExtractor {
   val NBR_WORDS_BEFORE = 1
   val NBR_WORDS_AFTER = 1
 
-  def extract(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
+  def extractTrainingData(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): DataFrame = {
 
     import sqlContext.implicits._
     var df = trainingSentences.zipWithIndex()
-      .flatMap(t => featureArray(t._2, t._1))
-      .toDF("idx", "rel_id", "rel_name", "relation_idx", "tokens")
+      .flatMap{
+        case(t, idx) =>
+          featureArray(t.sentenceDoc, t.entityPair.source, t.entityPair.dest).map(f => {
+            (idx, t.relationId, t.relationName, t.relationClass, f)
+          })
+
+      }.toDF("idx", "rel_id", "rel_name", "relation_idx", "tokens")
 
     df = ft.transform(df)
     df.show()
@@ -59,41 +65,39 @@ object FeatureExtractor {
     df
   }
 
-  private def featureArray(indx: Long, trainingSentence: TrainingSentence) = {
-    val doc = trainingSentence.sentenceDoc
+  private def featureArray(sentence: Document, sourceQID: String, destQID: String) = {
+
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
 
-    doc.nodes(classOf[Token])
+    sentence.nodes(classOf[Token])
       .asScala
       .toSeq
       .zipWithIndex
       .foreach(t => t._1.putTag("idx", t._2))
 
-    val features = doc.select(NED, T)
+    val features = sentence.select(NED, T)
       .where(T)
       .coveredBy(NED)
       .stream()
-      .collect(QueryCollectors.groupBy(doc, NED).values(T).collector())
+      .collect(QueryCollectors.groupBy(sentence, NED).values(T).collector())
       .asScala
       .filter(pg => {
         val qid = pg.key(NED).getIdentifier.split(":").last
-        qid == trainingSentence.entityPair.source || qid == trainingSentence.entityPair.dest
+        qid == sourceQID || qid == destQID
       })
       .flatMap(grp => {
         val start = grp.value(0, T).getTag("idx"): Int
         val end = grp.value(grp.size() - 1, T).getTag("idx"): Int
 
         // extract features
-        val wordsBefore = doc.nodes(classOf[Token]).asScala.toSeq.slice(start - NBR_WORDS_BEFORE, start)
-        val wordsAfter = doc.nodes(classOf[Token]).asScala.toSeq.slice(end + NBR_WORDS_AFTER, end + NBR_WORDS_AFTER + 1)
+        val wordsBefore = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start - NBR_WORDS_BEFORE, start)
+        val wordsAfter = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end + NBR_WORDS_AFTER, end + NBR_WORDS_AFTER + 1)
         // TODO: source or dest wordsBefore
         Seq(wordsBefore.map(_.text()), wordsAfter.map(_.text()))
       }).flatten.filter(Filters.wordFilter)
 
-    features.map(f => {
-      (indx, trainingSentence.relationId, trainingSentence.relationName, trainingSentence.relationClass, f)
-    })
+    features
 
   }
 
