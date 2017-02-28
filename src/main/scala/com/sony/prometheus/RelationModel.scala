@@ -1,4 +1,4 @@
-package com.sony.relationmodel
+package com.sony.prometheus
 
 import org.apache.log4j.LogManager
 import org.apache.spark.sql.SQLContext

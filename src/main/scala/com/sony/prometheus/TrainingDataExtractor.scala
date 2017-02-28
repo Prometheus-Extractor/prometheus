@@ -1,4 +1,4 @@
-package com.sony.relationmodel
+package com.sony.prometheus
 
 import breeze.linalg.Broadcaster
 import org.apache.spark.SparkContext

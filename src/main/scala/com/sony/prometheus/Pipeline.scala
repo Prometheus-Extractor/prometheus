@@ -1,4 +1,4 @@
-package com.sony.relationmodel
+package com.sony.prometheus
 
 import java.nio.file.{Paths, Files}
 import org.apache.spark.SparkContext

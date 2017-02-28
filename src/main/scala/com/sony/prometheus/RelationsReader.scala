@@ -1,4 +1,4 @@
-package com.sony.relationmodel
+package com.sony.prometheus
 
 import org.apache.spark.sql.{DataFrame, Dataset, SQLContext}
 import org.apache.spark.rdd.RDD

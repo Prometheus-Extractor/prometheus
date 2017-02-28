@@ -1,4 +1,4 @@
-package com.sony.relationmodel
+package com.sony.prometheus
 
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.feature.{StringIndexer, StringIndexerModel}
