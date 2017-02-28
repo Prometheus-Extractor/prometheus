@@ -23,7 +23,7 @@ class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
  */
 object CorpusReader {
 
-  /** Returns an [[org.apaceh.spark.rdd.RDD]] of [[se.lth.cs.docforia.Document]]
+  /** Returns an [[org.apache.spark.rdd.RDD]] of [[se.lth.cs.docforia.Document]]
    *
    *  @param file - the path to the corpus
    *  @param sampleSize - sample this fraction of the corpus (default 1)

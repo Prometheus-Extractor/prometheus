@@ -23,6 +23,9 @@ To run on the cluster use:
 
 That command creates a jar containing the program and all dependencies by running `sbt -Dmode=cluster assembly` then uploads it to cluster and runs `spark-submit`.
 
+## API Documentation
+[ScalaDoc](https://erikgartner.github.io/prometheus-relation-model)
+
 ## Developers
 - [Axel Larsson](https://github.com/AxelTLarsson)
 - [Erik Gärtner](https://gartner.io)
