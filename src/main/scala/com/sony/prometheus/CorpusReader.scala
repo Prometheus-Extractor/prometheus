@@ -19,7 +19,15 @@ class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
   }
 }
 
+/** Reads a corpus
+ */
 object CorpusReader {
+
+  /** Returns an [[org.apaceh.spark.rdd.RDD]] of [[se.lth.cs.docforia.Document]]
+   *
+   *  @param file - the path to the corpus
+   *  @param sampleSize - sample this fraction of the corpus (default 1)
+   */
   def readCorpus(
     file: String,
     sampleSize: Double = 1.0)

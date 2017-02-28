@@ -8,7 +8,7 @@ scalaVersion := "2.10.6"
 ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 dependencyOverrides += "org.scala-lang" % "scala-compiler" % scalaVersion.value
 publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
-
+enablePlugins(SiteScaladocPlugin)
 
 resolvers += Resolver.mavenLocal
 resolvers += "Akka repository" at "http://repo.akka.io/releases"
@@ -19,10 +19,6 @@ libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.
 libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.6"
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
-
-libraryDependencies += "de.bwaldvogel" % "liblinear" % "1.95"
-libraryDependencies += "org.deeplearning4j" % "deeplearning4j-core" % "0.7.2"
-libraryDependencies += "org.deeplearning4j" % "deeplearning4j-nlp" % "0.7.2"
 
 
 lazy val spark_core_version = "1.6.0-cdh5.10.0"
