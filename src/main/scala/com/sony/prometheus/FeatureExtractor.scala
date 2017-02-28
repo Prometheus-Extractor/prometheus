@@ -112,4 +112,4 @@ object FeatureExtractor {
 
 }
 
-case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Int, features: Seq[Double])
+case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, features: Seq[Double])
