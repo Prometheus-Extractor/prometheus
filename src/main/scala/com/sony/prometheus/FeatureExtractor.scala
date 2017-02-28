@@ -78,7 +78,7 @@ object FeatureExtractor {
       .asScala
       .filter(pg => {
         val qid = pg.key(NED).getIdentifier.split(":").last
-        qid == trainingSentence.entityPair.source || qid == trainingSentence.entityPair.source
+        qid == trainingSentence.entityPair.source || qid == trainingSentence.entityPair.dest
       })
       .flatMap(grp => {
         val start = grp.value(0, T).getTag("idx"): Int
