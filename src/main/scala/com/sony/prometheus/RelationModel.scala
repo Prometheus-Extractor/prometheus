@@ -45,7 +45,6 @@ object RelationModel {
     implicit val sc = new SparkContext(sparkConf)
     implicit val sqlContext = new SQLContext(sc)
 
-    // want to do get relations, docs, trainingData
     val corpusData = new CorpusData(conf.corpusPath())
     val trainingTask = new TrainingDataExtractorStage(
       conf.tempDataPath() + "/training_sentences",
