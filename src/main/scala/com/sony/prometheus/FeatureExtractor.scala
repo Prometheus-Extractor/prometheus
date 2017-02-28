@@ -1,10 +1,8 @@
 package com.sony.prometheus
 
-import org.apache.spark.ml.{Pipeline, PipelineModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.SparkContext
-import org.apache.spark.mllib.linalg.{SparseVector, Vectors}
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.query.QueryCollectors

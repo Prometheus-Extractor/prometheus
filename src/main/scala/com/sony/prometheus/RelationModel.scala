@@ -1,72 +1,63 @@
 package com.sony.prometheus
 
-import org.apache.log4j.LogManager
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
-import org.rogach.scallop._
-import org.rogach.scallop.exceptions._
+import org.apache.spark.SparkContext
+import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.sql.{DataFrame, SQLContext}
 
-import scala.util.Properties.envOrNone
+
+class RelationModelStage(path: String, featureExtractor: Data, featureTransformerStage: Data)
+                        (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+
+  override def getData(): String = {
+    if (!exists(path)) {
+      run()
+    }
+    path
+  }
+
+  override def run(): Unit = {
+
+    val data:DataFrame = FeatureExtractor.load(featureExtractor.getData())
+    val vocabSize = FeatureTransformer.load(featureTransformerStage.getData()).vocabSize()
+
+    val model = RelationModel(data, vocabSize)
+    model.save(path, data.sqlContext.sparkContext)
+  }
+}
 
 object RelationModel {
 
-  class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
-    version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel [--sample-size=0.f] corpus-path relations-path temp-data-path
-           |Prometheus model trainer trains a relation extractor
-           |Options:
-           |""".stripMargin)
-    val corpusPath = trailArg[String](descr = "path to the corpus to train on")
-    val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
-    val tempDataPath= trailArg[String](descr= "path to a folder that will contain intermediate results")
-    val sampleSize = opt[Double](
-      descr = "use this sample a fraction of the corpus",
-      validate = x => (x > 0 && x <= 1),
-      default = Option(1.0))
+  def apply(data: DataFrame, vocabSize: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
-    verify()
+    var labeledData = data.map(row => {
 
-    override def onError(e: Throwable): Unit = e match {
-      case ScallopException(message) =>
-        println(message)
-        printHelp
-        sys.exit(1)
-      case ex => super.onError(ex)
-    }
+      /* Perform one-hot encoding */
+      val features = row.getAs[Seq[Double]](3).distinct.map(idx => (idx.toInt, 1.0))
+      LabeledPoint(row.getLong(2).toDouble - 1.0, Vectors.sparse(vocabSize, features))
+
+    })
+    labeledData.cache()
+
+
+    val classifier = new LogisticRegressionWithLBFGS()
+    classifier.setNumClasses(2)
+    val model = classifier.run(labeledData)
+
+    new RelationModel(model)
   }
 
-  def main(args: Array[String]): Unit = {
-    val conf = new Conf(args)
-
-    val log = LogManager.getRootLogger
-    val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
-    envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
-
-    implicit val sc = new SparkContext(sparkConf)
-    implicit val sqlContext = new SQLContext(sc)
-
-    val corpusData = new CorpusData(conf.corpusPath())
-    val trainingTask = new TrainingDataExtractorStage(
-      conf.tempDataPath() + "/training_sentences",
-      corpusData = corpusData,
-      relationsData = new RelationsData(conf.relationsPath()))
-    val featureTransformerTask = new FeatureTransformerStage(
-      conf.tempDataPath() + "/feature_model",
-      corpusData)
-    val featureExtractionTask = new FeatureExtractorStage(
-      conf.tempDataPath() + "/features",
-      featureTransformerTask,
-      trainingTask)
-    val modelTrainingTask = new ModelTrainerStage(
-      conf.tempDataPath() + "/models",
-      featureExtractionTask,
-      featureTransformerTask)
-
-    val path = modelTrainingTask.getData()
-    log.info(s"Saved model to $path")
-
-    sc.stop()
+  def load(path: String, context: SparkContext): RelationModel = {
+    new RelationModel(LogisticRegressionModel.load(context, path))
   }
 
 }
 
+class RelationModel(model: LogisticRegressionModel) {
+
+  def save(path: String, context: SparkContext): Unit = {
+    model.save(context, path)
+  }
+
+}

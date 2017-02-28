@@ -1,10 +1,6 @@
 package com.sony.prometheus
 
-import breeze.linalg.Broadcaster
 import org.apache.spark.SparkContext
-import org.apache.spark.broadcast.Broadcast
-
-import scala.collection.JavaConverters._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
@@ -12,6 +8,8 @@ import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Sentence
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import se.lth.cs.docforia.query.QueryCollectors
+
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 class TrainingDataExtractorStage(

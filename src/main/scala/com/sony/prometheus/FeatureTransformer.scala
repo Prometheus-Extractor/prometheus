@@ -1,5 +1,4 @@
 package com.sony.prometheus
-
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.feature.{StringIndexer, StringIndexerModel}
 import org.apache.spark.rdd.RDD
@@ -63,8 +62,8 @@ object FeatureTransformer {
 
 class FeatureTransformer(indexer: StringIndexerModel) {
 
-  def vocabSize() = {
-    indexer.labels.size
+  def vocabSize(): Int = {
+    indexer.labels.length
   }
 
   def transform(dataframe: DataFrame): DataFrame = {

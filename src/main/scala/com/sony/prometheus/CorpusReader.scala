@@ -3,9 +3,9 @@ package com.sony.prometheus
 import java.io.IOError
 
 import org.apache.log4j.LogManager
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{Accumulator, SparkContext}
-import org.apache.spark.rdd.RDD
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
