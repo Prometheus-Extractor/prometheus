@@ -43,4 +43,5 @@ libraryDependencies += "se.lth.cs.nlp" % "docforia" % "1.0-SNAPSHOT"
 enablePlugins(SiteScaladocPlugin)
 enablePlugins(GhpagesPlugin)
 git.remoteRepo := "git@github.com:ErikGartner/prometheus-relation-model.git"
+// siteSubdirName in SiteScaladoc := version.value + "/api"
 
