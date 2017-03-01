@@ -18,7 +18,7 @@ object TokenEncoder {
 
   val TOKEN_MIN_COUNT = 3
 
-  def apply(docs: RDD[Document], path: String): TokenEncoder = {
+  def apply(docs: RDD[Document]): TokenEncoder = {
 
     val tokens = docs.flatMap(doc => {
       doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
@@ -33,7 +33,6 @@ object TokenEncoder {
       .map(_._1)
 
     val zippedTokens = commonTokens.zipWithIndex()
-    zippedTokens.saveAsObjectFile(path)
     createTokenEncoder(zippedTokens)
   }
 
@@ -63,6 +62,15 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
 
   def token(index: Int): String = {
     id2Token.getOrDefault(index, "<UNKNOWN_ID>")
+  }
+
+  def vocabSize(): Int = {
+    token2Id.size()
+  }
+
+  def save(path: String, sqlContext: SQLContext) {
+    val rdd = sqlContext.sparkContext.parallelize(token2Id.entrySet().asScala.map(e => (e.getKey, e.getValue)).toSeq)
+    rdd.saveAsObjectFile(path)
   }
 
 }

@@ -23,7 +23,7 @@ class FeatureTransformerStage(
   override def run(): Unit = {
     val docs = CorpusReader.readCorpus(corpusData.getData())
     val model = FeatureTransformer(docs)
-    model.save(path)
+    model.save(path, sqlContext)
   }
 }
 
@@ -31,47 +31,30 @@ object FeatureTransformer {
 
   def apply(docs: RDD[Document])(implicit sqlContext: SQLContext): FeatureTransformer = {
 
-    // Tokenisation
-    import sqlContext.implicits._
+    val tokenEncoder = TokenEncoder(docs)
+    new FeatureTransformer(tokenEncoder)
 
-    val T = Token.`var`()
-    val docsDF = docs.flatMap(doc => {
-      doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
-    }).filter(Filters.wordFilter)
-      .map(token => (token, 1))
-      .reduceByKey(_ + _)
-      .filter(tup => tup._2 >= 3)
-      .map(_._1)
-      .toDF("tokens")
-
-    val indexer = new StringIndexer()
-      .setInputCol("tokens")
-      .setOutputCol("vector")
-      .setHandleInvalid("skip")
-
-    val model = indexer.fit(docsDF)
-    new FeatureTransformer(model)
   }
 
-  def load(path: String): FeatureTransformer = {
-    val indexer = StringIndexerModel.load(path + "/indexer")
-    new FeatureTransformer(indexer)
+  def load(path: String)(implicit sqlContext: SQLContext): FeatureTransformer = {
+    val encoder = TokenEncoder.load(path + "/encoder", sqlContext.sparkContext)
+    new FeatureTransformer(encoder)
   }
 
 }
 
-class FeatureTransformer(indexer: StringIndexerModel) {
+class FeatureTransformer(encoder: TokenEncoder) {
 
   def vocabSize(): Int = {
-    indexer.labels.length
+    encoder.vocabSize()
   }
 
-  def transform(dataframe: DataFrame): DataFrame = {
-    indexer.transform(dataframe)
+  def transform(tokens: Seq[String]): Seq[Int] = {
+    tokens.map(encoder.index)
   }
 
-  def save(path: String): Unit = {
-    indexer.save(path + "/indexer")
+  def save(path: String, sqlContext: SQLContext): Unit = {
+    encoder.save(path + "/encoder", sqlContext)
   }
 
 }
