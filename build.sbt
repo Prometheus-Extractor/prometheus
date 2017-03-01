@@ -43,5 +43,15 @@ libraryDependencies += "se.lth.cs.nlp" % "docforia" % "1.0-SNAPSHOT"
 enablePlugins(SiteScaladocPlugin)
 enablePlugins(GhpagesPlugin)
 git.remoteRepo := "git@github.com:ErikGartner/prometheus-relation-model.git"
-// siteSubdirName in SiteScaladoc := version.value + "/api"
+siteSubdirName in SiteScaladoc := "api/" + version.value
+// excludeFilter in ghpagesCleanSite :=
+  // new FileFilter{
+    // def accept(f: File) = (ghpagesRepository.value / "api" ** "*").absString == f.getCanonicalPath
+  // }
+enablePlugins(PreprocessPlugin)
+sourceDirectory in Preprocess := sourceDirectory.value / "site-preprocess"
+preprocessVars in Preprocess := Map("VERSION" -> version.value)
+
+// enjoy ScalaTest's built-in event buffering algorithm
+logBuffered in Test := false
 

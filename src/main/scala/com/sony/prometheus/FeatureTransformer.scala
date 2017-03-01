@@ -5,6 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.text.Token
+import pipeline._
 
 import scala.collection.JavaConverters._
 

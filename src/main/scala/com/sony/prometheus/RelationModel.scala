@@ -6,6 +6,7 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
+import pipeline._
 
 
 class RelationModelStage(path: String, featureExtractor: Data, featureTransformerStage: Data)

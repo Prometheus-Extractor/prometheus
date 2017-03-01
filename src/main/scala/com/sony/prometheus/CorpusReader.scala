@@ -8,6 +8,7 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{Accumulator, SparkContext}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
+import pipeline._
 
 class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
   override def getData(): String = {
@@ -23,7 +24,7 @@ class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
  */
 object CorpusReader {
 
-  /** Returns an [[org.apache.spark.rdd.RDD]] of [[se.lth.cs.docforia.Document]]
+  /** Returns an RDD of [[se.lth.cs.docforia.Document]]
    *
    *  @param file - the path to the corpus
    *  @param sampleSize - sample this fraction of the corpus (default 1)

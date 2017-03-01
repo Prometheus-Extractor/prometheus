@@ -11,6 +11,7 @@ import se.lth.cs.docforia.query.QueryCollectors
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import pipeline._
 
 class TrainingDataExtractorStage(
   path: String,

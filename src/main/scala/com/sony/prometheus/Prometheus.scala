@@ -6,6 +6,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
 
+import pipeline._
 import scala.util.Properties.envOrNone
 
 object Prometheus {

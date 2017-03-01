@@ -10,12 +10,11 @@ import se.lth.cs.docforia.query.QueryCollectors
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-
+import pipeline._
 
 /**
-  * Created by axel on 2017-02-20.
-  */
-
+ * Stage to extract features, will not run if output already exists
+ */
 class FeatureExtractorStage(
    path: String,
    featureTransformer: Data,
