@@ -37,7 +37,7 @@ object TokenEncoder {
   }
 
   def load(path: String, context: SparkContext): TokenEncoder = {
-    val zippedTokens = context.objectFile(path)[(String, Long)]
+    val zippedTokens = context.objectFile[(String, Long)](path)
     createTokenEncoder(zippedTokens)
   }
 

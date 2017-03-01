@@ -9,6 +9,7 @@ import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.query.QueryCollectors
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 
 /**
@@ -42,29 +43,41 @@ object FeatureExtractor {
 
   def trainingData(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
-    import sqlContext.implicits._
-    var df = trainingSentences.zipWithIndex()
-      .flatMap{
-        case(t, idx) =>
-          featureArray(t.sentenceDoc, t.entityPair.source, t.entityPair.dest).map(f => {
-            (idx, t.relationId, t.relationName, t.relationClass, f)
-          })
+    val trainingPoints = trainingSentences.map(t => {
+      val f = featureArray(t.sentenceDoc, t.entityPair.source, t.entityPair.dest)
+      val encodedFeatures = ft.transform(f).map(_.toDouble)
 
-      }.toDF("idx", "rel_id", "rel_name", "relation_idx", "tokens")
+      TrainingDataPoint(t.relationName, t.relationId, t.relationClass, encodedFeatures)
+    })
 
-    df = ft.transform(df)
-    df.show()
-
-    val trainingData = df.rdd.map(row => (row.getLong(0), (row.getString(1), row.getString(2), row.getInt(3), row.getDouble(5))))
-      .groupByKey().map{
-        case (trainingSentence:Long, rows:Iterable[(String, String, Int, Double)]) =>
-          val featureList:Seq[Double] = rows.map(_._4).toSeq
-          TrainingDataPoint(rows.head._1, rows.head._2, rows.head._3, featureList)
-    }
-    trainingData
+    trainingPoints
   }
 
-  private def featureArray(sentence: Document, sourceQID: String, destQID: String) = {
+  def testData(ft: FeatureTransformer, sentences: RDD[Document])(implicit sqlContext: SQLContext): RDD[TestDataPoint] = {
+
+    val testPoints = sentences.flatMap(sentence => {
+
+      val neds = new mutable.HashSet() ++ sentence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq
+      val pairs = neds.subsets(2).map(_.toList)
+      val features = pairs.flatMap(p => {
+        val qid1 = p(0).getIdentifier.split(":").last
+        val qid2 = p(1).getIdentifier.split(":").last
+        val f1 = featureArray(sentence, qid1, qid2)
+        val f2 = featureArray(sentence, qid2, qid1)
+
+        Seq(
+          TestDataPoint(sentence, qid1, qid2, ft.transform(f1).map(_.toDouble)),
+          TestDataPoint(sentence, qid2, qid1, ft.transform(f2).map(_.toDouble))
+        )
+      })
+
+      features
+    })
+
+    testPoints
+  }
+
+  private def featureArray(sentence: Document, sourceQID: String, destQID: String):Seq[String] = {
 
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
@@ -113,3 +126,4 @@ object FeatureExtractor {
 }
 
 case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, features: Seq[Double])
+case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, features: Seq[Double])
