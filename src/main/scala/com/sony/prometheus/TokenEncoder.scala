@@ -31,7 +31,6 @@ object TokenEncoder {
       .sortByKey(ascending=false)
       .filter(tup => tup._2 >= TOKEN_MIN_COUNT)
       .map(_._1)
-
     val zippedTokens: RDD[(String, Int)] = commonTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
     createTokenEncoder(zippedTokens)
   }
