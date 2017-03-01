@@ -2,9 +2,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>Filters - com.sony.prometheus.Filters</title>
-          <meta name="description" content="Filters - com.sony.prometheus.Filters" />
-          <meta name="keywords" content="Filters com.sony.prometheus.Filters" />
+          <title>TokenEncoder - com.sony.prometheus.TokenEncoder</title>
+          <meta name="description" content="TokenEncoder - com.sony.prometheus.TokenEncoder" />
+          <meta name="keywords" content="TokenEncoder com.sony.prometheus.TokenEncoder" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -12,7 +12,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../index.html';
-            var hash = 'com.sony.prometheus.Filters$';
+            var hash = 'com.sony.prometheus.TokenEncoder$';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -24,9 +24,9 @@
         </head>
         <body class="value">
       <div id="definition">
-        <img src="../../../lib/object_big.png" />
+        <a href="TokenEncoder.html" title="Go to companion"><img src="../../../lib/object_to_class_big.png" /></a>
         <p id="owner"><a href="../../package.html" class="extype" name="com">com</a>.<a href="../package.html" class="extype" name="com.sony">sony</a>.<a href="package.html" class="extype" name="com.sony.prometheus">prometheus</a></p>
-        <h1>Filters</h1>
+        <h1><a href="TokenEncoder.html" title="Go to companion">TokenEncoder</a></h1>
       </div>
 
       <h4 id="signature" class="signature">
@@ -35,11 +35,11 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">Filters</span>
+        <span class="name">TokenEncoder</span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Created by erik on 2017-02-21.
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Created by erik on 2017-03-01.
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
@@ -60,7 +60,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.sony.prometheus.Filters"><span>Filters</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.sony.prometheus.TokenEncoder"><span>TokenEncoder</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -151,6 +151,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.sony.prometheus.TokenEncoder#TOKEN_MIN_COUNT" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="TOKEN_MIN_COUNT:Int"></a>
+      <a id="TOKEN_MIN_COUNT:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">val</span>
+      </span>
+      <span class="symbol">
+        <span class="name">TOKEN_MIN_COUNT</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.TokenEncoder#apply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="apply(docs:org.apache.spark.rdd.RDD[se.lth.cs.docforia.Document]):com.sony.prometheus.TokenEncoder"></a>
+      <a id="apply(RDD[Document]):TokenEncoder"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">apply</span><span class="params">(<span name="docs">docs: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="se.lth.cs.docforia.Document">Document</span>]</span>)</span><span class="result">: <a href="TokenEncoder.html" class="extype" name="com.sony.prometheus.TokenEncoder">TokenEncoder</a></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -267,6 +293,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li name="com.sony.prometheus.TokenEncoder#load" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="load(path:String,context:org.apache.spark.SparkContext):com.sony.prometheus.TokenEncoder"></a>
+      <a id="load(String,SparkContext):TokenEncoder"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">load</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="context">context: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <a href="TokenEncoder.html" class="extype" name="com.sony.prometheus.TokenEncoder">TokenEncoder</a></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -389,33 +428,6 @@
     </span>)</span>
               
         </dd></dl></div>
-    </li><li name="com.sony.prometheus.Filters#wordFilter" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="wordFilter(s:String):Boolean"></a>
-      <a id="wordFilter(String):Boolean"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wordFilter</span><span class="params">(<span name="s">s: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="com.sony.prometheus.Filters#wordPattern" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="wordPattern:java.util.regex.Pattern"></a>
-      <a id="wordPattern:Pattern"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">wordPattern</span><span class="result">: <span class="extype" name="java.util.regex.Pattern">Pattern</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Pattern for words
-</p>
     </li></ol>
             </div>
 

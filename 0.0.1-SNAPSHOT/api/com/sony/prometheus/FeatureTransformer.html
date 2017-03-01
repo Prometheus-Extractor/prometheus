@@ -12,7 +12,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../index.html';
-            var hash = 'com.sony.prometheus.FeatureTransformer$';
+            var hash = 'com.sony.prometheus.FeatureTransformer';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -22,20 +22,20 @@
    	  </script>
     
         </head>
-        <body class="value">
+        <body class="type">
       <div id="definition">
-        <a href="FeatureTransformer.html" title="Go to companion"><img src="../../../lib/object_to_class_big.png" /></a>
+        <a href="FeatureTransformer$.html" title="Go to companion"><img src="../../../lib/class_to_object_big.png" /></a>
         <p id="owner"><a href="../../package.html" class="extype" name="com">com</a>.<a href="../package.html" class="extype" name="com.sony">sony</a>.<a href="package.html" class="extype" name="com.sony.prometheus">prometheus</a></p>
-        <h1><a href="FeatureTransformer.html" title="Go to companion">FeatureTransformer</a></h1>
+        <h1><a href="FeatureTransformer$.html" title="Go to companion">FeatureTransformer</a></h1>
       </div>
 
       <h4 id="signature" class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">object</span>
+        <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">FeatureTransformer</span>
+        <span class="name">FeatureTransformer</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
@@ -77,7 +77,23 @@
 
       <div id="template">
         <div id="allMembers">
-        
+        <div id="constructors" class="members">
+              <h3>Instance Constructors</h3>
+              <ol><li name="com.sony.prometheus.FeatureTransformer#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(encoder:com.sony.prometheus.TokenEncoder):com.sony.prometheus.FeatureTransformer"></a>
+      <a id="&lt;init&gt;:FeatureTransformer"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">new</span>
+      </span>
+      <span class="symbol">
+        <span class="name">FeatureTransformer</span><span class="params">(<span name="encoder">encoder: <a href="TokenEncoder.html" class="extype" name="com.sony.prometheus.TokenEncoder">TokenEncoder</a></span>)</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
 
         
 
@@ -150,19 +166,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureTransformer#apply" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="apply(docs:org.apache.spark.rdd.RDD[se.lth.cs.docforia.Document])(implicitsqlContext:org.apache.spark.sql.SQLContext):com.sony.prometheus.FeatureTransformer"></a>
-      <a id="apply(RDD[Document])(SQLContext):FeatureTransformer"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="docs">docs: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="se.lth.cs.docforia.Document">Document</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -279,19 +282,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureTransformer#load" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="load(path:String):com.sony.prometheus.FeatureTransformer"></a>
-      <a id="load(String):FeatureTransformer"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">load</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -331,6 +321,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li name="com.sony.prometheus.FeatureTransformer#save" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="save(path:String,sqlContext:org.apache.spark.sql.SQLContext):Unit"></a>
+      <a id="save(String,SQLContext):Unit"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">save</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -357,6 +360,32 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.sony.prometheus.FeatureTransformer#transform" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="transform(tokens:Seq[String]):Seq[Int]"></a>
+      <a id="transform(Seq[String]):Seq[Int]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">transform</span><span class="params">(<span name="tokens">tokens: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Int">Int</span>]</span>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.FeatureTransformer#vocabSize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="vocabSize():Int"></a>
+      <a id="vocabSize():Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">vocabSize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
