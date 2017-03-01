@@ -45,7 +45,7 @@ object FeatureExtractor {
 
     val trainingPoints = trainingSentences.map(t => {
       val f = featureArray(t.sentenceDoc, t.entityPair.source, t.entityPair.dest)
-      val encodedFeatures = ft.transform(f).map(_.toDouble)
+      val encodedFeatures = ft.transform(f).map(_.toDouble).filter(_ >= 0)
 
       TrainingDataPoint(t.relationName, t.relationId, t.relationClass, encodedFeatures)
     })
@@ -66,8 +66,8 @@ object FeatureExtractor {
         val f2 = featureArray(sentence, qid2, qid1)
 
         Seq(
-          TestDataPoint(sentence, qid1, qid2, ft.transform(f1).map(_.toDouble)),
-          TestDataPoint(sentence, qid2, qid1, ft.transform(f2).map(_.toDouble))
+          TestDataPoint(sentence, qid1, qid2, ft.transform(f1).map(_.toDouble).filter(_ >= 0)),
+          TestDataPoint(sentence, qid2, qid1, ft.transform(f2).map(_.toDouble).filter(_ >= 0))
         )
       })
 

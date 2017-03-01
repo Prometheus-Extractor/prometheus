@@ -32,21 +32,21 @@ object TokenEncoder {
       .filter(tup => tup._2 >= TOKEN_MIN_COUNT)
       .map(_._1)
 
-    val zippedTokens = commonTokens.zipWithIndex()
+    val zippedTokens: RDD[(String, Int)] = commonTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
     createTokenEncoder(zippedTokens)
   }
 
   def load(path: String, context: SparkContext): TokenEncoder = {
-    val zippedTokens = context.objectFile[(String, Long)](path)
+    val zippedTokens = context.objectFile[(String, Int)](path)
     createTokenEncoder(zippedTokens)
   }
 
-  private def createTokenEncoder(zippedTokens: RDD[(String, Long)]): TokenEncoder = {
+  private def createTokenEncoder(zippedTokens: RDD[(String, Int)]): TokenEncoder = {
     val token2Id = new Object2IntOpenHashMap[String]()
     val id2Token = new Int2ObjectOpenHashMap[String]()
     zippedTokens.collect().foreach(t => {
-      token2Id.put(t._1, t._2.toInt)
-      id2Token.put(t._2.toInt, t._1)
+      token2Id.put(t._1, t._2)
+      id2Token.put(t._2, t._1)
     })
 
     new TokenEncoder(token2Id, id2Token)
@@ -54,7 +54,8 @@ object TokenEncoder {
 
 }
 
-class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2ObjectOpenHashMap[String]) {
+@SerialVersionUID(1)
+class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2ObjectOpenHashMap[String]) extends java.io.Serializable{
 
   def index(token: String): Int = {
     token2Id.getOrDefault(token, -1)

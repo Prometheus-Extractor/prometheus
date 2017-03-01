@@ -43,7 +43,7 @@ object FeatureTransformer {
 
 }
 
-class FeatureTransformer(encoder: TokenEncoder) {
+class FeatureTransformer(encoder: TokenEncoder) extends Serializable {
 
   def vocabSize(): Int = {
     encoder.vocabSize()
