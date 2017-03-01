@@ -9,6 +9,8 @@ import pipeline._
 
 import scala.collection.JavaConverters._
 
+/** Stage in the pipeline for feature transformation
+ */
 class FeatureTransformerStage(
   path: String,
   corpusData: Data)
@@ -28,6 +30,8 @@ class FeatureTransformerStage(
   }
 }
 
+/** Used for creating a FeatureTransformer
+ */
 object FeatureTransformer {
 
   def apply(docs: RDD[Document])(implicit sqlContext: SQLContext): FeatureTransformer = {
@@ -44,16 +48,26 @@ object FeatureTransformer {
 
 }
 
+/** Transforms tokens with a [[com.sony.prometheus.TokenEncoder]]
+ */
 class FeatureTransformer(encoder: TokenEncoder) extends Serializable {
 
+  /** Returns vocabulary size
+   */
   def vocabSize(): Int = {
     encoder.vocabSize()
   }
 
+  /** Returns a transformed Seq of tokens as a Seq of Ints with [[com.sony.prometheus.TokenEncoder]]
+    * @param tokens - the Seq of Strings to transform
+   */
   def transform(tokens: Seq[String]): Seq[Int] = {
     tokens.map(encoder.index)
   }
 
+  /** Saves the feature mapping to the path specified by path
+   * @param path - the path to save to
+   */
   def save(path: String, sqlContext: SQLContext): Unit = {
     encoder.save(path + "/encoder", sqlContext)
   }
