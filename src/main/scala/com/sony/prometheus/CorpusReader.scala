@@ -10,6 +10,8 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import pipeline._
 
+/** Represents the corpus data used to train on
+ */
 class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
   override def getData(): String = {
     if (exists(path)) {

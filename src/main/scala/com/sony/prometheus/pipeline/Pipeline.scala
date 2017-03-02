@@ -6,6 +6,9 @@ import org.apache.spark.SparkContext
 /** A runnable task in the Pipeline, implemented by eg [[com.sony.prometheus.FeatureExtractorStage]]
  */
 trait Task {
+
+  /** Runs the task
+   */
   def run(): Unit
 }
 

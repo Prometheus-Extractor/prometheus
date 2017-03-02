@@ -36,10 +36,19 @@ class FeatureExtractorStage(
   }
 }
 
+/** Extracts features for training/prediction
+ */
 object FeatureExtractor {
   val NBR_WORDS_BEFORE = 1
   val NBR_WORDS_AFTER = 1
 
+  /** Returns an RDD of [[com.sony.prometheus.TrainingDataPoint]]
+    *
+    * Use this to collect training data for [[com.sony.prometheus.RelationModel]]
+    *
+    * @param ft                 - a [[com.sony.prometheus.FeatureTransformer]]
+    * @param trainingSentences  - an RDD of [[com.sony.prometheus.TrainingSentence]]
+    */
   def trainingData(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
     val trainingPoints = trainingSentences.map(t => {
@@ -52,6 +61,13 @@ object FeatureExtractor {
     trainingPoints
   }
 
+  /** Returns an RDD of [[com.sony.prometheus.TestDataPoint]]
+    *
+    *   Use this to collect test data for [[com.sony.prometheus.RelationModel]]
+    *
+    *   @param ft     - a [[com.sony.prometheus.FeatureTransformer]]
+    *   @param sentences  - an RDD of Docforia Documents
+    */
   def testData(ft: FeatureTransformer, sentences: RDD[Document])(implicit sqlContext: SQLContext): RDD[TestDataPoint] = {
 
     val testPoints = sentences.flatMap(sentence => {
@@ -112,11 +128,15 @@ object FeatureExtractor {
 
   }
 
+  /** Saves the training data to the path
+   */
   def save(data: RDD[TrainingDataPoint], path: String)(implicit sqlContext: SQLContext): Unit = {
     import sqlContext.implicits._
     data.toDF().write.json(path)
   }
 
+  /** Loads the data from path
+   */
   def load(path: String)(implicit sqlContext: SQLContext): RDD[TrainingDataPoint]  = {
     import sqlContext.implicits._
     sqlContext.read.json(path).as[TrainingDataPoint].rdd
