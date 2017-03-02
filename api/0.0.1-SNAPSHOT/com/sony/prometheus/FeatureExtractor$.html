@@ -39,7 +39,8 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Extracts features for training/prediction
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
@@ -304,7 +305,8 @@
         <span class="name">load</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">TrainingDataPoint</a>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Loads the data from path
+</p>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -356,7 +358,8 @@
         <span class="name">save</span><span class="params">(<span name="data">data: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">TrainingDataPoint</a>]</span>, <span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Saves the training data to the path
+</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -370,7 +373,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureExtractor#testData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.sony.prometheus.FeatureExtractor#testData" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="testData(ft:com.sony.prometheus.FeatureTransformer,sentences:org.apache.spark.rdd.RDD[se.lth.cs.docforia.Document])(implicitsqlContext:org.apache.spark.sql.SQLContext):org.apache.spark.rdd.RDD[com.sony.prometheus.TestDataPoint]"></a>
       <a id="testData(FeatureTransformer,RDD[Document])(SQLContext):RDD[TestDataPoint]"></a>
       <h4 class="signature">
@@ -382,7 +385,9 @@
         <span class="name">testData</span><span class="params">(<span name="ft">ft: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>, <span name="sentences">sentences: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="se.lth.cs.docforia.Document">Document</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TestDataPoint.html" class="extype" name="com.sony.prometheus.TestDataPoint">TestDataPoint</a>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Returns an RDD of <a href="TestDataPoint.html" class="extype" name="com.sony.prometheus.TestDataPoint">com.sony.prometheus.TestDataPoint</a></p><div class="fullcomment"><div class="comment cmt"><p>Returns an RDD of <a href="TestDataPoint.html" class="extype" name="com.sony.prometheus.TestDataPoint">com.sony.prometheus.TestDataPoint</a></p><p>  Use this to collect test data for <a href="RelationModel.html" class="extype" name="com.sony.prometheus.RelationModel">com.sony.prometheus.RelationModel</a>
+</p></div><dl class="paramcmts block"><dt class="param">ft</dt><dd class="cmt"><p>- a <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">com.sony.prometheus.FeatureTransformer</a></p></dd><dt class="param">sentences</dt><dd class="cmt"><p>- an RDD of Docforia Documents
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
@@ -396,7 +401,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureExtractor#trainingData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.sony.prometheus.FeatureExtractor#trainingData" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="trainingData(ft:com.sony.prometheus.FeatureTransformer,trainingSentences:org.apache.spark.rdd.RDD[com.sony.prometheus.TrainingSentence])(implicitsqlContext:org.apache.spark.sql.SQLContext):org.apache.spark.rdd.RDD[com.sony.prometheus.TrainingDataPoint]"></a>
       <a id="trainingData(FeatureTransformer,RDD[TrainingSentence])(SQLContext):RDD[TrainingDataPoint]"></a>
       <h4 class="signature">
@@ -408,7 +413,9 @@
         <span class="name">trainingData</span><span class="params">(<span name="ft">ft: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>, <span name="trainingSentences">trainingSentences: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingSentence.html" class="extype" name="com.sony.prometheus.TrainingSentence">TrainingSentence</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">TrainingDataPoint</a>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Returns an RDD of <a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">com.sony.prometheus.TrainingDataPoint</a></p><div class="fullcomment"><div class="comment cmt"><p>Returns an RDD of <a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">com.sony.prometheus.TrainingDataPoint</a></p><p>Use this to collect training data for <a href="RelationModel.html" class="extype" name="com.sony.prometheus.RelationModel">com.sony.prometheus.RelationModel</a>
+</p></div><dl class="paramcmts block"><dt class="param">ft</dt><dd class="cmt"><p>- a <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">com.sony.prometheus.FeatureTransformer</a></p></dd><dt class="param">trainingSentences</dt><dd class="cmt"><p>- an RDD of <a href="TrainingSentence.html" class="extype" name="com.sony.prometheus.TrainingSentence">com.sony.prometheus.TrainingSentence</a>
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>

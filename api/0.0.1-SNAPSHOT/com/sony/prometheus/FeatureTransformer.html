@@ -35,13 +35,14 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">FeatureTransformer</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">FeatureTransformer</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Transforms tokens with a <a href="TokenEncoder.html" class="extype" name="com.sony.prometheus.TokenEncoder">com.sony.prometheus.TokenEncoder</a>
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -59,7 +60,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.sony.prometheus.FeatureTransformer"><span>FeatureTransformer</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.sony.prometheus.FeatureTransformer"><span>FeatureTransformer</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -321,7 +322,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureTransformer#save" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.sony.prometheus.FeatureTransformer#save" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="save(path:String,sqlContext:org.apache.spark.sql.SQLContext):Unit"></a>
       <a id="save(String,SQLContext):Unit"></a>
       <h4 class="signature">
@@ -333,7 +334,8 @@
         <span class="name">save</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Saves the feature mapping to the path specified by path</p><div class="fullcomment"><div class="comment cmt"><p>Saves the feature mapping to the path specified by path</p></div><dl class="paramcmts block"><dt class="param">path</dt><dd class="cmt"><p>- the path to save to
+</p></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -360,7 +362,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureTransformer#transform" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.sony.prometheus.FeatureTransformer#transform" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="transform(tokens:Seq[String]):Seq[Int]"></a>
       <a id="transform(Seq[String]):Seq[Int]"></a>
       <h4 class="signature">
@@ -372,7 +374,8 @@
         <span class="name">transform</span><span class="params">(<span name="tokens">tokens: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Int">Int</span>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Returns a transformed Seq of tokens as a Seq of Ints with <a href="TokenEncoder.html" class="extype" name="com.sony.prometheus.TokenEncoder">com.sony.prometheus.TokenEncoder</a></p><div class="fullcomment"><div class="comment cmt"><p>Returns a transformed Seq of tokens as a Seq of Ints with <a href="TokenEncoder.html" class="extype" name="com.sony.prometheus.TokenEncoder">com.sony.prometheus.TokenEncoder</a></p></div><dl class="paramcmts block"><dt class="param">tokens</dt><dd class="cmt"><p>- the Seq of Strings to transform
+</p></dd></dl></div>
     </li><li name="com.sony.prometheus.FeatureTransformer#vocabSize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="vocabSize():Int"></a>
       <a id="vocabSize():Int"></a>
@@ -385,7 +388,8 @@
         <span class="name">vocabSize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Returns vocabulary size
+</p>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -452,7 +456,11 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>

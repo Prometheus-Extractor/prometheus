@@ -2,17 +2,17 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>Task - com.sony.prometheus.Task</title>
-          <meta name="description" content="Task - com.sony.prometheus.Task" />
-          <meta name="keywords" content="Task com.sony.prometheus.Task" />
+          <title>Task - com.sony.prometheus.pipeline.Task</title>
+          <meta name="description" content="Task - com.sony.prometheus.pipeline.Task" />
+          <meta name="keywords" content="Task com.sony.prometheus.pipeline.Task" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
-      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
       <script type="text/javascript">
          if(top === self) {
-            var url = '../../../index.html';
-            var hash = 'com.sony.prometheus.Task';
+            var url = '../../../../index.html';
+            var hash = 'com.sony.prometheus.pipeline.Task';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -24,8 +24,8 @@
         </head>
         <body class="type">
       <div id="definition">
-        <img src="../../../lib/trait_big.png" />
-        <p id="owner"><a href="../../package.html" class="extype" name="com">com</a>.<a href="../package.html" class="extype" name="com.sony">sony</a>.<a href="package.html" class="extype" name="com.sony.prometheus">prometheus</a></p>
+        <img src="../../../../lib/trait_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.sony">sony</a>.<a href="../package.html" class="extype" name="com.sony.prometheus">prometheus</a>.<a href="package.html" class="extype" name="com.sony.prometheus.pipeline">pipeline</a></p>
         <h1>Task</h1>
       </div>
 
@@ -39,12 +39,13 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A runnable task in the Pipeline, implemented by eg <a href="../FeatureExtractorStage.html" class="extype" name="com.sony.prometheus.FeatureExtractorStage">com.sony.prometheus.FeatureExtractorStage</a>
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a href="FeatureExtractorStage.html" class="extype" name="com.sony.prometheus.FeatureExtractorStage">FeatureExtractorStage</a>, <a href="FeatureTransformerStage.html" class="extype" name="com.sony.prometheus.FeatureTransformerStage">FeatureTransformerStage</a>, <a href="RelationModelStage.html" class="extype" name="com.sony.prometheus.RelationModelStage">RelationModelStage</a>, <a href="TrainingDataExtractorStage.html" class="extype" name="com.sony.prometheus.TrainingDataExtractorStage">TrainingDataExtractorStage</a></div>
+          <div class="subClasses hiddenContent"><a href="../FeatureExtractorStage.html" class="extype" name="com.sony.prometheus.FeatureExtractorStage">FeatureExtractorStage</a>, <a href="../FeatureTransformerStage.html" class="extype" name="com.sony.prometheus.FeatureTransformerStage">FeatureTransformerStage</a>, <a href="../RelationModelStage.html" class="extype" name="com.sony.prometheus.RelationModelStage">RelationModelStage</a>, <a href="../TrainingDataExtractorStage.html" class="extype" name="com.sony.prometheus.TrainingDataExtractorStage">TrainingDataExtractorStage</a></div>
         </div></div>
         
 
@@ -62,7 +63,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.sony.prometheus.Task"><span>Task</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.sony.prometheus.pipeline.Task"><span>Task</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -86,7 +87,7 @@
 
         <div id="values" class="values members">
               <h3>Abstract Value Members</h3>
-              <ol><li name="com.sony.prometheus.Task#run" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
+              <ol><li name="com.sony.prometheus.pipeline.Task#run" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
       <a id="run():Unit"></a>
       <a id="run():Unit"></a>
       <h4 class="signature">
@@ -98,7 +99,8 @@
         <span class="name">run</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Runs the task
+</p>
     </li></ol>
             </div>
 
@@ -194,7 +196,7 @@
         <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">(<span>
       
       <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
@@ -239,7 +241,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">(<span>
       
       <span class="symbol">classOf[java.lang.Throwable]</span>
@@ -436,6 +438,6 @@
       <div id="tooltip"></div>
 
       <div id="footer">  </div>
-      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../lib/template.js"></script>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../lib/template.js"></script>
     </body>
       </html>

@@ -2,9 +2,9 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>TokenEncoder - com.sony.prometheus.TokenEncoder</title>
-          <meta name="description" content="TokenEncoder - com.sony.prometheus.TokenEncoder" />
-          <meta name="keywords" content="TokenEncoder com.sony.prometheus.TokenEncoder" />
+          <title>Predictor - com.sony.prometheus.Predictor</title>
+          <meta name="description" content="Predictor - com.sony.prometheus.Predictor" />
+          <meta name="keywords" content="Predictor com.sony.prometheus.Predictor" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
@@ -12,7 +12,7 @@
       <script type="text/javascript">
          if(top === self) {
             var url = '../../../index.html';
-            var hash = 'com.sony.prometheus.TokenEncoder';
+            var hash = 'com.sony.prometheus.Predictor';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -24,9 +24,9 @@
         </head>
         <body class="type">
       <div id="definition">
-        <a href="TokenEncoder$.html" title="Go to companion"><img src="../../../lib/class_to_object_big.png" /></a>
+        <a href="Predictor$.html" title="Go to companion"><img src="../../../lib/class_to_object_big.png" /></a>
         <p id="owner"><a href="../../package.html" class="extype" name="com">com</a>.<a href="../package.html" class="extype" name="com.sony">sony</a>.<a href="package.html" class="extype" name="com.sony.prometheus">prometheus</a></p>
-        <h1><a href="TokenEncoder$.html" title="Go to companion">TokenEncoder</a></h1>
+        <h1><a href="Predictor$.html" title="Go to companion">Predictor</a></h1>
       </div>
 
       <h4 id="signature" class="signature">
@@ -35,19 +35,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">TokenEncoder</span><span class="result"> extends <span class="extype" name="java.io.Serializable">Serializable</span></span>
+        <span class="name">Predictor</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><dl class="attributes block"> <dt>Annotations</dt><dd>
-                <span class="name">@SerialVersionUID</span><span class="args">(<span>
-      
-      <span class="symbol">1</span>
-    </span>)</span>
-              
-        </dd></dl><div class="toggleContainer block">
+          <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -65,7 +59,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.sony.prometheus.TokenEncoder"><span>TokenEncoder</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.sony.prometheus.Predictor"><span>Predictor</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -85,16 +79,16 @@
         <div id="allMembers">
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
-              <ol><li name="com.sony.prometheus.TokenEncoder#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(token2Id:it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap[String],id2Token:it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap[String]):com.sony.prometheus.TokenEncoder"></a>
-      <a id="&lt;init&gt;:TokenEncoder"></a>
+              <ol><li name="com.sony.prometheus.Predictor#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="&lt;init&gt;(model:com.sony.prometheus.RelationModel,transformer:com.sony.prometheus.FeatureTransformer):com.sony.prometheus.Predictor"></a>
+      <a id="&lt;init&gt;:Predictor"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">TokenEncoder</span><span class="params">(<span name="token2Id">token2Id: <span class="extype" name="it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap">Object2IntOpenHashMap</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>, <span name="id2Token">id2Token: <span class="extype" name="it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap">Int2ObjectOpenHashMap</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span>
+        <span class="name">Predictor</span><span class="params">(<span name="model">model: <a href="RelationModel.html" class="extype" name="com.sony.prometheus.RelationModel">RelationModel</a></span>, <span name="transformer">transformer: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>)</span>
       </span>
       </h4>
       
@@ -275,19 +269,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.TokenEncoder#index" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="index(token:String):Int"></a>
-      <a id="index(String):Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">index</span><span class="params">(<span name="token">token: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -340,19 +321,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.sony.prometheus.TokenEncoder#save" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="save(path:String,sqlContext:org.apache.spark.sql.SQLContext):Unit"></a>
-      <a id="save(String,SQLContext):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">save</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -379,32 +347,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.TokenEncoder#token" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="token(index:Int):String"></a>
-      <a id="token(Int):String"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">token</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
-      </span>
-      </h4>
-      
-    </li><li name="com.sony.prometheus.TokenEncoder#vocabSize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="vocabSize():Int"></a>
-      <a id="vocabSize():Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">vocabSize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -471,9 +413,7 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="java.io.Serializable">
-              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
-            </div><div class="parent" name="scala.AnyRef">
+        <div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>

@@ -35,14 +35,14 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">FeatureExtractorStage</span><span class="result"> extends <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a> with <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>
+        <span class="name">FeatureExtractorStage</span><span class="result"> extends <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a> with <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Created by axel on 2017-02-20.
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Stage to extract features, will not run if output already exists
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a>, <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a>, <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -60,7 +60,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.sony.prometheus.FeatureExtractorStage"><span>FeatureExtractorStage</span></li><li class="in" name="com.sony.prometheus.Data"><span>Data</span></li><li class="in" name="com.sony.prometheus.Task"><span>Task</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.sony.prometheus.FeatureExtractorStage"><span>FeatureExtractorStage</span></li><li class="in" name="com.sony.prometheus.pipeline.Data"><span>Data</span></li><li class="in" name="com.sony.prometheus.pipeline.Task"><span>Task</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -81,7 +81,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="com.sony.prometheus.FeatureExtractorStage#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(path:String,featureTransformer:com.sony.prometheus.Data,trainingDataExtractor:com.sony.prometheus.Data)(implicitsqlContext:org.apache.spark.sql.SQLContext,implicitsc:org.apache.spark.SparkContext):com.sony.prometheus.FeatureExtractorStage"></a>
+      <a id="&lt;init&gt;(path:String,featureTransformer:com.sony.prometheus.pipeline.Data,trainingDataExtractor:com.sony.prometheus.pipeline.Data)(implicitsqlContext:org.apache.spark.sql.SQLContext,implicitsc:org.apache.spark.SparkContext):com.sony.prometheus.FeatureExtractorStage"></a>
       <a id="&lt;init&gt;:FeatureExtractorStage"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -89,7 +89,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">FeatureExtractorStage</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="featureTransformer">featureTransformer: <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>, <span name="trainingDataExtractor">trainingDataExtractor: <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>, <span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span>
+        <span class="name">FeatureExtractorStage</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="featureTransformer">featureTransformer: <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>, <span name="trainingDataExtractor">trainingDataExtractor: <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>, <span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span>
       </span>
       </h4>
       
@@ -225,7 +225,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.Data#exists" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="com.sony.prometheus.pipeline.Data#exists" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="exists(path:String)(implicitsc:org.apache.spark.SparkContext):Boolean"></a>
       <a id="exists(String)(SparkContext):Boolean"></a>
       <h4 class="signature">
@@ -237,7 +237,8 @@
         <span class="name">exists</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sc">sc: <span class="extype" name="org.apache.spark.SparkContext">SparkContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Boolean">Boolean</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></dd></dl></div>
+      <p class="shortcomment cmt">Returns true if data is available in path</p><div class="fullcomment"><div class="comment cmt"><p>Returns true if data is available in path</p></div><dl class="paramcmts block"><dt class="param">path</dt><dd class="cmt"><p>- the path to check
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></dd></dl></div>
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -282,7 +283,9 @@
         <span class="name">getData</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.sony.prometheus.FeatureExtractorStage">FeatureExtractorStage</a> → <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></dd></dl></div>
+      <p class="shortcomment cmt">Returns the path to the Data
+</p><div class="fullcomment"><div class="comment cmt"><p>Returns the path to the Data
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.sony.prometheus.FeatureExtractorStage">FeatureExtractorStage</a> → <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></dd></dl></div>
     </li><li name="scala.AnyRef#hashCode" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="hashCode():Int"></a>
       <a id="hashCode():Int"></a>
@@ -360,7 +363,9 @@
         <span class="name">run</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.sony.prometheus.FeatureExtractorStage">FeatureExtractorStage</a> → <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a></dd></dl></div>
+      <p class="shortcomment cmt">Runs the task
+</p><div class="fullcomment"><div class="comment cmt"><p>Runs the task
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.sony.prometheus.FeatureExtractorStage">FeatureExtractorStage</a> → <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a></dd></dl></div>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -453,10 +458,10 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="com.sony.prometheus.Data">
-              <h3>Inherited from <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></h3>
-            </div><div class="parent" name="com.sony.prometheus.Task">
-              <h3>Inherited from <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a></h3>
+        <div class="parent" name="com.sony.prometheus.pipeline.Data">
+              <h3>Inherited from <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></h3>
+            </div><div class="parent" name="com.sony.prometheus.pipeline.Task">
+              <h3>Inherited from <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a></h3>
             </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">

@@ -67,23 +67,11 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="CorpusData.html"><span class="name">CorpusData</span></a><span class="result"> extends <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>
+        <a href="CorpusData.html"><span class="name">CorpusData</span></a><span class="result"> extends <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
-      
-    </li><li name="com.sony.prometheus.Data" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="DataextendsAnyRef"></a>
-      <a id="Data:Data"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
-      </span>
-      <span class="symbol">
-        <a href="Data.html"><span class="name">Data</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
-      </span>
-      </h4>
-      
+      <p class="comment cmt">Represents the corpus data used to train on
+</p>
     </li><li name="com.sony.prometheus.EntityPair" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="EntityPairextendsProductwithSerializable"></a>
       <a id="EntityPair:EntityPair"></a>
@@ -106,12 +94,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="FeatureExtractorStage.html"><span class="name">FeatureExtractorStage</span></a><span class="result"> extends <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a> with <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>
+        <a href="FeatureExtractorStage.html"><span class="name">FeatureExtractorStage</span></a><span class="result"> extends <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a> with <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
-      <p class="comment cmt">Created by axel on 2017-02-20.</p>
+      <p class="comment cmt">Stage to extract features, will not run if output already exists
+</p>
     </li><li name="com.sony.prometheus.FeatureTransformer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="FeatureTransformerextendsAnyRef"></a>
+      <a id="FeatureTransformerextendsSerializable"></a>
       <a id="FeatureTransformer:FeatureTransformer"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -119,10 +108,11 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="FeatureTransformer.html"><span class="name">FeatureTransformer</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="FeatureTransformer.html"><span class="name">FeatureTransformer</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Transforms tokens with a <a href="TokenEncoder.html" class="extype" name="com.sony.prometheus.TokenEncoder">com.sony.prometheus.TokenEncoder</a>
+</p>
     </li><li name="com.sony.prometheus.FeatureTransformerStage" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="FeatureTransformerStageextendsTaskwithData"></a>
       <a id="FeatureTransformerStage:FeatureTransformerStage"></a>
@@ -132,7 +122,21 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="FeatureTransformerStage.html"><span class="name">FeatureTransformerStage</span></a><span class="result"> extends <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a> with <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>
+        <a href="FeatureTransformerStage.html"><span class="name">FeatureTransformerStage</span></a><span class="result"> extends <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a> with <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Stage in the pipeline for feature transformation
+</p>
+    </li><li name="com.sony.prometheus.Predictor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="PredictorextendsAnyRef"></a>
+      <a id="Predictor:Predictor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="Predictor.html"><span class="name">Predictor</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
       
@@ -171,7 +175,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="RelationModelStage.html"><span class="name">RelationModelStage</span></a><span class="result"> extends <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a> with <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>
+        <a href="RelationModelStage.html"><span class="name">RelationModelStage</span></a><span class="result"> extends <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a> with <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
       
@@ -184,20 +188,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="RelationsData.html"><span class="name">RelationsData</span></a><span class="result"> extends <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>
-      </span>
-      </h4>
-      
-    </li><li name="com.sony.prometheus.Task" visbl="pub" data-isabs="true" fullComment="no" group="Ungrouped">
-      <a id="TaskextendsAnyRef"></a>
-      <a id="Task:Task"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">trait</span>
-      </span>
-      <span class="symbol">
-        <a href="Task.html"><span class="name">Task</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="RelationsData.html"><span class="name">RelationsData</span></a><span class="result"> extends <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
       
@@ -214,8 +205,8 @@
       </span>
       </h4>
       
-    </li><li name="com.sony.prometheus.TokenEncoder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="TokenEncoderextendsAnyRef"></a>
+    </li><li name="com.sony.prometheus.TokenEncoder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="TokenEncoderextendsSerializable"></a>
       <a id="TokenEncoder:TokenEncoder"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -223,10 +214,16 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="TokenEncoder.html"><span class="name">TokenEncoder</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="TokenEncoder.html"><span class="name">TokenEncoder</span></a><span class="result"> extends <span class="extype" name="java.io.Serializable">Serializable</span></span>
       </span>
       </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
+                <span class="name">@SerialVersionUID</span><span class="args">(<span>
       
+      <span class="symbol">1</span>
+    </span>)</span>
+              
+        </dd></dl></div>
     </li><li name="com.sony.prometheus.TrainingDataExtractorStage" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TrainingDataExtractorStageextendsTaskwithData"></a>
       <a id="TrainingDataExtractorStage:TrainingDataExtractorStage"></a>
@@ -236,7 +233,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="TrainingDataExtractorStage.html"><span class="name">TrainingDataExtractorStage</span></a><span class="result"> extends <a href="Task.html" class="extype" name="com.sony.prometheus.Task">Task</a> with <a href="Data.html" class="extype" name="com.sony.prometheus.Data">Data</a></span>
+        <a href="TrainingDataExtractorStage.html"><span class="name">TrainingDataExtractorStage</span></a><span class="result"> extends <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a> with <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
       
@@ -299,7 +296,8 @@
         <a href="FeatureExtractor$.html"><span class="name">FeatureExtractor</span></a>
       </span>
       </h4>
-      
+      <p class="comment cmt">Extracts features for training/prediction
+</p>
     </li><li name="com.sony.prometheus.FeatureTransformer" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="FeatureTransformer"></a>
       <a id="FeatureTransformer:FeatureTransformer"></a>
@@ -309,10 +307,11 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="FeatureTransformer$.html"><span class="name">FeatureTransformer</span></a>
+        <a href="FeatureTransformer$.html"><span class="name">FeatureTransformer</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Used for creating a FeatureTransformer
+</p>
     </li><li name="com.sony.prometheus.Filters" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Filters"></a>
       <a id="Filters:Filters"></a>
@@ -326,6 +325,19 @@
       </span>
       </h4>
       <p class="comment cmt">Created by erik on 2017-02-21.</p>
+    </li><li name="com.sony.prometheus.Predictor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Predictor"></a>
+      <a id="Predictor:Predictor"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Predictor$.html"><span class="name">Predictor</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Created by erik on 2017-02-28.</p>
     </li><li name="com.sony.prometheus.Prometheus" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="Prometheus"></a>
       <a id="Prometheus:Prometheus"></a>
@@ -374,7 +386,7 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="TokenEncoder$.html"><span class="name">TokenEncoder</span></a>
+        <a href="TokenEncoder$.html"><span class="name">TokenEncoder</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">Created by erik on 2017-03-01.</p>
@@ -388,6 +400,19 @@
       </span>
       <span class="symbol">
         <a href="TrainingDataExtractor$.html"><span class="name">TrainingDataExtractor</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.pipeline" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="pipeline"></a>
+      <a id="pipeline:pipeline"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="pipeline/package.html"><span class="name">pipeline</span></a>
       </span>
       </h4>
       
