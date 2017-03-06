@@ -24,7 +24,7 @@ object Predictor {
 
 }
 
-class Predictor(model: RelationModel, transformer: FeatureTransformer) {
+class Predictor(model: RelationModel, transformer: FeatureTransformer) extends Serializable{
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext) = {
 

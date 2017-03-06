@@ -66,8 +66,6 @@ object Prometheus {
     val path = modelTrainingTask.getData()
     log.info(s"Saved model to $path")
 
-
-
     // Test model
     val docs = CorpusReader.readCorpus(conf.corpusPath())
     val gp = docs.filter(_.id() == "Q537747")
