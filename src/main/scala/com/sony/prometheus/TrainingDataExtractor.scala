@@ -13,6 +13,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import pipeline._
 
+/** Stage for training data extraction
+ */
 class TrainingDataExtractorStage(
   path: String,
   corpusData: Data,
@@ -34,12 +36,17 @@ class TrainingDataExtractorStage(
   }
 }
 
+/** Provides training data extraction
+ */
 object TrainingDataExtractor {
 
   val SENTENCE_MAX_LENGTH = 500
   val SENTENCE_MIN_LENGTH = 5
   val PARTIONS = 432
 
+  /**
+   * Extracts [[com.sony.prometheus.TrainingSentence]]s
+   */
   def extract(docs: RDD[Document], relations: RDD[Relation])(implicit sparkContext: SparkContext): RDD[TrainingSentence] = {
 
     val broadcastedRelations = relations.sparkContext.broadcast(relations.collect())

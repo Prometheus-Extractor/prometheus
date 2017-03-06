@@ -11,9 +11,8 @@ import se.lth.cs.docforia.graph.text.Token
 import scala.collection.JavaConverters._
 import scala.collection.immutable.HashMap
 
-/**
-  * Created by erik on 2017-03-01.
-  */
+/** Provides String indexer
+ */
 object TokenEncoder {
 
   val TOKEN_MIN_COUNT = 3
@@ -53,13 +52,25 @@ object TokenEncoder {
 
 }
 
+/** A String indexer that maps String:s to Int:s and back
+ */
 @SerialVersionUID(1)
 class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2ObjectOpenHashMap[String]) extends java.io.Serializable{
 
+  /** Gets the index of token
+    *
+    *  @param token   the String to map to Int
+    *  @return        the Int that maps to the token or -1 if not found
+    */
   def index(token: String): Int = {
     token2Id.getOrDefault(token, -1)
   }
 
+  /** Gets the String mapping to index
+    *
+    *   @param index    the index to map to String
+    *   @return         the String that maps to index, or "<UNKNOWN_ID>" if not found
+    */
   def token(index: Int): String = {
     id2Token.getOrDefault(index, "<UNKNOWN_ID>")
   }
@@ -68,6 +79,8 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
     token2Id.size()
   }
 
+  /** Saves the TokenEncoder to disk
+   */
   def save(path: String, sqlContext: SQLContext) {
     val rdd = sqlContext.sparkContext.parallelize(token2Id.entrySet().asScala.map(e => (e.getKey, e.getValue)).toSeq)
     rdd.saveAsObjectFile(path)

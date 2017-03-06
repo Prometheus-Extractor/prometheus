@@ -9,8 +9,12 @@ import org.rogach.scallop.exceptions._
 import pipeline._
 import scala.util.Properties.envOrNone
 
+/** Main class, sets up and runs the pipeline
+ */
 object Prometheus {
 
+  /** Provides arugment parsing
+   */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
     banner("""Usage: RelationModel [--sample-size=0.f] corpus-path relations-path temp-data-path

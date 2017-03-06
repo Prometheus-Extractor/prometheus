@@ -9,6 +9,8 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import pipeline._
 
 
+/** Builds the RelationModel
+ */
 class RelationModelStage(path: String, featureExtractor: Data, featureTransformerStage: Data)
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
@@ -29,6 +31,8 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
   }
 }
 
+/** Provides the RelationModel classifier
+ */
 object RelationModel {
 
   def apply(data: RDD[TrainingDataPoint], vocabSize: Int)(implicit sqlContext: SQLContext): RelationModel = {
