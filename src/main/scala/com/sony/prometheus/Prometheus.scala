@@ -51,10 +51,11 @@ object Prometheus {
     implicit val sqlContext = new SQLContext(sc)
 
     val corpusData = new CorpusData(conf.corpusPath())
+    val relationsData = new RelationsData(conf.relationsPath())
     val trainingTask = new TrainingDataExtractorStage(
       conf.tempDataPath() + "/training_sentences",
-      corpusData = corpusData,
-      relationsData = new RelationsData(conf.relationsPath()))
+      corpusData,
+      relationsData)
     val featureTransformerTask = new FeatureTransformerStage(
       conf.tempDataPath() + "/feature_model",
       corpusData)
@@ -72,9 +73,11 @@ object Prometheus {
 
     // Test model
     val docs = CorpusReader.readCorpus(conf.corpusPath())
-    val gp = docs.filter(_.id() == "Q537747")
+    val gp = docs.filter(_.uris() contains "urn:wikidata:Q53747")
 
-    val predictor = Predictor(modelTrainingTask, featureTransformerTask)
+    println(gp.collect())
+
+    val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
     val results = predictor.extractRelations(gp)
 
     results.saveAsTextFile("hdfs:/user/ine11ega/output.txt")
