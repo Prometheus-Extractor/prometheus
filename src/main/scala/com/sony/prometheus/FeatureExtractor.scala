@@ -66,9 +66,9 @@ object FeatureExtractor {
     *   Use this to collect test data for [[com.sony.prometheus.RelationModel]]
     *
     *   @param ft     - a [[com.sony.prometheus.FeatureTransformer]]
-    *   @param sentences  - an RDD of Docforia Documents
+    *   @param sentences  - a Seq of Docforia Documents
     */
-  def testData(ft: FeatureTransformer, sentences: RDD[Document])(implicit sqlContext: SQLContext): RDD[TestDataPoint] = {
+  def testData(ft: FeatureTransformer, sentences: Seq[Document])(implicit sqlContext: SQLContext): Seq[TestDataPoint] = {
 
     val testPoints = sentences.flatMap(sentence => {
 

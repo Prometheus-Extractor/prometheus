@@ -2,7 +2,7 @@ package com.sony.prometheus
 
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{Vectors, Vector}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
@@ -34,11 +34,7 @@ object RelationModel {
   def apply(data: RDD[TrainingDataPoint], vocabSize: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
     var labeledData = data.map(t => {
-
-      /* Perform one-hot encoding */
-      val features = t.features.distinct.map(idx => (idx.toInt, 1.0))
-      LabeledPoint(t.relationClass.toDouble - 1.0, Vectors.sparse(vocabSize, features))
-
+      LabeledPoint(t.relationClass.toDouble - 1.0, oneHotEncode(t.features, vocabSize))
     })
     labeledData.cache()
 
@@ -54,12 +50,25 @@ object RelationModel {
     new RelationModel(LogisticRegressionModel.load(context, path))
   }
 
+  def oneHotEncode(features: Seq[Double], vocabSize: Int): Vector = {
+    val f = features.distinct.map(idx => (idx.toInt, 1.0))
+    Vectors.sparse(vocabSize, f)
+  }
+
 }
 
-class RelationModel(model: LogisticRegressionModel) {
+class RelationModel(model: LogisticRegressionModel) extends Serializable {
 
   def save(path: String, context: SparkContext): Unit = {
     model.save(context, path)
+  }
+
+  def predict(vector: Vector): Double = {
+    model.predict(vector)
+  }
+
+  def predict(vectors: RDD[Vector]): RDD[Double] = {
+    model.predict(vectors)
   }
 
 }
