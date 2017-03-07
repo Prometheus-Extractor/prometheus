@@ -2,7 +2,8 @@
 
 - Install AWS cli
 - Configure using `aws configure`
-- Create Key Pair and download certificate.
+- Create Key Pair and the download certificate.
+- Create a VPC name it `Prometheus-VPC` with a subnet. Replace in command below.
 - Create a EMR cluster running Spark 1.6.3. See section below.
 - Make sure the security group for the master allows SSH.
 - SSH into master using `aws emr ssh --cluster-id <id> --key-pair-file <cert>`
