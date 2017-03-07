@@ -45,7 +45,7 @@ object TrainingDataExtractor {
   val PARTIONS = 432
 
   /**
-   * Extracts [[com.sony.prometheus.TrainingSentence]]s
+   * Extracts RDD of [[com.sony.prometheus.TrainingSentence]]
    */
   def extract(docs: RDD[Document], relations: RDD[Relation])(implicit sparkContext: SparkContext): RDD[TrainingSentence] = {
 
@@ -64,19 +64,17 @@ object TrainingDataExtractor {
           .filter(pg => SENTENCE_MIN_LENGTH <= pg.key(S).length() && pg.key(S).length() <= SENTENCE_MAX_LENGTH)
           .flatMap(pg => {
 
-            val trainingData = broadcastedRelations.value.flatMap(relation => {
+            val trainingData = broadcastedRelations.value.map(relation => {
 
               val neds = new mutable.HashSet() ++ pg.list(NED).asScala.map(_.getIdentifier.split(":").last)
-              relation.entities.toStream.filter(p => neds.contains(p.source) && neds.contains(p.dest))
-                .map(p => {
-                  if (doc.id() == null) {
-                    // This is a work around for a bug in Docforia.
-                    doc.setId("<null_id>")
-                  }
-                  val s = pg.key(S)
-                  TrainingSentence(relation.id, relation.name, relation.classIdx,
-                                   doc.subDocument(s.getStart, s.getEnd), p)
-                })
+              val pairs = relation.entities.toStream.filter(p => neds.contains(p.source) && neds.contains(p.dest))
+
+              if (doc.id() == null) {
+                // This is a work around for a bug in Docforia.
+                doc.setId("<null_id>")
+              }
+              val s = pg.key(S)
+              TrainingSentence(relation.id, relation.name, relation.classIdx, doc.subDocument(s.getStart, s.getEnd), pairs)
             })
 
             trainingData
@@ -113,5 +111,5 @@ object TrainingDataExtractor {
 
 }
 
-case class TrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Document, entityPair: EntityPair)
-private case class SerializedTrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Array[Byte], entityPair: EntityPair)
+case class TrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Document, entityPair: Seq[EntityPair])
+private case class SerializedTrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Array[Byte], entityPair: Seq[EntityPair])

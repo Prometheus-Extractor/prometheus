@@ -51,11 +51,13 @@ object FeatureExtractor {
     */
   def trainingData(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
-    val trainingPoints = trainingSentences.map(t => {
-      val f = featureArray(t.sentenceDoc, t.entityPair.source, t.entityPair.dest)
-      val encodedFeatures = ft.transform(f).map(_.toDouble).filter(_ >= 0)
-
-      TrainingDataPoint(t.relationName, t.relationId, t.relationClass, encodedFeatures)
+    val trainingPoints = trainingSentences.flatMap(t => {
+      val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
+      val featureArrays = featureArray(t.sentenceDoc).map(f => {
+        val relationClass = if(neds.contains(f.subj) && neds.contains(f.obj)) t.relationClass else 0
+        TrainingDataPoint(t.relationId, t.relationName, relationClass, ft.transform(f.features).map(_.toDouble).filter(_ >= 0))
+      })
+      featureArrays
     })
 
     trainingPoints
@@ -71,28 +73,15 @@ object FeatureExtractor {
   def testData(ft: FeatureTransformer, sentences: Seq[Document])(implicit sqlContext: SQLContext): Seq[TestDataPoint] = {
 
     val testPoints = sentences.flatMap(sentence => {
-
-      val neds = new mutable.HashSet() ++ sentence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq
-      val pairs = neds.subsets(2).map(_.toList)
-      val features = pairs.flatMap(p => {
-        val qid1 = p(0).getIdentifier.split(":").last
-        val qid2 = p(1).getIdentifier.split(":").last
-        val f1 = featureArray(sentence, qid1, qid2)
-        val f2 = featureArray(sentence, qid2, qid1)
-
-        Seq(
-          TestDataPoint(sentence, qid1, qid2, ft.transform(f1).map(_.toDouble).filter(_ >= 0)),
-          TestDataPoint(sentence, qid2, qid1, ft.transform(f2).map(_.toDouble).filter(_ >= 0))
-        )
+      featureArray(sentence).map(f => {
+        TestDataPoint(sentence, f.subj, f.obj, ft.transform(f.features).map(_.toDouble).filter(_ >= 0))
       })
-
-      features
     })
 
     testPoints
   }
 
-  private def featureArray(sentence: Document, sourceQID: String, destQID: String):Seq[String] = {
+  private def featureArray(sentence: Document):Seq[FeatureArray] = {
 
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
@@ -109,22 +98,42 @@ object FeatureExtractor {
       .stream()
       .collect(QueryCollectors.groupBy(sentence, NED).values(T).collector())
       .asScala
-      .filter(pg => {
-        val qid = pg.key(NED).getIdentifier.split(":").last
-        qid == sourceQID || qid == destQID
+      .toSet
+      .subsets(2)
+      .map(set => {
+        /*
+        Here we extract features for a pair of entities.
+         */
+        val grp1 :: grp2 :: _ = set.toList
+
+        /*
+        Extract words before and after entity 1
+         */
+        val start1 = grp1.value(0, T).getTag("idx"): Int
+        val end1 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
+
+        val wordsBefore1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, start1)
+        val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + NBR_WORDS_AFTER, end1 + NBR_WORDS_AFTER + 1)
+
+        /*
+        Extract words before and after entity 2
+         */
+        val start2 = grp1.value(0, T).getTag("idx"): Int
+        val end2 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
+
+        val wordsBefore2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, start2)
+        val wordsAfter2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end2 + NBR_WORDS_AFTER, end2 + NBR_WORDS_AFTER + 1)
+
+        /*
+        Create string feature vector for the pair
+         */
+        val stringFeatures = Seq(
+          wordsBefore1.map(_.text()), wordsAfter1.map(_.text()), wordsBefore2.map(_.text()), wordsAfter2.map(_.text())
+        ).flatten.filter(Filters.wordFilter)
+        FeatureArray(sentence, grp1.key(NED).getIdentifier.split(":").last, grp2.key(NED).getIdentifier.split(":").last, stringFeatures)
       })
-      .flatMap(grp => {
-        val start = grp.value(0, T).getTag("idx"): Int
-        val end = grp.value(grp.size() - 1, T).getTag("idx"): Int
 
-        // extract features
-        val wordsBefore = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start - NBR_WORDS_BEFORE, start)
-        val wordsAfter = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end + NBR_WORDS_AFTER, end + NBR_WORDS_AFTER + 1)
-        // TODO: source or dest wordsBefore
-        Seq(wordsBefore.map(_.text()), wordsAfter.map(_.text()))
-      }).flatten.filter(Filters.wordFilter)
-
-    features
+    features.toSeq
 
   }
 
@@ -146,3 +155,4 @@ object FeatureExtractor {
 
 case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, features: Seq[Double])
 case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, features: Seq[Double])
+case class FeatureArray(sentence: Document, subj: String, obj: String, features: Seq[String])

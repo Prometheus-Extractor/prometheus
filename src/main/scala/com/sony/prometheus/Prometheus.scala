@@ -70,7 +70,7 @@ object Prometheus {
 
     val path = modelTrainingTask.getData()
     log.info(s"Saved model to $path")
-
+/*
     // Test model
     val docs = CorpusReader.readCorpus(conf.corpusPath())
     val gp = docs.filter(_.uris() contains "urn:wikidata:Q53747")
@@ -81,7 +81,7 @@ object Prometheus {
     val results = predictor.extractRelations(gp)
 
     results.saveAsTextFile("hdfs:/user/ine11ega/output.txt")
-
+*/
     sc.stop()
   }
 
