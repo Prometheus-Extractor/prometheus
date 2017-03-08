@@ -1,12 +1,12 @@
 package com.sony.prometheus
 
-import org.apache.log4j.LogManager
+import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
-
 import pipeline._
+
 import scala.util.Properties.envOrNone
 
 /** Main class, sets up and runs the pipeline
@@ -43,7 +43,10 @@ object Prometheus {
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
 
-    val log = LogManager.getRootLogger
+    Logger.getLogger("org").setLevel(Level.WARN)
+    Logger.getLogger("akka").setLevel(Level.WARN)
+
+    val log = LogManager.getLogger(Prometheus.getClass)
     val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
 

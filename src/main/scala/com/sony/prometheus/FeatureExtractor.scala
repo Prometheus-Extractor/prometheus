@@ -56,8 +56,12 @@ object FeatureExtractor {
       val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
         if(f.features.length >= MIN_FEATURE_LENGTH) {
-          val relationClass = if(neds.contains(f.subj) && neds.contains(f.obj)) t.relationClass else 0
-          Seq(TrainingDataPoint(t.relationId, t.relationName, relationClass, ft.transform(f.features).map(_.toDouble).filter(_ >= 0)))
+          val feats = ft.transform(f.features).map(_.toDouble).filter(_ >= 0)
+          if(neds.contains(f.subj) && neds.contains(f.obj)) {
+            Seq(TrainingDataPoint(t.relationId, t.relationName, t.relationClass, feats))
+          }else {
+            Seq(TrainingDataPoint("neg", "neg", 0, feats))
+          }
         }else{
           Seq()
         }

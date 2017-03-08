@@ -1,8 +1,9 @@
 package com.sony.prometheus
 
+import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.linalg.{Vectors, Vector}
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
@@ -37,13 +38,23 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
  */
 object RelationModel {
 
+  def printDataInfo(data: RDD[TrainingDataPoint], vocabSize: Int, numClasses: Int): Unit = {
+    val log = LogManager.getLogger(RelationModel.getClass)
+    log.info("Training Model")
+    log.info(s"Vocab size: $vocabSize")
+    log.info(s"Number of classes: $numClasses")
+    log.info("Data distribution:")
+    data.map(t => (t.relationId, 1)).reduceByKey(_+_).map(t=> s"${t._2}\t${t._1}").collect().map(log.info)
+  }
+
   def apply(data: RDD[TrainingDataPoint], vocabSize: Int, numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
+
+    printDataInfo(data, vocabSize, numClasses)
 
     var labeledData = data.map(t => {
       LabeledPoint(t.relationClass.toDouble, oneHotEncode(t.features, vocabSize))
     })
     labeledData.cache()
-
 
     val classifier = new LogisticRegressionWithLBFGS()
     classifier.setNumClasses(numClasses)
