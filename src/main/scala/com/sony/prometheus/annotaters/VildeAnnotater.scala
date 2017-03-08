@@ -11,7 +11,7 @@ object VildeAnnotater extends Annotater {
     val vildeURL = s"http://vilde.cs.lth.se:9000/$lang/$conf/api/json"
     val response: HttpResponse[String] = Http(vildeURL)
       .postData(input)
-      .header("content-type", "application/json")
+      .header("content-type", "application/json; charset=UTF-8")
       .asString
     val docJson = response.body
     MemoryDocumentIO.getInstance().fromJson(docJson)
