@@ -50,13 +50,13 @@ object TrainingDataExtractor {
     val docsCount = docs.count()
     val relationsCount = relations.count()
     val entitiesCount = relations.map(r => (r.id -> r.entities.length)).collect().toMap
-    val dist = sentences.map(t => (t.relationId, 1)).reduceByKey(_ + _)
-      .map(t => s"${t._1}\t-> ${entitiesCount.getOrElse(t._1, 0)} entities\t-> ${t._2}").collect()
+    //val dist = sentences.map(t => (t.relationId, 1)).reduceByKey(_ + _)
+    //  .map(t => s"${t._1}\t-> ${entitiesCount.getOrElse(t._1, 0)} entities\t-> ${t._2}").collect()
 
     log.info("Extracting Training Sentences")
     log.info(s"Documents: $docsCount")
     log.info(s"Relations: $relationsCount")
-    dist.map(log.info)
+    //dist.map(log.info)
   }
 
   /**

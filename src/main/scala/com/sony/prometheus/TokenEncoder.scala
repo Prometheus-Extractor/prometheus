@@ -25,15 +25,15 @@ object TokenEncoder {
 
     val wordTokens = tokens.filter(Filters.wordFilter)
 
-    val commonTokens = wordTokens.map(token => (token, 1))
+    val normalizedTokens = wordTokens.map(normalize)
+
+    val commonTokens = normalizedTokens.map(token => (token, 1))
       .reduceByKey(_ + _)
       .sortByKey(ascending=false)
       .filter(tup => tup._2 >= TOKEN_MIN_COUNT)
       .map(_._1)
 
-    val normalizedTokens = commonTokens.map(normalize)
-
-    val zippedTokens: RDD[(String, Int)] = normalizedTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
+    val zippedTokens: RDD[(String, Int)] = commonTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
     createTokenEncoder(zippedTokens)
   }
 
