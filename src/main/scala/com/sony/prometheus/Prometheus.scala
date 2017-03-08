@@ -13,6 +13,8 @@ import scala.util.Properties.envOrNone
  */
 object Prometheus {
 
+  val DATA_PARTITIONS = 432
+
   /** Provides arugment parsing
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {

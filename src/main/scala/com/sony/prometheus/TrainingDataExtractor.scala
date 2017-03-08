@@ -44,7 +44,6 @@ object TrainingDataExtractor {
 
   val SENTENCE_MAX_LENGTH = 500
   val SENTENCE_MIN_LENGTH = 5
-  val PARTIONS = 432
 
   def printInfo(docs: RDD[Document], relations: RDD[Relation], sentences: RDD[TrainingSentence]): Unit = {
     val log = LogManager.getLogger(TrainingDataExtractor.getClass)
@@ -103,7 +102,7 @@ object TrainingDataExtractor {
 
       })
 
-    data
+    data.repartition(Prometheus.DATA_PARTITIONS)
 
   }
 

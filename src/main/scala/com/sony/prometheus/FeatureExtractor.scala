@@ -69,7 +69,7 @@ object FeatureExtractor {
       featureArrays
     })
 
-    trainingPoints
+    trainingPoints.repartition(Prometheus.DATA_PARTITIONS)
   }
 
   /** Returns an RDD of [[com.sony.prometheus.TestDataPoint]]
