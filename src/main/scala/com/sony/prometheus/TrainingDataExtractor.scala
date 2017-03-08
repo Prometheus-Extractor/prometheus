@@ -64,17 +64,16 @@ object TrainingDataExtractor {
           .filter(pg => SENTENCE_MIN_LENGTH <= pg.key(S).length() && pg.key(S).length() <= SENTENCE_MAX_LENGTH)
           .flatMap(pg => {
 
+            if (doc.id() == null) {
+              // This is a work around for a bug in Docforia.
+              doc.setId("<null_id>")
+            }
+            val neds = new mutable.HashSet() ++ pg.list(NED).asScala.map(_.getIdentifier.split(":").last)
+            lazy val sDoc = doc.subDocument(pg.key(S).getStart, pg.key(S).getEnd)
+
             val trainingData = broadcastedRelations.value.map(relation => {
-
-              val neds = new mutable.HashSet() ++ pg.list(NED).asScala.map(_.getIdentifier.split(":").last)
               val pairs = relation.entities.toStream.filter(p => neds.contains(p.source) && neds.contains(p.dest))
-
-              if (doc.id() == null) {
-                // This is a work around for a bug in Docforia.
-                doc.setId("<null_id>")
-              }
-              val s = pg.key(S)
-              TrainingSentence(relation.id, relation.name, relation.classIdx, doc.subDocument(s.getStart, s.getEnd), pairs)
+              TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, pairs)
             })
 
             trainingData
