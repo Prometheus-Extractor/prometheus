@@ -26,7 +26,7 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
 
     val data:RDD[TrainingDataPoint] = FeatureExtractor.load(featureExtractor.getData())
     val vocabSize = FeatureTransformer.load(featureTransformerStage.getData()).vocabSize()
-    val numClasses = RelationsReader.readRelations(relationsReader.getData()).count() + 1
+    val numClasses = RelationsReader.readRelations(relationsReader.getData()).count().toInt + 1
 
     val model = RelationModel(data, vocabSize, numClasses)
     model.save(path, data.sparkContext)

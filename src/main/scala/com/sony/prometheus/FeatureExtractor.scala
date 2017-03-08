@@ -41,6 +41,7 @@ class FeatureExtractorStage(
 object FeatureExtractor {
   val NBR_WORDS_BEFORE = 1
   val NBR_WORDS_AFTER = 1
+  val MIN_FEATURE_LENGTH = 2
 
   /** Returns an RDD of [[com.sony.prometheus.TrainingDataPoint]]
     *
@@ -53,9 +54,13 @@ object FeatureExtractor {
 
     val trainingPoints = trainingSentences.flatMap(t => {
       val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
-      val featureArrays = featureArray(t.sentenceDoc).map(f => {
-        val relationClass = if(neds.contains(f.subj) && neds.contains(f.obj)) t.relationClass else 0
-        TrainingDataPoint(t.relationId, t.relationName, relationClass, ft.transform(f.features).map(_.toDouble).filter(_ >= 0))
+      val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
+        if(f.features.length >= MIN_FEATURE_LENGTH) {
+          val relationClass = if(neds.contains(f.subj) && neds.contains(f.obj)) t.relationClass else 0
+          Seq(TrainingDataPoint(t.relationId, t.relationName, relationClass, ft.transform(f.features).map(_.toDouble).filter(_ >= 0)))
+        }else{
+          Seq()
+        }
       })
       featureArrays
     })
