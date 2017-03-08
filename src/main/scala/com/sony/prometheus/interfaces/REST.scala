@@ -17,9 +17,9 @@ object REST {
       val is = scalaz.stream.io.toInputStream(req.body)
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
       val doc = VildeAnnotater.annotatedDocument(input)
-      predictor.extractRelations(sc.parallelize(List(doc)))
+      val results = predictor.extractRelations(sc.parallelize(List(doc)))
       println(doc)
-      Ok(req.body).putHeaders(`Content-Type`(`text/plain`))
+      Ok(results.collect().map(e => e.toString).mkString).putHeaders(`Content-Type`(`text/plain`))
     case GET -> Root / "hello" / name =>
       Ok(s"Hello REST $name")
     case GET -> Root / "shutdown" =>
