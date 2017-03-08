@@ -11,7 +11,8 @@ import pipeline._
 
 /** Builds the RelationModel
  */
-class RelationModelStage(path: String, featureExtractor: Data, featureTransformerStage: Data)
+class RelationModelStage(path: String, featureExtractor: Data, featureTransformerStage: Data,
+                         relationsReader: Data)
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -25,8 +26,9 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
 
     val data:RDD[TrainingDataPoint] = FeatureExtractor.load(featureExtractor.getData())
     val vocabSize = FeatureTransformer.load(featureTransformerStage.getData()).vocabSize()
+    val numClasses = RelationsReader.readRelations(relationsReader.getData()).count() + 1
 
-    val model = RelationModel(data, vocabSize)
+    val model = RelationModel(data, vocabSize, numClasses)
     model.save(path, data.sparkContext)
   }
 }
@@ -35,16 +37,16 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
  */
 object RelationModel {
 
-  def apply(data: RDD[TrainingDataPoint], vocabSize: Int)(implicit sqlContext: SQLContext): RelationModel = {
+  def apply(data: RDD[TrainingDataPoint], vocabSize: Int, numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
     var labeledData = data.map(t => {
-      LabeledPoint(t.relationClass.toDouble - 1.0, oneHotEncode(t.features, vocabSize))
+      LabeledPoint(t.relationClass.toDouble, oneHotEncode(t.features, vocabSize))
     })
     labeledData.cache()
 
 
     val classifier = new LogisticRegressionWithLBFGS()
-    classifier.setNumClasses(2)
+    classifier.setNumClasses(numClasses)
     val model = classifier.run(labeledData)
 
     new RelationModel(model)

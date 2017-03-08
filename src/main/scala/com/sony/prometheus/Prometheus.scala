@@ -66,7 +66,8 @@ object Prometheus {
     val modelTrainingTask = new RelationModelStage(
       conf.tempDataPath() + "/models",
       featureExtractionTask,
-      featureTransformerTask)
+      featureTransformerTask,
+      relationsData)
 
     val path = modelTrainingTask.getData()
     log.info(s"Saved model to $path")
