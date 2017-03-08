@@ -11,7 +11,7 @@ trait Annotater {
     * @param input    the input to annotate into a Document
     * @param lang     the language - defaults to Swedish
     * @param conf     the configuration - defaults to "default"
-    * @returns        an annotated docforia Document
+    * @return        an annotated docforia Document
    */
   def annotatedDocument(input: String, lang: String = "sv", conf: String = "default"): Document
 }

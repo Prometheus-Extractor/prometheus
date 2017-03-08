@@ -55,4 +55,6 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
 
 }
 
-case class ExtractedRelation(subject: String, predictedPredicate: String, obj: String, sentence: String, source: String, probability: Double)
+case class ExtractedRelation(subject: String, predictedPredicate: String, obj: String, sentence: String, source: String, probability: Double) {
+  def toJSON(): String = s"""{"subj": "$subject", "relation": "$predictedPredicate", "object": "$obj", "sentence": "$sentence", "source": "$source", "probability": "$probability"}"""
+}

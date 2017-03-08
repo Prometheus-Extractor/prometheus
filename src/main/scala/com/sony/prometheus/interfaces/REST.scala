@@ -2,12 +2,13 @@ package com.sony.prometheus.interfaces
 
 import org.http4s._
 import org.http4s.dsl._
-import org.http4s.server.{Server}
+import org.http4s.server.Server
+
 import scalaz.concurrent.{Task => HttpTask}
-import org.http4s.headers.{`Content-Type`, `Content-Length`}
+import org.http4s.headers.{ `Content-Type`}
 import org.http4s.MediaType._
 import com.sony.prometheus.annotaters._
-import org.apache.spark.{SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import com.sony.prometheus.Predictor
 
@@ -16,12 +17,11 @@ object REST {
     case req @ POST -> Root / "extract" =>
       val is = scalaz.stream.io.toInputStream(req.body)
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
-      val doc = VildeAnnotater.annotatedDocument(input)
+      val doc = VildeAnnotater.annotatedDocument(input, conf = "herd")
       val results = predictor.extractRelations(sc.parallelize(List(doc)))
-      println(doc)
-      Ok(results.collect().map(e => e.toString).mkString).putHeaders(`Content-Type`(`text/plain`))
-    case GET -> Root / "hello" / name =>
-      Ok(s"Hello REST $name")
+      val res = "[" + results.collect().map(e => e.toJSON).mkString(",\n") + "]"
+      Ok(res).putHeaders(`Content-Type`(`text/plain`))
+
     case GET -> Root / "shutdown" =>
       // Does not work unfortunately
       HttpTask({
@@ -29,5 +29,6 @@ object REST {
         task.shutdownNow()
       }).runAsync(_)
       Ok("Goodbye, cruel world")
+
   }
 }
