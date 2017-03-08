@@ -7,7 +7,7 @@ import java.util.regex.Pattern
   */
 object Filters {
 
-  val wordPattern = Pattern.compile("\\p{L}{2,}|\\d{4}]")
+  val wordPattern = Pattern.compile(".*(\\p{L}{1,}|\\d{1,}).*")
 
   def wordFilter(s: String): Boolean = wordPattern.matcher(s).matches()
 

@@ -30,8 +30,15 @@ object TokenEncoder {
       .sortByKey(ascending=false)
       .filter(tup => tup._2 >= TOKEN_MIN_COUNT)
       .map(_._1)
-    val zippedTokens: RDD[(String, Int)] = commonTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
+
+    val normalizedTokens = commonTokens.map(normalize)
+
+    val zippedTokens: RDD[(String, Int)] = normalizedTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
     createTokenEncoder(zippedTokens)
+  }
+
+  def normalize(token: String): String = {
+    token.toLowerCase
   }
 
   def load(path: String, context: SparkContext): TokenEncoder = {
@@ -63,7 +70,8 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
     *  @return        the Int that maps to the token or -1 if not found
     */
   def index(token: String): Int = {
-    token2Id.getOrDefault(token, -1)
+    val t = TokenEncoder.normalize(token)
+    token2Id.getOrDefault(t, -1)
   }
 
   /** Gets the String mapping to index
