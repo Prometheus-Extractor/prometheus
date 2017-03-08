@@ -36,7 +36,7 @@ object CorpusReader {
     sampleSize: Double = 1.0)
     (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
 
-    val log = LogManager.getRootLogger
+    val log = LogManager.getLogger(CorpusReader.getClass)
     var df: DataFrame = sqlContext.read.parquet(file)
     df = df.where(df("type").equalTo("ARTICLE"))
 
@@ -53,7 +53,7 @@ object CorpusReader {
           List()
       }
     }
-    log.warn(s"$ioErrors IO Errors encountered")
+    log.info(s"$ioErrors IO Errors encountered")
     docs
   }
 }
