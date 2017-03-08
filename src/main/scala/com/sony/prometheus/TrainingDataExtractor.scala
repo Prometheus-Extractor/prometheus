@@ -71,9 +71,13 @@ object TrainingDataExtractor {
             val neds = new mutable.HashSet() ++ pg.list(NED).asScala.map(_.getIdentifier.split(":").last)
             lazy val sDoc = doc.subDocument(pg.key(S).getStart, pg.key(S).getEnd)
 
-            val trainingData = broadcastedRelations.value.map(relation => {
+            val trainingData = broadcastedRelations.value.flatMap(relation => {
               val pairs = relation.entities.toStream.filter(p => neds.contains(p.source) && neds.contains(p.dest))
-              TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, pairs)
+              if (pairs.length > 0) {
+                Seq(TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, pairs))
+              } else {
+                Seq()
+              }
             })
 
             trainingData
