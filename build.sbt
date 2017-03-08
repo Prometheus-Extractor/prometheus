@@ -20,6 +20,13 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
 libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "2.3.0"
 
+val http4sVersion = "0.15.6"
+libraryDependencies ++= Seq(
+  "org.http4s" %% "http4s-dsl" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-server" % http4sVersion,
+  "org.http4s" %% "http4s-blaze-client" % http4sVersion
+)
+
 lazy val spark_core_version = "1.6.0-cdh5.10.0"
 lazy val spark_sql_version = "1.6.0-cdh5.10.0"
 lazy val spark_mlib_version = "1.6.0-cdh5.10.0"

@@ -1,4 +1,4 @@
-package com.sony.prometheus.interfaces
+package com.sony.prometheus.annotaters
 
 import scalaj.http._
 import se.lth.cs.docforia.Document

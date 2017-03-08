@@ -7,6 +7,11 @@ import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
 import pipeline._
 
+import scalaz.concurrent.{Task => HttpTask}
+import pipeline._
+import interfaces._
+import org.http4s.server.{Server, ServerApp}
+import org.http4s.server.blaze._
 import scala.util.Properties.envOrNone
 
 /** Main class, sets up and runs the pipeline
@@ -43,6 +48,7 @@ object Prometheus {
   }
 
   def main(args: Array[String]): Unit = {
+
     val conf = new Conf(args)
 
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -88,8 +94,16 @@ object Prometheus {
 
     results.saveAsTextFile("hdfs:/user/ine11ega/output.txt")
 */
-    sc.stop()
-  }
 
+    val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+    var task: Server = null
+    val blaze = BlazeBuilder.bindHttp(8080, "localhost")
+    task = blaze.mountService(REST.api(task, predictor), "/api").run
+    task.awaitShutdown()
+    println("Shutting down REST API")
+
+    sc.stop()
+
+  }
 }
 

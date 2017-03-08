@@ -1,7 +1,7 @@
 import org.scalatest.{FlatSpec, Matchers}
 import se.lth.cs.docforia.memstore.MemoryDocument
 import se.lth.cs.docforia.Document
-import com.sony.prometheus.interfaces._
+import com.sony.prometheus.annotaters._
 import scala.collection.JavaConverters._
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
