@@ -2,17 +2,17 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>FeatureExtractor - com.sony.prometheus.FeatureExtractor</title>
-          <meta name="description" content="FeatureExtractor - com.sony.prometheus.FeatureExtractor" />
-          <meta name="keywords" content="FeatureExtractor com.sony.prometheus.FeatureExtractor" />
+          <title>VildeAnnotater - com.sony.prometheus.interfaces.VildeAnnotater</title>
+          <meta name="description" content="VildeAnnotater - com.sony.prometheus.interfaces.VildeAnnotater" />
+          <meta name="keywords" content="VildeAnnotater com.sony.prometheus.interfaces.VildeAnnotater" />
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
-      <link href="../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
-      <link href="../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
       <script type="text/javascript">
          if(top === self) {
-            var url = '../../../index.html';
-            var hash = 'com.sony.prometheus.FeatureExtractor$';
+            var url = '../../../../index.html';
+            var hash = 'com.sony.prometheus.interfaces.VildeAnnotater$';
             var anchor = window.location.hash;
             var anchor_opt = '';
             if (anchor.length >= 1)
@@ -24,9 +24,9 @@
         </head>
         <body class="value">
       <div id="definition">
-        <img src="../../../lib/object_big.png" />
-        <p id="owner"><a href="../../package.html" class="extype" name="com">com</a>.<a href="../package.html" class="extype" name="com.sony">sony</a>.<a href="package.html" class="extype" name="com.sony.prometheus">prometheus</a></p>
-        <h1>FeatureExtractor</h1>
+        <img src="../../../../lib/object_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.sony">sony</a>.<a href="../package.html" class="extype" name="com.sony.prometheus">prometheus</a>.<a href="package.html" class="extype" name="com.sony.prometheus.interfaces">interfaces</a></p>
+        <h1>VildeAnnotater</h1>
       </div>
 
       <h4 id="signature" class="signature">
@@ -35,14 +35,14 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">FeatureExtractor</span>
+        <span class="name">VildeAnnotater</span><span class="result"> extends <a href="Annotater.html" class="extype" name="com.sony.prometheus.interfaces.Annotater">Annotater</a></span>
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Extracts features for training/prediction
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>Provides a way to annotate strings into docforia Documents
 </p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><a href="Annotater.html" class="extype" name="com.sony.prometheus.interfaces.Annotater">Annotater</a>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -60,7 +60,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.sony.prometheus.FeatureExtractor"><span>FeatureExtractor</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.sony.prometheus.interfaces.VildeAnnotater"><span>VildeAnnotater</span></li><li class="in" name="com.sony.prometheus.interfaces.Annotater"><span>Annotater</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -151,32 +151,21 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureExtractor#NBR_WORDS_AFTER" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="NBR_WORDS_AFTER:Int"></a>
-      <a id="NBR_WORDS_AFTER:Int"></a>
+    </li><li name="com.sony.prometheus.interfaces.VildeAnnotater#annotatedDocument" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+      <a id="annotatedDocument(input:String,lang:String,conf:String):se.lth.cs.docforia.Document"></a>
+      <a id="annotatedDocument(String,String,String):Document"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">val</span>
+        <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">NBR_WORDS_AFTER</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
+        <span class="name">annotatedDocument</span><span class="params">(<span name="input">input: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="lang">lang: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;sv&quot;</span></span>, <span name="conf">conf: <span class="extype" name="scala.Predef.String">String</span> = <span class="symbol">&quot;default&quot;</span></span>)</span><span class="result">: <span class="extype" name="se.lth.cs.docforia.Document">Document</span></span>
       </span>
       </h4>
-      
-    </li><li name="com.sony.prometheus.FeatureExtractor#NBR_WORDS_BEFORE" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="NBR_WORDS_BEFORE:Int"></a>
-      <a id="NBR_WORDS_BEFORE:Int"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">val</span>
-      </span>
-      <span class="symbol">
-        <span class="name">NBR_WORDS_BEFORE</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
-      </span>
-      </h4>
-      
+      <p class="shortcomment cmt">Returns an annotated docforia Document from input String
+</p><div class="fullcomment"><div class="comment cmt"><p>Returns an annotated docforia Document from input String
+</p></div><dl class="paramcmts block"><dt class="param">input</dt><dd class="cmt"><p>the input to annotate into a Document</p></dd><dt class="param">lang</dt><dd class="cmt"><p>the language - defaults to Swedish</p></dd><dt class="param">conf</dt><dd class="cmt"><p>the configuration - defaults to &quot;default&quot;</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a href="" class="extype" name="com.sony.prometheus.interfaces.VildeAnnotater">VildeAnnotater</a> → <a href="Annotater.html" class="extype" name="com.sony.prometheus.interfaces.Annotater">Annotater</a></dd></dl></div>
     </li><li name="scala.Any#asInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="asInstanceOf[T0]:T0"></a>
       <a id="asInstanceOf[T0]:T0"></a>
@@ -202,7 +191,7 @@
         <span class="name">clone</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.AnyRef">AnyRef</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">(<span>
       
       <span class="defval" name="classOf[java.lang.CloneNotSupportedException]">...</span>
@@ -247,7 +236,7 @@
         <span class="name">finalize</span><span class="params">()</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Attributes</dt><dd>protected[<a href="../../../../java$lang.html" class="extype" name="java.lang">java.lang</a>] </dd><dt>Definition Classes</dt><dd>AnyRef</dd><dt>Annotations</dt><dd>
                 <span class="name">@throws</span><span class="args">(<span>
       
       <span class="symbol">classOf[java.lang.Throwable]</span>
@@ -293,20 +282,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureExtractor#load" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="load(path:String)(implicitsqlContext:org.apache.spark.sql.SQLContext):org.apache.spark.rdd.RDD[com.sony.prometheus.TrainingDataPoint]"></a>
-      <a id="load(String)(SQLContext):RDD[TrainingDataPoint]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">load</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">TrainingDataPoint</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Loads the data from path
-</p>
     </li><li name="scala.AnyRef#ne" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="ne(x$1:AnyRef):Boolean"></a>
       <a id="ne(AnyRef):Boolean"></a>
@@ -346,20 +321,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureExtractor#save" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="save(data:org.apache.spark.rdd.RDD[com.sony.prometheus.TrainingDataPoint],path:String)(implicitsqlContext:org.apache.spark.sql.SQLContext):Unit"></a>
-      <a id="save(RDD[TrainingDataPoint],String)(SQLContext):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">save</span><span class="params">(<span name="data">data: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">TrainingDataPoint</a>]</span>, <span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Saves the training data to the path
-</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -373,21 +334,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureExtractor#testData" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="testData(ft:com.sony.prometheus.FeatureTransformer,sentences:Seq[se.lth.cs.docforia.Document])(implicitsqlContext:org.apache.spark.sql.SQLContext):Seq[com.sony.prometheus.TestDataPoint]"></a>
-      <a id="testData(FeatureTransformer,Seq[Document])(SQLContext):Seq[TestDataPoint]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">testData</span><span class="params">(<span name="ft">ft: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>, <span name="sentences">sentences: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="se.lth.cs.docforia.Document">Document</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Seq">Seq</span>[<a href="TestDataPoint.html" class="extype" name="com.sony.prometheus.TestDataPoint">TestDataPoint</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Returns an RDD of <a href="TestDataPoint.html" class="extype" name="com.sony.prometheus.TestDataPoint">com.sony.prometheus.TestDataPoint</a></p><div class="fullcomment"><div class="comment cmt"><p>Returns an RDD of <a href="TestDataPoint.html" class="extype" name="com.sony.prometheus.TestDataPoint">com.sony.prometheus.TestDataPoint</a></p><p>  Use this to collect test data for <a href="RelationModel.html" class="extype" name="com.sony.prometheus.RelationModel">com.sony.prometheus.RelationModel</a>
-</p></div><dl class="paramcmts block"><dt class="param">ft</dt><dd class="cmt"><p>- a <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">com.sony.prometheus.FeatureTransformer</a></p></dd><dt class="param">sentences</dt><dd class="cmt"><p>- a Seq of Docforia Documents
-</p></dd></dl></div>
     </li><li name="scala.AnyRef#toString" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="toString():String"></a>
       <a id="toString():String"></a>
@@ -401,21 +347,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.FeatureExtractor#trainingData" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
-      <a id="trainingData(ft:com.sony.prometheus.FeatureTransformer,trainingSentences:org.apache.spark.rdd.RDD[com.sony.prometheus.TrainingSentence])(implicitsqlContext:org.apache.spark.sql.SQLContext):org.apache.spark.rdd.RDD[com.sony.prometheus.TrainingDataPoint]"></a>
-      <a id="trainingData(FeatureTransformer,RDD[TrainingSentence])(SQLContext):RDD[TrainingDataPoint]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">trainingData</span><span class="params">(<span name="ft">ft: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>, <span name="trainingSentences">trainingSentences: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingSentence.html" class="extype" name="com.sony.prometheus.TrainingSentence">TrainingSentence</a>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">TrainingDataPoint</a>]</span>
-      </span>
-      </h4>
-      <p class="shortcomment cmt">Returns an RDD of <a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">com.sony.prometheus.TrainingDataPoint</a></p><div class="fullcomment"><div class="comment cmt"><p>Returns an RDD of <a href="TrainingDataPoint.html" class="extype" name="com.sony.prometheus.TrainingDataPoint">com.sony.prometheus.TrainingDataPoint</a></p><p>Use this to collect training data for <a href="RelationModel.html" class="extype" name="com.sony.prometheus.RelationModel">com.sony.prometheus.RelationModel</a>
-</p></div><dl class="paramcmts block"><dt class="param">ft</dt><dd class="cmt"><p>- a <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">com.sony.prometheus.FeatureTransformer</a></p></dd><dt class="param">trainingSentences</dt><dd class="cmt"><p>- an RDD of <a href="TrainingSentence.html" class="extype" name="com.sony.prometheus.TrainingSentence">com.sony.prometheus.TrainingSentence</a>
-</p></dd></dl></div>
     </li><li name="scala.AnyRef#wait" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="wait():Unit"></a>
       <a id="wait():Unit"></a>
@@ -482,7 +413,9 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="com.sony.prometheus.interfaces.Annotater">
+              <h3>Inherited from <a href="Annotater.html" class="extype" name="com.sony.prometheus.interfaces.Annotater">Annotater</a></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
@@ -502,6 +435,6 @@
       <div id="tooltip"></div>
 
       <div id="footer">  </div>
-      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../lib/template.js"></script>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../lib/template.js"></script>
     </body>
       </html>

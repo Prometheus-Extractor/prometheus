@@ -85,6 +85,32 @@
       </span>
       </h4>
       
+    </li><li name="com.sony.prometheus.ExtractedRelation" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="ExtractedRelationextendsProductwithSerializable"></a>
+      <a id="ExtractedRelation:ExtractedRelation"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="ExtractedRelation.html"><span class="name">ExtractedRelation</span></a><span class="params">(<span name="subject">subject: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="predictedPredicate">predictedPredicate: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="obj">obj: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="sentence">sentence: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="source">source: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="probability">probability: <span class="extype" name="scala.Double">Double</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.FeatureArray" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="FeatureArrayextendsProductwithSerializable"></a>
+      <a id="FeatureArray:FeatureArray"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="FeatureArray.html"><span class="name">FeatureArray</span></a><span class="params">(<span name="sentence">sentence: <span class="extype" name="se.lth.cs.docforia.Document">Document</span></span>, <span name="subj">subj: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="obj">obj: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="features">features: <span class="extype" name="scala.Seq">Seq</span>[<span class="extype" name="scala.Predef.String">String</span>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
     </li><li name="com.sony.prometheus.FeatureExtractorStage" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="FeatureExtractorStageextendsTaskwithData"></a>
       <a id="FeatureExtractorStage:FeatureExtractorStage"></a>
@@ -128,7 +154,7 @@
       <p class="comment cmt">Stage in the pipeline for feature transformation
 </p>
     </li><li name="com.sony.prometheus.Predictor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="PredictorextendsAnyRef"></a>
+      <a id="PredictorextendsSerializable"></a>
       <a id="Predictor:Predictor"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -136,7 +162,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="Predictor.html"><span class="name">Predictor</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="Predictor.html"><span class="name">Predictor</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -154,7 +180,7 @@
       </h4>
       
     </li><li name="com.sony.prometheus.RelationModel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="RelationModelextendsAnyRef"></a>
+      <a id="RelationModelextendsSerializable"></a>
       <a id="RelationModel:RelationModel"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -162,7 +188,7 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <a href="RelationModel.html"><span class="name">RelationModel</span></a><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <a href="RelationModel.html"><span class="name">RelationModel</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -178,7 +204,8 @@
         <a href="RelationModelStage.html"><span class="name">RelationModelStage</span></a><span class="result"> extends <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a> with <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Builds the RelationModel
+</p>
     </li><li name="com.sony.prometheus.RelationsData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="RelationsDataextendsData"></a>
       <a id="RelationsData:RelationsData"></a>
@@ -191,7 +218,8 @@
         <a href="RelationsData.html"><span class="name">RelationsData</span></a><span class="result"> extends <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Represents the relations data
+</p>
     </li><li name="com.sony.prometheus.TestDataPoint" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TestDataPointextendsProductwithSerializable"></a>
       <a id="TestDataPoint:TestDataPoint"></a>
@@ -205,7 +233,7 @@
       </span>
       </h4>
       
-    </li><li name="com.sony.prometheus.TokenEncoder" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
+    </li><li name="com.sony.prometheus.TokenEncoder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TokenEncoderextendsSerializable"></a>
       <a id="TokenEncoder:TokenEncoder"></a>
       <h4 class="signature">
@@ -217,13 +245,8 @@
         <a href="TokenEncoder.html"><span class="name">TokenEncoder</span></a><span class="result"> extends <span class="extype" name="java.io.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Annotations</dt><dd>
-                <span class="name">@SerialVersionUID</span><span class="args">(<span>
-      
-      <span class="symbol">1</span>
-    </span>)</span>
-              
-        </dd></dl></div>
+      <p class="comment cmt">A String indexer that maps String:s to Int:s and back
+</p>
     </li><li name="com.sony.prometheus.TrainingDataExtractorStage" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TrainingDataExtractorStageextendsTaskwithData"></a>
       <a id="TrainingDataExtractorStage:TrainingDataExtractorStage"></a>
@@ -236,7 +259,8 @@
         <a href="TrainingDataExtractorStage.html"><span class="name">TrainingDataExtractorStage</span></a><span class="result"> extends <a href="pipeline/Task.html" class="extype" name="com.sony.prometheus.pipeline.Task">Task</a> with <a href="pipeline/Data.html" class="extype" name="com.sony.prometheus.pipeline.Data">Data</a></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Stage for training data extraction
+</p>
     </li><li name="com.sony.prometheus.TrainingDataPoint" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TrainingDataPointextendsProductwithSerializable"></a>
       <a id="TrainingDataPoint:TrainingDataPoint"></a>
@@ -259,7 +283,7 @@
         <span class="kind">case class</span>
       </span>
       <span class="symbol">
-        <a href="TrainingSentence.html"><span class="name">TrainingSentence</span></a><span class="params">(<span name="relationId">relationId: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="relationName">relationName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="relationClass">relationClass: <span class="extype" name="scala.Int">Int</span></span>, <span name="sentenceDoc">sentenceDoc: <span class="extype" name="se.lth.cs.docforia.Document">Document</span></span>, <span name="entityPair">entityPair: <a href="EntityPair.html" class="extype" name="com.sony.prometheus.EntityPair">EntityPair</a></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+        <a href="TrainingSentence.html"><span class="name">TrainingSentence</span></a><span class="params">(<span name="relationId">relationId: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="relationName">relationName: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="relationClass">relationClass: <span class="extype" name="scala.Int">Int</span></span>, <span name="sentenceDoc">sentenceDoc: <span class="extype" name="se.lth.cs.docforia.Document">Document</span></span>, <span name="entityPair">entityPair: <span class="extype" name="scala.Seq">Seq</span>[<a href="EntityPair.html" class="extype" name="com.sony.prometheus.EntityPair">EntityPair</a>]</span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
@@ -334,7 +358,7 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="Predictor$.html"><span class="name">Predictor</span></a>
+        <a href="Predictor$.html"><span class="name">Predictor</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       <p class="comment cmt">Created by erik on 2017-02-28.</p>
@@ -350,7 +374,8 @@
         <a href="Prometheus$.html"><span class="name">Prometheus</span></a>
       </span>
       </h4>
-      
+      <p class="comment cmt">Main class, sets up and runs the pipeline
+</p>
     </li><li name="com.sony.prometheus.RelationModel" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="RelationModel"></a>
       <a id="RelationModel:RelationModel"></a>
@@ -360,10 +385,11 @@
         <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <a href="RelationModel$.html"><span class="name">RelationModel</span></a>
+        <a href="RelationModel$.html"><span class="name">RelationModel</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Provides the RelationModel classifier
+</p>
     </li><li name="com.sony.prometheus.RelationsReader" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="RelationsReader"></a>
       <a id="RelationsReader:RelationsReader"></a>
@@ -376,7 +402,8 @@
         <a href="RelationsReader$.html"><span class="name">RelationsReader</span></a>
       </span>
       </h4>
-      
+      <p class="comment cmt">Reads relations data file into an RDD of <a href="Relation.html" class="extype" name="com.sony.prometheus.Relation">com.sony.prometheus.Relation</a>
+</p>
     </li><li name="com.sony.prometheus.TokenEncoder" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TokenEncoder"></a>
       <a id="TokenEncoder:TokenEncoder"></a>
@@ -389,7 +416,8 @@
         <a href="TokenEncoder$.html"><span class="name">TokenEncoder</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
-      <p class="comment cmt">Created by erik on 2017-03-01.</p>
+      <p class="comment cmt">Provides String indexer
+</p>
     </li><li name="com.sony.prometheus.TrainingDataExtractor" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="TrainingDataExtractor"></a>
       <a id="TrainingDataExtractor:TrainingDataExtractor"></a>
@@ -400,6 +428,20 @@
       </span>
       <span class="symbol">
         <a href="TrainingDataExtractor$.html"><span class="name">TrainingDataExtractor</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Provides training data extraction
+</p>
+    </li><li name="com.sony.prometheus.interfaces" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="interfaces"></a>
+      <a id="interfaces:interfaces"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <a href="interfaces/package.html"><span class="name">interfaces</span></a>
       </span>
       </h4>
       

@@ -39,7 +39,8 @@
       </span>
       </h4>
       
-          <div id="comment" class="fullcommenttop"><dl class="attributes block"> <dt>Annotations</dt><dd>
+          <div id="comment" class="fullcommenttop"><div class="comment cmt"><p>A String indexer that maps String:s to Int:s and back
+</p></div><dl class="attributes block"> <dt>Annotations</dt><dd>
                 <span class="name">@SerialVersionUID</span><span class="args">(<span>
       
       <span class="symbol">1</span>
@@ -275,7 +276,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.TokenEncoder#index" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.sony.prometheus.TokenEncoder#index" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="index(token:String):Int"></a>
       <a id="index(String):Int"></a>
       <h4 class="signature">
@@ -287,7 +288,10 @@
         <span class="name">index</span><span class="params">(<span name="token">token: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result">: <span class="extype" name="scala.Int">Int</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Gets the index of token
+</p><div class="fullcomment"><div class="comment cmt"><p>Gets the index of token
+</p></div><dl class="paramcmts block"><dt class="param">token</dt><dd class="cmt"><p>the String to map to Int</p></dd><dt>returns</dt><dd class="cmt"><p>the Int that maps to the token or -1 if not found
+</p></dd></dl></div>
     </li><li name="scala.Any#isInstanceOf" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <a id="isInstanceOf[T0]:Boolean"></a>
@@ -352,7 +356,8 @@
         <span class="name">save</span><span class="params">(<span name="path">path: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="scala.Unit">Unit</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Saves the TokenEncoder to disk
+</p>
     </li><li name="scala.AnyRef#synchronized" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="synchronized[T0](x$1:=&gt;T0):T0"></a>
       <a id="synchronized[T0](⇒T0):T0"></a>
@@ -379,7 +384,7 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
-    </li><li name="com.sony.prometheus.TokenEncoder#token" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+    </li><li name="com.sony.prometheus.TokenEncoder#token" visbl="pub" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="token(index:Int):String"></a>
       <a id="token(Int):String"></a>
       <h4 class="signature">
@@ -391,7 +396,10 @@
         <span class="name">token</span><span class="params">(<span name="index">index: <span class="extype" name="scala.Int">Int</span></span>)</span><span class="result">: <span class="extype" name="scala.Predef.String">String</span></span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Gets the String mapping to index
+</p><div class="fullcomment"><div class="comment cmt"><p>Gets the String mapping to index
+</p></div><dl class="paramcmts block"><dt class="param">index</dt><dd class="cmt"><p>the index to map to String</p></dd><dt>returns</dt><dd class="cmt"><p>the String that maps to index, or &quot;&lt;UNKNOWN_ID&gt;&quot; if not found
+</p></dd></dl></div>
     </li><li name="com.sony.prometheus.TokenEncoder#vocabSize" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
       <a id="vocabSize():Int"></a>
       <a id="vocabSize():Int"></a>

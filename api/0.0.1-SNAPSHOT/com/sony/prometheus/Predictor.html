@@ -35,13 +35,13 @@
         <span class="kind">class</span>
       </span>
       <span class="symbol">
-        <span class="name">Predictor</span><span class="result"> extends <span class="extype" name="scala.AnyRef">AnyRef</span></span>
+        <span class="name">Predictor</span><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
       </span>
       </h4>
       
           <div id="comment" class="fullcommenttop"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
+          <div class="superTypes hiddenContent"><span class="extype" name="scala.Serializable">Serializable</span>, <span class="extype" name="java.io.Serializable">Serializable</span>, <span class="extype" name="scala.AnyRef">AnyRef</span>, <span class="extype" name="scala.Any">Any</span></div>
         </div></div>
         
 
@@ -59,7 +59,7 @@
                 <span class="filtertype">Inherited<br />
                 </span>
                 <ol id="linearization">
-                  <li class="in" name="com.sony.prometheus.Predictor"><span>Predictor</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
+                  <li class="in" name="com.sony.prometheus.Predictor"><span>Predictor</span></li><li class="in" name="scala.Serializable"><span>Serializable</span></li><li class="in" name="java.io.Serializable"><span>Serializable</span></li><li class="in" name="scala.AnyRef"><span>AnyRef</span></li><li class="in" name="scala.Any"><span>Any</span></li>
                 </ol>
               </div><div id="ancestors">
             <span class="filtertype"></span>
@@ -80,7 +80,7 @@
         <div id="constructors" class="members">
               <h3>Instance Constructors</h3>
               <ol><li name="com.sony.prometheus.Predictor#&lt;init&gt;" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
-      <a id="&lt;init&gt;(model:com.sony.prometheus.RelationModel,transformer:com.sony.prometheus.FeatureTransformer):com.sony.prometheus.Predictor"></a>
+      <a id="&lt;init&gt;(model:com.sony.prometheus.RelationModel,transformer:com.sony.prometheus.FeatureTransformer,relations:org.apache.spark.rdd.RDD[com.sony.prometheus.Relation]):com.sony.prometheus.Predictor"></a>
       <a id="&lt;init&gt;:Predictor"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -88,7 +88,7 @@
         <span class="kind">new</span>
       </span>
       <span class="symbol">
-        <span class="name">Predictor</span><span class="params">(<span name="model">model: <a href="RelationModel.html" class="extype" name="com.sony.prometheus.RelationModel">RelationModel</a></span>, <span name="transformer">transformer: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>)</span>
+        <span class="name">Predictor</span><span class="params">(<span name="model">model: <a href="RelationModel.html" class="extype" name="com.sony.prometheus.RelationModel">RelationModel</a></span>, <span name="transformer">transformer: <a href="FeatureTransformer.html" class="extype" name="com.sony.prometheus.FeatureTransformer">FeatureTransformer</a></span>, <span name="relations">relations: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="Relation.html" class="extype" name="com.sony.prometheus.Relation">Relation</a>]</span>)</span>
       </span>
       </h4>
       
@@ -224,6 +224,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li name="com.sony.prometheus.Predictor#extractRelations" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="extractRelations(docs:org.apache.spark.rdd.RDD[se.lth.cs.docforia.Document])(implicitsqlContext:org.apache.spark.sql.SQLContext):org.apache.spark.rdd.RDD[com.sony.prometheus.ExtractedRelation]"></a>
+      <a id="extractRelations(RDD[Document])(SQLContext):RDD[ExtractedRelation]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">extractRelations</span><span class="params">(<span name="docs">docs: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<span class="extype" name="se.lth.cs.docforia.Document">Document</span>]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="sqlContext">sqlContext: <span class="extype" name="org.apache.spark.sql.SQLContext">SQLContext</span></span>)</span><span class="result">: <span class="extype" name="org.apache.spark.rdd.RDD">RDD</span>[<a href="ExtractedRelation.html" class="extype" name="com.sony.prometheus.ExtractedRelation">ExtractedRelation</a>]</span>
+      </span>
+      </h4>
+      
     </li><li name="scala.AnyRef#finalize" visbl="prt" data-isabs="false" fullComment="yes" group="Ungrouped">
       <a id="finalize():Unit"></a>
       <a id="finalize():Unit"></a>
@@ -413,7 +426,11 @@
         </div>
 
         <div id="inheritedMembers">
-        <div class="parent" name="scala.AnyRef">
+        <div class="parent" name="scala.Serializable">
+              <h3>Inherited from <span class="extype" name="scala.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="java.io.Serializable">
+              <h3>Inherited from <span class="extype" name="java.io.Serializable">Serializable</span></h3>
+            </div><div class="parent" name="scala.AnyRef">
               <h3>Inherited from <span class="extype" name="scala.AnyRef">AnyRef</span></h3>
             </div><div class="parent" name="scala.Any">
               <h3>Inherited from <span class="extype" name="scala.Any">Any</span></h3>
