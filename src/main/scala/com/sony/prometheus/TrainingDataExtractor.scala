@@ -1,5 +1,6 @@
 package com.sony.prometheus
 
+import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -33,6 +34,7 @@ class TrainingDataExtractorStage(
     val docs = CorpusReader.readCorpus(corpusData.getData())
     val sentences = TrainingDataExtractor.extract(docs, relations)
     TrainingDataExtractor.save(sentences, path)
+    TrainingDataExtractor.printInfo(docs, relations, sentences)
   }
 }
 
@@ -43,6 +45,20 @@ object TrainingDataExtractor {
   val SENTENCE_MAX_LENGTH = 500
   val SENTENCE_MIN_LENGTH = 5
   val PARTIONS = 432
+
+  def printInfo(docs: RDD[Document], relations: RDD[Relation], sentences: RDD[TrainingSentence]): Unit = {
+    val log = LogManager.getLogger(TrainingDataExtractor.getClass)
+    val docsCount = docs.count()
+    val relationsCount = relations.count()
+    val entitiesCount = relations.map(r => (r.id -> r.entities.length)).collect().toMap
+    val dist = sentences.map(t => (t.relationId, 1)).reduceByKey(_ + _)
+      .map(t => s"${t._1}\t-> ${entitiesCount.getOrElse(t._1, 0)} entities\t-> ${t._2}").collect()
+
+    log.info("Extracting Training Sentences")
+    log.info(s"Documents: $docsCount")
+    log.info(s"Relations: $relationsCount")
+    dist.map(log.info)
+  }
 
   /**
    * Extracts RDD of [[com.sony.prometheus.TrainingSentence]]
