@@ -27,7 +27,7 @@ object Predictor {
 
 class Predictor(model: RelationModel, transformer: FeatureTransformer, relations: RDD[Relation]) extends Serializable{
 
-  def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext) = {
+  def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext):RDD[ExtractedRelation] = {
 
     val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).collect().toList.toMap
 
