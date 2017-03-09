@@ -42,7 +42,7 @@ class TrainingDataExtractorStage(
  */
 object TrainingDataExtractor {
 
-  val SENTENCE_MAX_LENGTH = 500
+  val SENTENCE_MAX_LENGTH = 220
   val SENTENCE_MIN_LENGTH = 5
 
   def printInfo(docs: RDD[Document], relations: RDD[Relation], sentences: RDD[TrainingSentence]): Unit = {
