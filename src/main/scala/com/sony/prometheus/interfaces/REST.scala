@@ -20,7 +20,7 @@ object REST {
       val doc = VildeAnnotater.annotatedDocument(input, conf = "herd")
       val results = predictor.extractRelations(sc.parallelize(List(doc)))
       val res = "[" + results.collect().map(e => e.toJSON).mkString(",\n") + "]"
-      Ok(res).putHeaders(`Content-Type`(`text/plain`))
+      Ok(res).putHeaders(`Content-Type`(`application/json`))
 
     case GET -> Root / "shutdown" =>
       // Does not work unfortunately
