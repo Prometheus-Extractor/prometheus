@@ -1,6 +1,6 @@
 #!/bin/bash
 TERM=xterm-color
-VERSION=0.0.1-SNAPSHOT
+VERSION=0.1.0
 args=$@
 
 #Cluster credentials, normally user@host, if you have SSH aliases they can be used.
