@@ -50,7 +50,12 @@ if __name__ == '__main__':
 
     print("Converting %d items" % len(lines))
     for i in range(len(lines)):
-        item = json.loads(lines[i])
+        try:
+            item = json.loads(lines[i])
+        except Exception:
+            print('Error when reading: %s' % lines[i])
+            continue
+
         wd_item = convertItem(item, relation_id)
         if wd_item is not False:
             outfile.write(json.dumps(wd_item) + '\n')
