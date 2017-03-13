@@ -11,6 +11,7 @@ import com.sony.prometheus.annotaters._
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import com.sony.prometheus.Predictor
+import play.api.libs.json._
 
 object REST {
   def api(task: Server, predictor: Predictor)(implicit sc: SparkContext, sqlContext: SQLContext) = HttpService {
@@ -19,7 +20,7 @@ object REST {
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
       val doc = VildeAnnotater.annotatedDocument(input, conf = "herd")
       val results = predictor.extractRelations(sc.parallelize(List(doc)))
-      val res = "[" + results.collect().map(e => e.toJSON).mkString(",\n") + "]"
+      val res = Json.toJson(results.collect()).toString
       Ok(res).putHeaders(`Content-Type`(`application/json`))
 
     case GET -> Root / "shutdown" =>

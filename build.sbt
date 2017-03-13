@@ -19,6 +19,7 @@ libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
 libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "2.3.0"
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
 
 val http4sVersion = "0.15.6"
 libraryDependencies ++= Seq(

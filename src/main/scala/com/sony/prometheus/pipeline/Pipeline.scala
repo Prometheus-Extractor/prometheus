@@ -7,7 +7,7 @@ import org.apache.spark.SparkContext
  */
 trait Task {
 
-  /** Runs the task
+  /** Runs the task, saving results to disk
    */
   def run(): Unit
 }
@@ -15,7 +15,11 @@ trait Task {
 /** A task in the the pipeline that produces data, implemented by eg [[com.sony.prometheus.CorpusReader]]
  */
 trait Data {
-  /** Returns the path to the Data
+  /** Returns the path to the Data if it already exists, otherwise if the class also
+    * extends [[Task]], run() is called and the data is produced and saved to path, which
+    * is returned.
+    *
+    * @returns  - the path to the data
    */
   def getData(): String
 
