@@ -56,7 +56,7 @@ if __name__ == '__main__':
             outfile.write(json.dumps(wd_item) + '\n')
         else:
             print('Error when writing: %s' % item)
-        if i + 1 % 50 == 0:
+        if (i + 1) % 50 == 0:
             print(i + 1)
 
     outfile.close()
