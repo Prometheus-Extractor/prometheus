@@ -3,6 +3,7 @@ package com.sony.prometheus
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.SparkContext
+import org.apache.spark.mllib.linalg.{SparseVector, Vector, Vectors}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
@@ -56,11 +57,12 @@ object FeatureExtractor {
       val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
         if(f.wordFeatures.length >= MIN_FEATURE_LENGTH) {
-          val feats = ft.transform(f.wordFeatures).map(_.toDouble).filter(_ >= 0)
+          val wordFeats = ft.transformWords(f.wordFeatures).map(_.toDouble).filter(_ >= 0)
+          val posFeats = ft.transformPos(f.posFeatures).map(_.toDouble)
           if(neds.contains(f.subj) && neds.contains(f.obj)) {
-            Seq(TrainingDataPoint(t.relationId, t.relationName, t.relationClass, feats))
+            Seq(TrainingDataPoint(t.relationId, t.relationName, t.relationClass, wordFeats, posFeats))
           }else {
-            Seq(TrainingDataPoint("neg", "neg", 0, feats))
+            Seq(TrainingDataPoint("neg", "neg", 0, wordFeats, posFeats))
           }
         }else{
           Seq()
@@ -83,7 +85,9 @@ object FeatureExtractor {
 
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
-        TestDataPoint(sentence, f.subj, f.obj, ft.transform(f.wordFeatures).map(_.toDouble).filter(_ >= 0))
+        TestDataPoint(sentence, f.subj, f.obj,
+          ft.transformWords(f.wordFeatures).map(_.toDouble).filter(_ >= 0),
+          ft.transformPos(f.posFeatures).map(_.toDouble))
       })
     })
 
@@ -192,6 +196,22 @@ object FeatureExtractor {
 
 }
 
-case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, features: Seq[Double])
-case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, features: Seq[Double])
+abstract class DataPoint(wordFeature: Seq[Double], posFeature: Seq[Double]) {
+
+  /** Creates a unified vector with [one-hot bag of words, one-hot pos1, one-hot pos2> ...]
+   */
+  def toFeatureVector(featureTransformer: FeatureTransformer):Vector = {
+    val vocabSize = featureTransformer.wordEncoder.vocabSize() + posFeature.length * featureTransformer.posEncoder.vocabSize()
+    val indexes: Seq[Double] = wordFeature ++ posFeature.zipWithIndex.map(p => wordFeature.length + p._2 * posFeature.length + p._1)
+    oneHotEncode(indexes, vocabSize)
+  }
+
+  def oneHotEncode(features: Seq[Double], vocabSize: Int): Vector = {
+    val f = features.distinct.map(idx => (idx.toInt, 1.0))
+    Vectors.sparse(vocabSize, f)
+  }
+
+}
+case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, wordFeatures: Seq[Double], posFeatures: Seq[Double]) extends DataPoint(wordFeatures, posFeatures)
+case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[Double], posFeatures: Seq[Double]) extends DataPoint(wordFeatures, posFeatures)
 case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String], posFeatures: Seq[String])

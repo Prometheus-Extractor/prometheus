@@ -17,7 +17,7 @@ object TokenEncoder {
 
   val TOKEN_MIN_COUNT = 3
 
-  def apply(docs: RDD[Document]): TokenEncoder = {
+  def createWordEncoder(docs: RDD[Document]): TokenEncoder = {
 
     val tokens = docs.flatMap(doc => {
       doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
@@ -35,6 +35,16 @@ object TokenEncoder {
 
     val zippedTokens: RDD[(String, Int)] = commonTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
     createTokenEncoder(zippedTokens)
+  }
+
+  def createPosEncoder(docs: RDD[Document]): TokenEncoder = {
+
+    val pos = docs.flatMap(doc => {
+      doc.nodes(classOf[Token]).asScala.toSeq.map(_.getPartOfSpeech)
+    }).distinct.zipWithIndex.map(p => (p._1, p._2.toInt))
+
+    createTokenEncoder(pos)
+
   }
 
   def normalize(token: String): String = {

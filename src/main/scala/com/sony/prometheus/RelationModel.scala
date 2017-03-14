@@ -26,10 +26,10 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
   override def run(): Unit = {
 
     val data:RDD[TrainingDataPoint] = FeatureExtractor.load(featureExtractor.getData())
-    val vocabSize = FeatureTransformer.load(featureTransformerStage.getData()).vocabSize()
+    val featureTransformer = FeatureTransformer.load(featureTransformerStage.getData())
     val numClasses = RelationsReader.readRelations(relationsReader.getData()).count().toInt + 1
 
-    val model = RelationModel(data, vocabSize, numClasses)
+    val model = RelationModel(data, featureTransformer, numClasses)
     model.save(path, data.sparkContext)
   }
 }
@@ -47,12 +47,10 @@ object RelationModel {
     data.map(t => (t.relationId, 1)).reduceByKey(_+_).map(t=> s"${t._2}\t${t._1}").collect().map(log.info)
   }
 
-  def apply(data: RDD[TrainingDataPoint], vocabSize: Int, numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
-
-    printDataInfo(data, vocabSize, numClasses)
+  def apply(data: RDD[TrainingDataPoint], featureTransformer: FeatureTransformer, numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
     var labeledData = data.map(t => {
-      LabeledPoint(t.relationClass.toDouble, oneHotEncode(t.features, vocabSize))
+      LabeledPoint(t.relationClass.toDouble, t.toFeatureVector(featureTransformer))
     })
     labeledData.cache()
 
@@ -65,11 +63,6 @@ object RelationModel {
 
   def load(path: String, context: SparkContext): RelationModel = {
     new RelationModel(LogisticRegressionModel.load(context, path))
-  }
-
-  def oneHotEncode(features: Seq[Double], vocabSize: Int): Vector = {
-    val f = features.distinct.map(idx => (idx.toInt, 1.0))
-    Vectors.sparse(vocabSize, f)
   }
 
 }

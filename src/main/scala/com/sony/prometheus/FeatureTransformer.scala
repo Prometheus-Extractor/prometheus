@@ -36,40 +36,45 @@ object FeatureTransformer {
 
   def apply(docs: RDD[Document])(implicit sqlContext: SQLContext): FeatureTransformer = {
 
-    val tokenEncoder = TokenEncoder(docs)
-    new FeatureTransformer(tokenEncoder)
+    val tokenEncoder = TokenEncoder.createWordEncoder(docs)
+    val posEncoder = TokenEncoder.createPosEncoder(docs)
+    new FeatureTransformer(tokenEncoder, posEncoder)
 
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): FeatureTransformer = {
-    val encoder = TokenEncoder.load(path + "/encoder", sqlContext.sparkContext)
-    new FeatureTransformer(encoder)
+    val wordEncoder = TokenEncoder.load(path + "/word_encoder", sqlContext.sparkContext)
+    val posEncoder = TokenEncoder.load(path + "/pos_encoder", sqlContext.sparkContext)
+    new FeatureTransformer(wordEncoder, posEncoder)
   }
 
 }
 
 /** Transforms tokens with a [[com.sony.prometheus.TokenEncoder]]
  */
-class FeatureTransformer(encoder: TokenEncoder) extends Serializable {
-
-  /** Returns vocabulary size
-   */
-  def vocabSize(): Int = {
-    encoder.vocabSize()
-  }
+class FeatureTransformer(val wordEncoder: TokenEncoder, val posEncoder: TokenEncoder) extends Serializable {
 
   /** Returns a transformed Seq of tokens as a Seq of Ints with [[com.sony.prometheus.TokenEncoder]]
     * @param tokens - the Seq of Strings to transform
    */
-  def transform(tokens: Seq[String]): Seq[Int] = {
-    tokens.map(encoder.index)
+  def transformWords(tokens: Seq[String]): Seq[Int] = {
+    tokens.map(wordEncoder.index)
+  }
+
+  def transformPos(pos: Seq[String]): Seq[Int] = {
+    pos.map(posEncoder.index)
+  }
+
+  def combinedFeatureSize(): Int = {
+    wordEncoder.vocabSize + posEncoder.vocabSize
   }
 
   /** Saves the feature mapping to the path specified by path
    * @param path - the path to save to
    */
   def save(path: String, sqlContext: SQLContext): Unit = {
-    encoder.save(path + "/encoder", sqlContext)
+    wordEncoder.save(path + "/word_encoder", sqlContext)
+    posEncoder.save(path + "/pos_encoder", sqlContext)
   }
 
 }
