@@ -41,7 +41,7 @@ class TokenEncoderSpec extends FlatSpec with BeforeAndAfter with Matchers {
   }
 
   "A TokenEncoder" should "uniquely encode strings" in new TestDocument {
-    val te = TokenEncoder(docs)
+    val te = TokenEncoder.createWordEncoder(docs)
     val nbrUniqWords = words.filter(Filters.wordFilter).toSet.size
     te.vocabSize() should equal (nbrUniqWords)
     val indices = words.filter(Filters.wordFilter).map(te.index)
