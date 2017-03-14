@@ -45,7 +45,7 @@ object EvaluationDataReader {
   }
 
   def getAnnotatedDocs(path: String)(implicit sqlContext: SQLContext): RDD[Document] = {
-    load(path).flatMap(p =>{
+    load(path).flatMap(p => {
       p.evidences.map(_.snippet).map(s => {
         VildeAnnotater.annotatedDocument(s, conf = "herd")
       })

@@ -32,12 +32,15 @@ object Evaluator {
 
   def evaluate(predictions: RDD[ExtractedRelation], trueRelations: RDD[EvaluationDataPoint])
     (implicit sc: SparkContext): RDD[EvaluationResult] = {
+      // TOOD: sidestep PredictorStage because it is a head ache
     // TODO: compute recall, precision, F1 etc between predictions and trueRelations
     // probably expand this to more granular statistics for each data point
-    predictions.map(p => {
-
-    })
+    val truePositives = predictions.zip(trueRelations).filter{ case (p, t) => {
+      p.subject == t.sub && p.predictedPredicate == t.pred
+    }}.count()
+    println(s"True Positives: $truePositives")
     val evaluation: EvaluationResult = (1,1,1)
+    println(s"EvaluationResult: $evaluation")
     sc.parallelize(Seq(evaluation))
   }
 
