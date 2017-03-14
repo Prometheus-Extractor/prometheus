@@ -55,8 +55,8 @@ object FeatureExtractor {
     val trainingPoints = trainingSentences.flatMap(t => {
       val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
-        if(f.features.length >= MIN_FEATURE_LENGTH) {
-          val feats = ft.transform(f.features).map(_.toDouble).filter(_ >= 0)
+        if(f.wordFeatures.length >= MIN_FEATURE_LENGTH) {
+          val feats = ft.transform(f.wordFeatures).map(_.toDouble).filter(_ >= 0)
           if(neds.contains(f.subj) && neds.contains(f.obj)) {
             Seq(TrainingDataPoint(t.relationId, t.relationName, t.relationClass, feats))
           }else {
@@ -83,7 +83,7 @@ object FeatureExtractor {
 
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
-        TestDataPoint(sentence, f.subj, f.obj, ft.transform(f.features).map(_.toDouble).filter(_ >= 0))
+        TestDataPoint(sentence, f.subj, f.obj, ft.transform(f.wordFeatures).map(_.toDouble).filter(_ >= 0))
       })
     })
 
@@ -111,39 +111,48 @@ object FeatureExtractor {
       .subsets(2)
       .map(set => {
         /*
-        Here we extract features for a pair of entities.
+        Find the positions of the entities
          */
         val grp1 :: grp2 :: _ = set.toList
-
-        /*
-        Extract words before and after entity 1
-         */
         val start1 = grp1.value(0, T).getTag("idx"): Int
         val end1 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
-
-        val wordsBefore1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, start1)
-        val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + NBR_WORDS_AFTER, end1 + NBR_WORDS_AFTER + 1)
-
-        /*
-        Extract words before and after entity 2
-         */
         val start2 = grp1.value(0, T).getTag("idx"): Int
         val end2 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
 
-        val wordsBefore2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, start2)
-        val wordsAfter2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end2 + NBR_WORDS_AFTER, end2 + NBR_WORDS_AFTER + 1)
+        val words = wordFeatures(sentence, start1, end1, start2, end2)
 
-        /*
-        Create string feature vector for the pair
-         */
-        val stringFeatures = Seq(
-          wordsBefore1.map(_.text()), wordsAfter1.map(_.text()), wordsBefore2.map(_.text()), wordsAfter2.map(_.text())
-        ).flatten.filter(Filters.wordFilter)
-        FeatureArray(sentence, grp1.key(NED).getIdentifier.split(":").last, grp2.key(NED).getIdentifier.split(":").last, stringFeatures)
+        FeatureArray(sentence,
+                     grp1.key(NED).getIdentifier.split(":").last,
+                     grp2.key(NED).getIdentifier.split(":").last,
+                     words)
       })
 
     features.toSeq
 
+  }
+
+  /** Extracts a all words features as a list of strings
+    */
+  private def wordFeatures(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int) = {
+    /*
+      Extract words before and after entity 1
+     */
+    val wordsBefore1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, start1)
+    val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + NBR_WORDS_AFTER, end1 + NBR_WORDS_AFTER + 1)
+
+    /*
+      Extract words before and after entity 2
+     */
+    val wordsBefore2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, start2)
+    val wordsAfter2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end2 + NBR_WORDS_AFTER, end2 + NBR_WORDS_AFTER + 1)
+
+    /*
+      Create string feature vector for the pair
+     */
+    val features = Seq(
+      wordsBefore1.map(_.text()), wordsAfter1.map(_.text()), wordsBefore2.map(_.text()), wordsAfter2.map(_.text())
+    ).flatten.filter(Filters.wordFilter)
+    features
   }
 
   /** Saves the training data to the path
@@ -164,4 +173,4 @@ object FeatureExtractor {
 
 case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, features: Seq[Double])
 case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, features: Seq[Double])
-case class FeatureArray(sentence: Document, subj: String, obj: String, features: Seq[String])
+case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String])
