@@ -39,6 +39,9 @@ object Prometheus {
       descr = "use this sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
       default = Option(1.0))
+    val demoServer = opt[Boolean](
+      descr = "start an HTTP server to receive text to extract relations from")
+    val evaluationFile = opt[String](descr = "path to file to evaluate")
 
     verify()
 
@@ -50,8 +53,8 @@ object Prometheus {
       case ex => super.onError(ex)
     }
   }
-
   def main(args: Array[String]): Unit = {
+
 
     val conf = new Conf(args)
 
@@ -88,30 +91,33 @@ object Prometheus {
     log.info(s"Saved model to $path")
 
     // Evaluate
-    // TODO: use scalop arg
-    val evaluationData = new EvaluationData("./evaluationdata.txt")
-    val docs = EvaluationDataReader.getAnnotatedDocs(evaluationData.getData())
-    val predictorTask = new PredictorStage(
-      conf.tempDataPath() + "/predictions",
-      modelTrainingTask,
-      featureTransformerTask,
-      relationsData,
-      docs)
-    val evaluationTask = new EvaluatorStage(
-      conf.tempDataPath() + "/evaluation", // TODO: timestamp
-      predictorTask,
-      evaluationData)
+    conf.evaluationFile.toOption.foreach(evalFile => {
+      val evaluationData = new EvaluationData(evalFile)
+      val docs = EvaluationDataReader.getAnnotatedDocs(evaluationData.getData())
+      val predictorTask = new PredictorStage(
+        conf.tempDataPath() + "/predictions",
+        modelTrainingTask,
+        featureTransformerTask,
+        relationsData,
+        docs)
+      val evaluationTask = new EvaluatorStage(
+        conf.tempDataPath() + "/evaluation", // TODO: timestamp
+        predictorTask,
+        evaluationData)
 
-    val evaluationPath = evaluationTask.getData()
-    log.info(s"Saved evaluation to $path")
+      val evaluationPath = evaluationTask.getData()
+      log.info(s"Saved evaluation to $path")
+    })
 
-    // Server HTTP API
-    val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
-    var task: Server = null
-    val blaze = BlazeBuilder.bindHttp(8080, "localhost")
-    task = blaze.mountService(REST.api(task, predictor), "/api").run
-    task.awaitShutdown()
-    println("Shutting down REST API")
+    // Serve HTTP API
+    if (conf.demoServer()) {
+      val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+      var task: Server = null
+      val blaze = BlazeBuilder.bindHttp(8080, "localhost")
+      task = blaze.mountService(REST.api(task, predictor), "/api").run
+      task.awaitShutdown()
+      println("Shutting down REST API")
+    }
 
     sc.stop()
 
