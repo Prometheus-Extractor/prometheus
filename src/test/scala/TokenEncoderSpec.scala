@@ -8,19 +8,9 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.{Level, Logger}
 import com.sony.prometheus.TokenEncoder
 import com.sony.prometheus.Filters
+import com.holdenkarau.spark.testing.SharedSparkContext
 
-class TokenEncoderSpec extends FlatSpec with BeforeAndAfter with Matchers {
-
-  Logger.getLogger("org").setLevel(Level.WARN)
-  Logger.getLogger("akka").setLevel(Level.WARN)
-
-  val conf = new SparkConf().setAppName("TEST")
-  conf.setMaster("local[*]")
-  val sc = new SparkContext(conf)
-
-  after {
-    sc.stop()
-  }
+class TokenEncoderSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext {
 
   trait TestDocument {
     val stringDoc = """

@@ -14,6 +14,10 @@ import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze._
 import scala.util.Properties.envOrNone
 
+import scala.io.Source
+import annotaters.VildeAnnotater
+import evaluation._
+
 /** Main class, sets up and runs the pipeline
  */
 object Prometheus {
@@ -83,6 +87,25 @@ object Prometheus {
     val path = modelTrainingTask.getData()
     log.info(s"Saved model to $path")
 
+    // Evaluate
+    // TODO: use scalop arg
+    val evaluationData = new EvaluationData("./evaluationdata.txt")
+    val docs = EvaluationDataReader.getAnnotatedDocs(evaluationData.getData())
+    val predictorTask = new PredictorStage(
+      conf.tempDataPath() + "/predictions",
+      modelTrainingTask,
+      featureTransformerTask,
+      relationsData,
+      docs)
+    val evaluationTask = new EvaluatorStage(
+      conf.tempDataPath() + "/evaluation", // TODO: timestamp
+      predictorTask,
+      evaluationData)
+
+    val evaluationPath = evaluationTask.getData()
+    log.info(s"Saved evaluation to $path")
+
+    // Server HTTP API
     val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
     var task: Server = null
     val blaze = BlazeBuilder.bindHttp(8080, "localhost")

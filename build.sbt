@@ -16,7 +16,8 @@ resolvers += "JBoss" at "https://repository.jboss.org/"
 
 libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.8.6"
 libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.6"
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
+libraryDependencies += "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.6.0" % Test
 libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
 libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "2.3.0"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
@@ -63,4 +64,4 @@ preprocessVars in Preprocess := Map("VERSION" -> version.value)
 
 // enjoy ScalaTest's built-in event buffering algorithm
 logBuffered in Test := false
-
+parallelExecution in Test := false

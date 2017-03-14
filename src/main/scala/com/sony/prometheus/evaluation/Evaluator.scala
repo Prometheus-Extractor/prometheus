@@ -32,7 +32,7 @@ object Evaluator {
 
   def evaluate(predictions: RDD[ExtractedRelation], trueRelations: RDD[EvaluationDataPoint])
     (implicit sc: SparkContext): RDD[EvaluationResult] = {
-    // compute recall, precision, F1 etc between predictions and trueRelations
+    // TODO: compute recall, precision, F1 etc between predictions and trueRelations
     // probably expand this to more granular statistics for each data point
     predictions.map(p => {
 
