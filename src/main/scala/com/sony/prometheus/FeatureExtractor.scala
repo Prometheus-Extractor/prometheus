@@ -120,11 +120,13 @@ object FeatureExtractor {
         val end2 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
 
         val words = wordFeatures(sentence, start1, end1, start2, end2)
+        val pos = posFeatures(sentence, start1, end1, start2, end2)
 
         FeatureArray(sentence,
                      grp1.key(NED).getIdentifier.split(":").last,
                      grp2.key(NED).getIdentifier.split(":").last,
-                     words)
+                     words,
+                     pos)
       })
 
     features.toSeq
@@ -133,7 +135,7 @@ object FeatureExtractor {
 
   /** Extracts a all words features as a list of strings
     */
-  private def wordFeatures(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int) = {
+  private def wordFeatures(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int): Seq[String] = {
     /*
       Extract words before and after entity 1
      */
@@ -155,6 +157,25 @@ object FeatureExtractor {
     features
   }
 
+  private def posFeatures(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int): Seq[String] = {
+    /*
+      POS around entity 1 including for entity 1
+     */
+    val pos1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, end1 + NBR_WORDS_AFTER + 1)
+    /*
+      POS around entity 2 including for entity 2
+     */
+    val pos2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, end2 + NBR_WORDS_AFTER + 1)
+
+    /*
+      Create string feature vector for the pair
+     */
+    val features = Seq(
+      pos1.map(_.getPartOfSpeech), pos2.map(_.getPartOfSpeech)
+    ).flatten
+    features
+  }
+
   /** Saves the training data to the path
    */
   def save(data: RDD[TrainingDataPoint], path: String)(implicit sqlContext: SQLContext): Unit = {
@@ -173,4 +194,4 @@ object FeatureExtractor {
 
 case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, features: Seq[Double])
 case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, features: Seq[Double])
-case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String])
+case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String], posFeatures: Seq[String])
