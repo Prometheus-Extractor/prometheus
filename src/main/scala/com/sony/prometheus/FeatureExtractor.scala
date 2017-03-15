@@ -40,8 +40,8 @@ class FeatureExtractorStage(
 /** Extracts features for training/prediction
  */
 object FeatureExtractor {
-  val NBR_WORDS_BEFORE = 1
-  val NBR_WORDS_AFTER = 1
+  val NBR_WORDS_BEFORE = 3
+  val NBR_WORDS_AFTER = 3
   val MIN_FEATURE_LENGTH = 2
 
   /** Returns an RDD of [[com.sony.prometheus.TrainingDataPoint]]
@@ -204,20 +204,5 @@ object FeatureExtractor {
 
 
 case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, wordFeatures: Seq[Double], posFeatures: Seq[Double])
-case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[Double], posFeatures: Seq[Double]) {
-
-  /** Creates a unified vector with [one-hot bag of words, one-hot pos1, one-hot pos2> ...]
-    */
-  def toFeatureVector(featureTransformer: FeatureTransformer): Vector = {
-    val vocabSize = featureTransformer.wordEncoder.vocabSize() + posFeatures.length * featureTransformer.posEncoder.vocabSize()
-    val indexes: Seq[Double] = wordFeatures ++ posFeatures.zipWithIndex.map(p => wordFeatures.length + p._2 * posFeatures.length + p._1)
-    oneHotEncode(indexes, vocabSize)
-  }
-
-  def oneHotEncode(features: Seq[Double], vocabSize: Int): Vector = {
-    val f = features.distinct.map(idx => (idx.toInt, 1.0))
-    Vectors.sparse(vocabSize, f)
-  }
-
-}
+case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[Double], posFeatures: Seq[Double])
 case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String], posFeatures: Seq[String])
