@@ -19,7 +19,7 @@ object REST {
       val is = scalaz.stream.io.toInputStream(req.body)
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
       val doc = VildeAnnotater.annotate(input, conf = "herd")
-      val results = predictor.extractRelations(sc.parallelize(List(doc)))
+      val results = predictor.extractRelations(sc.parallelize(List(doc))).filter(_.predictedPredicate != "<unknown_class: 0.0>")
       val res = Json.toJson(results.collect()).toString
       Ok(res).putHeaders(`Content-Type`(`application/json`))
 
