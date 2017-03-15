@@ -48,6 +48,7 @@ if (sys.props.getOrElse("mode", default = "local") == "cluster") {
   libraryDependencies ++= sparks
 }
 
+test in assembly := {}
 
 // ScalaDoc site generation
 enablePlugins(SiteScaladocPlugin)
