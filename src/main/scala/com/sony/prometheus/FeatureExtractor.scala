@@ -120,8 +120,8 @@ object FeatureExtractor {
         val grp1 :: grp2 :: _ = set.toList
         val start1 = grp1.value(0, T).getTag("idx"): Int
         val end1 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
-        val start2 = grp1.value(0, T).getTag("idx"): Int
-        val end2 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
+        val start2 = grp2.value(0, T).getTag("idx"): Int
+        val end2 = grp2.value(grp2.size() - 1, T).getTag("idx"): Int
 
         val words = wordFeatures(sentence, start1, end1, start2, end2)
         val pos = posFeatures(sentence, start1, end1, start2, end2)
@@ -131,9 +131,9 @@ object FeatureExtractor {
                      grp2.key(NED).getIdentifier.split(":").last,
                      words,
                      pos)
-      })
+      }).toSeq
 
-    features.toSeq
+    features
 
   }
 
@@ -165,17 +165,23 @@ object FeatureExtractor {
     /*
       POS around entity 1 including for entity 1
      */
-    val pos1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, end1 + NBR_WORDS_AFTER + 1)
+    val wordsBefore1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, start1)
+    val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + NBR_WORDS_AFTER, end1 + NBR_WORDS_AFTER + 1)
+
     /*
-      POS around entity 2 including for entity 2
+      Extract words before and after entity 2
      */
-    val pos2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, end2 + NBR_WORDS_AFTER + 1)
+    val wordsBefore2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, start2)
+    val wordsAfter2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end2 + NBR_WORDS_AFTER, end2 + NBR_WORDS_AFTER + 1)
 
     /*
       Create string feature vector for the pair
      */
     val features = Seq(
-      pos1.map(_.getPartOfSpeech), pos2.map(_.getPartOfSpeech)
+      Seq.fill(NBR_WORDS_BEFORE - wordsBefore1.length)("<empty>") ++ wordsBefore1.map(_.getPartOfSpeech),
+      wordsAfter1.map(_.getPartOfSpeech) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter1.length)("<empty>"),
+      Seq.fill(NBR_WORDS_BEFORE - wordsBefore2.length)("<empty>") ++ wordsBefore2.map(_.getPartOfSpeech),
+      wordsAfter2.map(_.getPartOfSpeech) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter2.length)("<empty>")
     ).flatten
     features
   }
@@ -196,13 +202,15 @@ object FeatureExtractor {
 
 }
 
-abstract class DataPoint(wordFeature: Seq[Double], posFeature: Seq[Double]) {
+
+case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, wordFeatures: Seq[Double], posFeatures: Seq[Double])
+case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[Double], posFeatures: Seq[Double]) {
 
   /** Creates a unified vector with [one-hot bag of words, one-hot pos1, one-hot pos2> ...]
-   */
-  def toFeatureVector(featureTransformer: FeatureTransformer):Vector = {
-    val vocabSize = featureTransformer.wordEncoder.vocabSize() + posFeature.length * featureTransformer.posEncoder.vocabSize()
-    val indexes: Seq[Double] = wordFeature ++ posFeature.zipWithIndex.map(p => wordFeature.length + p._2 * posFeature.length + p._1)
+    */
+  def toFeatureVector(featureTransformer: FeatureTransformer): Vector = {
+    val vocabSize = featureTransformer.wordEncoder.vocabSize() + posFeatures.length * featureTransformer.posEncoder.vocabSize()
+    val indexes: Seq[Double] = wordFeatures ++ posFeatures.zipWithIndex.map(p => wordFeatures.length + p._2 * posFeatures.length + p._1)
     oneHotEncode(indexes, vocabSize)
   }
 
@@ -212,6 +220,4 @@ abstract class DataPoint(wordFeature: Seq[Double], posFeature: Seq[Double]) {
   }
 
 }
-case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, wordFeatures: Seq[Double], posFeatures: Seq[Double]) extends DataPoint(wordFeatures, posFeatures)
-case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[Double], posFeatures: Seq[Double]) extends DataPoint(wordFeatures, posFeatures)
 case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String], posFeatures: Seq[String])

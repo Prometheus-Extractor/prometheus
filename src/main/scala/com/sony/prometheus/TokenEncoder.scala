@@ -33,7 +33,7 @@ object TokenEncoder {
       .filter(tup => tup._2 >= TOKEN_MIN_COUNT)
       .map(_._1)
 
-    val zippedTokens: RDD[(String, Int)] = commonTokens.zipWithIndex().map(t=> (t._1, t._2.toInt))
+    val zippedTokens: RDD[(String, Int)] = commonTokens.zipWithIndex().map(t=> (t._1, t._2.toInt + 1))
     createTokenEncoder(zippedTokens)
   }
 
@@ -41,7 +41,7 @@ object TokenEncoder {
 
     val pos = docs.flatMap(doc => {
       doc.nodes(classOf[Token]).asScala.toSeq.map(_.getPartOfSpeech)
-    }).distinct.zipWithIndex.map(p => (p._1, p._2.toInt))
+    }).distinct.zipWithIndex.map(p => (p._1, p._2.toInt + 1))
 
     createTokenEncoder(pos)
 
@@ -70,6 +70,7 @@ object TokenEncoder {
 }
 
 /** A String indexer that maps String:s to Int:s and back
+  * Index 0 is always "unknown token"
  */
 @SerialVersionUID(1)
 class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2ObjectOpenHashMap[String]) extends java.io.Serializable{
@@ -81,7 +82,7 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
     */
   def index(token: String): Int = {
     val t = TokenEncoder.normalize(token)
-    token2Id.getOrDefault(t, -1)
+    token2Id.getOrDefault(t, 0)
   }
 
   /** Gets the String mapping to index

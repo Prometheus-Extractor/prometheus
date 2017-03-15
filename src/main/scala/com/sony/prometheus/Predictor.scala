@@ -75,7 +75,7 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
         doc.subDocument(s.getStart, s.getEnd)})
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(transformer, sentences)
-      val classes = points.map(p => p.toFeatureVector(transformer)).map(model.predict)
+      val classes = points.map(p => transformer.toFeatureVector(p.wordFeatures, p.posFeatures)).map(model.predict)
 
       classes.zip(points).map{
         case (result: Double, point: TestDataPoint) =>

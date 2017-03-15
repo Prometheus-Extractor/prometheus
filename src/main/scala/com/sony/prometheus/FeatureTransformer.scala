@@ -1,6 +1,7 @@
 package com.sony.prometheus
 import org.apache.spark.SparkContext
 import org.apache.spark.ml.feature.{StringIndexer, StringIndexerModel}
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import se.lth.cs.docforia.Document
@@ -48,6 +49,14 @@ object FeatureTransformer {
     new FeatureTransformer(wordEncoder, posEncoder)
   }
 
+  /**
+    * Performs one-hot encoding from of sequences of doubles that represent indexes in a sparse vector.
+    */
+  def oneHotEncode(features: Seq[Double], vocabSize: Int): Vector = {
+    val f = features.distinct.map(idx => (idx.toInt, 1.0))
+    Vectors.sparse(vocabSize, f)
+  }
+
 }
 
 /** Transforms tokens with a [[com.sony.prometheus.TokenEncoder]]
@@ -75,6 +84,14 @@ class FeatureTransformer(val wordEncoder: TokenEncoder, val posEncoder: TokenEnc
   def save(path: String, sqlContext: SQLContext): Unit = {
     wordEncoder.save(path + "/word_encoder", sqlContext)
     posEncoder.save(path + "/pos_encoder", sqlContext)
+  }
+
+  /** Creates a unified vector with [one-hot bag of words, one-hot pos1, one-hot pos2> ...]
+    */
+  def toFeatureVector(wordFeatures: Seq[Double], posFeatures: Seq[Double]): Vector = {
+    val vocabSize = wordEncoder.vocabSize() + posFeatures.length * posEncoder.vocabSize()
+    val indexes: Seq[Double] = wordFeatures ++ posFeatures.zipWithIndex.map(p => wordFeatures.length + p._2 * posFeatures.length + p._1)
+    FeatureTransformer.oneHotEncode(indexes, vocabSize)
   }
 
 }
