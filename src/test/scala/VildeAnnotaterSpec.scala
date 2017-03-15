@@ -11,7 +11,7 @@ class VildeAnnotaterSpec extends FlatSpec with Matchers {
 
   "The VildAnnotater" should "produce a herd-annoted docforia Document" in {
     val str = "Barack Obama gifte sig med Michelle Obama."
-    val doc = VildeAnnotater.annotatedDocument(str, conf = "herd")
+    val doc = VildeAnnotater.annotate(str, conf = "herd")
 
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()

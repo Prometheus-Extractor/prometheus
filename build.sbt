@@ -19,7 +19,8 @@ libraryDependencies += "com.fasterxml.jackson.module" %% "jackson-module-scala" 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % Test
 libraryDependencies += "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.6.0" % Test
 libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
-libraryDependencies +=  "org.scalaj" %% "scalaj-http" % "2.3.0"
+libraryDependencies += "se.lth.cs.nlp" % "docforia" % "1.0-SNAPSHOT"
+libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
 
 val http4sVersion = "0.15.6"
@@ -47,7 +48,6 @@ if (sys.props.getOrElse("mode", default = "local") == "cluster") {
   libraryDependencies ++= sparks
 }
 
-libraryDependencies += "se.lth.cs.nlp" % "docforia" % "1.0-SNAPSHOT"
 
 // ScalaDoc site generation
 enablePlugins(SiteScaladocPlugin)
@@ -64,4 +64,6 @@ preprocessVars in Preprocess := Map("VERSION" -> version.value)
 
 // enjoy ScalaTest's built-in event buffering algorithm
 logBuffered in Test := false
+
 parallelExecution in Test := false
+

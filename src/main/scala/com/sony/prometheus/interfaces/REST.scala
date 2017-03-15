@@ -18,7 +18,7 @@ object REST {
     case req @ POST -> Root / "extract" =>
       val is = scalaz.stream.io.toInputStream(req.body)
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
-      val doc = VildeAnnotater.annotatedDocument(input, conf = "herd")
+      val doc = VildeAnnotater.annotate(input, conf = "herd")
       val results = predictor.extractRelations(sc.parallelize(List(doc)))
       val res = Json.toJson(results.collect()).toString
       Ok(res).putHeaders(`Content-Type`(`application/json`))

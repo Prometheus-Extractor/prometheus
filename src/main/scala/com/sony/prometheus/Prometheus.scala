@@ -93,18 +93,11 @@ object Prometheus {
     // Evaluate
     conf.evaluationFile.toOption.foreach(evalFile => {
       val evaluationData = new EvaluationData(evalFile)
-      val docs = EvaluationDataReader.getAnnotatedDocs(evaluationData.getData())
-      val predictorTask = new PredictorStage(
-        conf.tempDataPath() + "/predictions",
-        modelTrainingTask,
-        featureTransformerTask,
-        relationsData,
-        docs)
+      val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
       val evaluationTask = new EvaluatorStage(
         conf.tempDataPath() + "/evaluation", // TODO: timestamp
-        predictorTask,
-        evaluationData)
-
+        evaluationData,
+        predictor)
       val evaluationPath = evaluationTask.getData()
       log.info(s"Saved evaluation to $path")
     })

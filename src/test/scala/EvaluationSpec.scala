@@ -34,7 +34,15 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
   "EvaluationDataReader" should "extract snippets into annotated docs" in {
     implicit val sqlContext = new SQLContext(sc)
     val docs: RDD[Document] = EvaluationDataReader.getAnnotatedDocs("./src/test/data/evaluationTest.txt")
-    println(docs.collect().mkString("\n"))
+    val expected = """Morris Smith Miller (July 31, 1779 -- November 16, 1824) was
+    |a United States Representative from New York. Born in New York City, he
+    |graduated from Union College in Schenectady in 1798. He studied law and was
+    |admitted to the bar. Miller served as private secretary to Governor Jay, and
+    |subsequently, in 1806, commenced the practice of his profession in Utica. He was
+    |president of the village of Utica in 1808 and judge of the court of common
+    |pleas of Oneida County from 1810 until his death.""".stripMargin.replaceAll("\n", " ")
+
+    docs.collect().mkString should equal (expected)
   }
 }
 

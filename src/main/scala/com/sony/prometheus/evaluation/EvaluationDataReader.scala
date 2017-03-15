@@ -24,6 +24,9 @@ case class Evidence(
   snippet: String,
   url: String)
 
+/** Data structure for both true and false examples of extracted relations and
+  * their sources in the form of text snippets
+  */
 case class EvaluationDataPoint(
   wd_sub: String,
   sub: String,
@@ -44,10 +47,17 @@ object EvaluationDataReader {
     sqlContext.read.json(path).as[EvaluationDataPoint].rdd
   }
 
+  /** Retuns and RDD of HERD-annotated Document:s, read from file containing
+    * [[EvaluationDataPoint]]:s
+    *
+    * @param path       the path to the file to read
+    * @returns          RDD of HERD-annotated Document:s; one Document per
+    * evidence snippet per EvaluationDataPoint in the file
+   */
   def getAnnotatedDocs(path: String)(implicit sqlContext: SQLContext): RDD[Document] = {
     load(path).flatMap(p => {
       p.evidences.map(_.snippet).map(s => {
-        VildeAnnotater.annotatedDocument(s, conf = "herd")
+        VildeAnnotater.annotate(s, conf = "herd")
       })
     })
   }
