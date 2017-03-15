@@ -20,7 +20,7 @@ class EvaluatorStage(
   path: String,
   evaluationData: Data,
   predictor: Predictor)
-  (implicit sc: SparkContext, sqlContext: SQLContext) extends Task with Data {
+  (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
     if (!exists(path))
@@ -47,7 +47,7 @@ object Evaluator {
     * @returns                a triple (recall, precision, f1)
    */
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], predictor: Predictor)
-    (implicit sc: SparkContext, sqlContext: SQLContext): RDD[EvaluationResult] = {
+    (implicit sqlContext: SQLContext, sc: SparkContext): RDD[EvaluationResult] = {
     // TODO: compute recall, precision, F1 etc between predictions and evalDataPoints
     val accum = sc.accumulator(0, "True Positives")
     val truePositives =
