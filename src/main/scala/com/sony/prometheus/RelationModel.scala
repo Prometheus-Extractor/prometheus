@@ -51,7 +51,7 @@ object RelationModel {
 
     var labeledData = data.map(t => {
       LabeledPoint(t.relationClass.toDouble, featureTransformer.toFeatureVector(t.wordFeatures, t.posFeatures))
-    }).repartition(432) // perform repartition to force execution.
+    }).repartition(Prometheus.DATA_PARTITIONS) // perform repartition to force execution.
     labeledData.cache()
 
     val classifier = new LogisticRegressionWithLBFGS()
