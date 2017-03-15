@@ -61,6 +61,8 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[ExtractedRelation] = {
 
+    val broadcastedFT = relations.sparkContext.broadcast(transformer)
+
     val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).collect().toList.toMap
 
     docs.flatMap(doc => {
@@ -75,7 +77,7 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
         doc.subDocument(s.getStart, s.getEnd)})
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(transformer, sentences)
-      val classes = points.map(p => transformer.toFeatureVector(p.wordFeatures, p.posFeatures)).map(model.predict)
+      val classes = points.map(p => broadcastedFT.value.toFeatureVector(p.wordFeatures, p.posFeatures)).map(model.predict)
 
       classes.zip(points).map{
         case (result: Double, point: TestDataPoint) =>
