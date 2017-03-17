@@ -1,21 +1,14 @@
-import java.nio.file.{Files, Paths}
+import java.io.File
 
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import se.lth.cs.docforia.Document
-import se.lth.cs.docforia.memstore.MemoryDocument
-import se.lth.cs.docforia.graph.text.{Sentence, Token}
-
-import scala.collection.JavaConverters._
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.rdd.RDD
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.SQLContext
-import com.sony.prometheus.evaluation._
 import com.holdenkarau.spark.testing.SharedSparkContext
 import com.sony.prometheus._
+import com.sony.prometheus.evaluation._
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import se.lth.cs.docforia.Document
 
-class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext {
+class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext   {
   "EvaluationDataReader" should "read json file properly" in {
     implicit val sqlContext = new SQLContext(sc)
     val edPointsRDD: RDD[EvaluationDataPoint] = EvaluationDataReader.load("./src/test/data/evaluationTest.txt")
@@ -50,40 +43,43 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
   }
 
   "Evaluator" should "evaluate" in {
-    implicit val sqlContext = new SQLContext(sc)
-    val tempDataPath = "../data"
-    val relationsPath = "../data/entities"
+    val relationModelPath = new File("../data/relation_model")
+    val entitiesFile = new File("../data/entities")
+    val corpusPath = new File("../data/wikipedia-corpus-herd")
+    val evalFile = new File("../data/relation_model/eval_files/date_of_birth.json.txt")
 
     // First check that the required files are present, otherwise the test will take a long time
-    Files.exists(Paths.get(tempDataPath)) should be (true)
-    Files.exists(Paths.get(tempDataPath + "/entities")) should be (true)
-    Files.exists(Paths.get(relationsPath)) should be (true)
+    relationModelPath should exist
+    entitiesFile should exist
+    corpusPath should exist
+    evalFile should exist
 
     // Run the pipeline
-    val corpusData = new CorpusData("empty")(sc)
-    val relationsData = new RelationsData(relationsPath)(sc)
+    implicit val sqlContext = new SQLContext(sc)
+    val corpusData = new CorpusData(corpusPath.getPath())(sc)
+    val relationsData = new RelationsData(entitiesFile.getPath())(sc)
     val trainingTask = new TrainingDataExtractorStage(
-      tempDataPath + "/training_sentences",
+      relationModelPath.getPath() + "/training_sentences",
       corpusData,
       relationsData)(sqlContext, sc)
     val featureTransformerTask = new FeatureTransformerStage(
-      tempDataPath + "/feature_model",
+      relationModelPath.getPath() + "/feature_model",
       corpusData)(sqlContext, sc)
     val featureExtractionTask = new FeatureExtractorStage(
-      tempDataPath + "/features",
+      relationModelPath.getPath() + "/features",
       featureTransformerTask,
       trainingTask)(sqlContext, sc)
     val modelTrainingTask = new RelationModelStage(
-      tempDataPath + "/model",
+      relationModelPath.getPath() + "/model",
       featureExtractionTask,
       featureTransformerTask,
       relationsData)(sqlContext, sc)
+
+    val modelPath = new File(modelTrainingTask.getData())
+    modelPath should exist
+
     val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
-
-    val path = modelTrainingTask.getData()
-    Files.exists(Paths.get(path)) should be (true)
-
-    val evalDataPoints = EvaluationDataReader.load("./src/test/data/evaluationTest.txt")
+    val evalDataPoints = EvaluationDataReader.load(evalFile.getPath())
     Evaluator.evaluate(evalDataPoints, predictor)(sqlContext, sc)
   }
 }
