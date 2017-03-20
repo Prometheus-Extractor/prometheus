@@ -49,29 +49,36 @@ object Evaluator {
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], predictor: Predictor)
     (implicit sqlContext: SQLContext, sc: SparkContext): RDD[EvaluationResult] = {
     // TODO: compute recall, precision, F1 etc between predictions and evalDataPoints
-    val annotatedDocs =
-      evalDataPoints
-      .filter(dP => dP.judgments.length == dP.judgments.filter(_.judgment == "yes").length)
-      .flatMap(dP => dP.evidences.map(_.snippet).map(s => VildeAnnotater.annotate(s)))
-    log.info(s"annotatedDoc: ${annotatedDocs.count()}")
 
-    // val docs =
-      // evalDataPoints // RDD[EDP]
-      // .filter(dP => dP.judgments.length == dP.judgments.filter(_.judgment == "yes").length)
-      // .map(dP => // RDD[(EDP, Seq[RDD[annotatedDoc1], RDD[annotatedDoc2]])]
-       // (dP, dP.evidences.map(_.snippet).map(s => VildeAnnotater.annotate(s)).map(d => sc.parallelize(Seq(d)))))
-     // .flatMap{case (dP, docs) => {
-       // docs.map(doc => {
-         // log.debug(s"doc: $doc")
-         // val p = predictor.extractRelations(doc).filter(rel => {
-           // accum += 1
-           // dP.wd_sub == rel.subject && dP.wd_obj == rel.obj &&
-           // dP.pred == rel.predictedPredicate
-         // }).count()
-         // p
-       // })
-     // }}.count()
-    //log.info(s"True Positives: $truePositives")
+    // Annotate all evidence
+    val annotatedEvidence =
+      evalDataPoints
+      // treat multiple snippets as one string of multiple paragraphs
+      .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
+      .map(e => VildeAnnotater.annotate(e))
+    val predictedRelations = predictor.extractRelations(annotatedEvidence)
+    predictedRelations.cache()
+
+    log.info(s"Extracted ${predictedRelations.count()} relations")
+
+    // Evaluate positive examples
+    val truePositives = evalDataPoints.zip(predictedRelations)
+      .filter{ case (dP, _) =>
+        dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2} // majority said yes
+      .map{case (dP, rels) =>
+        rels.exists(rel => {
+          println(s"${dP.wd_pred} ${rel.predictedPredicate}")
+          dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
+        })
+      }
+      .count()
+
+    log.info(s"truePositives: ${truePositives}")
+
+    val precision = truePositives / predictedRelations.count()
+
+    log.info(s"precision is $precision")
+
     val evaluation: EvaluationResult = (1,1,1)
     log.info(s"EvaluationResult: $evaluation")
     sc.parallelize(Seq(evaluation))

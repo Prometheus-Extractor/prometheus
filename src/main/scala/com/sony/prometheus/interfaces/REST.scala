@@ -14,15 +14,17 @@ import com.sony.prometheus.Predictor
 import play.api.libs.json._
 
 object REST {
-  def api(task: Server, predictor: Predictor)(implicit sc: SparkContext, sqlContext: SQLContext) = HttpService {
+  def api(task: Server, predictor: Predictor)
+         (implicit sc: SparkContext, sqlContext: SQLContext): HttpService = HttpService {
     case req @ POST -> Root / "extract" =>
       val is = scalaz.stream.io.toInputStream(req.body)
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
       val doc = VildeAnnotater.annotate(input, conf = "herd")
-      val results = predictor.extractRelations(sc.parallelize(List(doc))).filter(_.predictedPredicate != "<unknown_class: 0.0>")
+      val results = predictor
+        .extractRelations(sc.parallelize(List(doc)))
+        .map(rels => rels.filter(_.predictedPredicate != "<unknown_class: 0.0>"))
       val res = Json.toJson(results.collect()).toString
       Ok(res).putHeaders(`Content-Type`(`application/json`))
-
     case GET -> Root / "shutdown" =>
       // Does not work unfortunately
       HttpTask({

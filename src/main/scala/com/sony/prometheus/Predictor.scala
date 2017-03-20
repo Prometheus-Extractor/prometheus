@@ -50,22 +50,22 @@ object Predictor {
     sqlContext.read.json(path).as[ExtractedRelation].rdd
   }
 
-  def save(data: RDD[ExtractedRelation], path: String)(implicit sqlContext: SQLContext): Unit = {
+  def save(data: RDD[Seq[ExtractedRelation]], path: String)(implicit sqlContext: SQLContext): Unit = {
     import sqlContext.implicits._
-    data.toDF().write.json(path)
+    data.flatMap(d => d).toDF().write.json(path)
   }
 
 }
 
 class Predictor(model: RelationModel, transformer: FeatureTransformer, relations: RDD[Relation]) extends Serializable {
 
-  def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[ExtractedRelation] = {
+  def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
 
     val broadcastedFT = relations.sparkContext.broadcast(transformer)
 
     val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).collect().toList.toMap
 
-    docs.flatMap(doc => {
+    docs.map(doc => {
       val sentences = doc.nodes(classOf[Sentence])
         .asScala
         .toSeq
@@ -77,7 +77,9 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
         doc.subDocument(s.getStart, s.getEnd)})
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(transformer, sentences)
-      val classes = points.map(p => broadcastedFT.value.toFeatureVector(p.wordFeatures, p.posFeatures)).map(model.predict)
+      val classes = points
+        .map(p => broadcastedFT.value.toFeatureVector(p.wordFeatures, p.posFeatures))
+        .map(model.predict)
 
       classes.zip(points).map{
         case (result: Double, point: TestDataPoint) =>
