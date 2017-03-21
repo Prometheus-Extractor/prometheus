@@ -38,7 +38,10 @@ class EvaluatorStage(
 /** Performs evaluation of [[EvaluationDataPoint]]:s
  */
 object Evaluator {
-  type EvaluationResult = Tuple3[Double, Double, Double]
+  type Recall = Double
+  type Precision = Double
+  type F1 = Double
+  type EvaluationResult = Tuple3[Recall, Precision, F1]
 
   val log = LogManager.getLogger(Evaluator.getClass)
 
@@ -48,7 +51,9 @@ object Evaluator {
    */
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], predictor: Predictor)
     (implicit sqlContext: SQLContext, sc: SparkContext): RDD[EvaluationResult] = {
-    // TODO: compute recall, precision, F1 etc between predictions and evalDataPoints
+
+    evalDataPoints.cache()
+    log.info(s"There are ${evalDataPoints.count()} EvaluationDataPoints")
 
     // Annotate all evidence
     val annotatedEvidence =
@@ -57,6 +62,7 @@ object Evaluator {
       .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
       .map(e => VildeAnnotater.annotate(e))
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
+
     predictedRelations.cache()
 
     log.info(s"Extracted ${predictedRelations.count()} relations")
@@ -65,7 +71,7 @@ object Evaluator {
     val truePositives = evalDataPoints.zip(predictedRelations)
       .filter{ case (dP, _) =>
         dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2} // majority said yes
-      .map{case (dP, rels) =>
+      .filter{case (dP, rels) =>
         rels.exists(rel => {
           println(s"${dP.wd_pred} ${rel.predictedPredicate}")
           dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
@@ -75,14 +81,20 @@ object Evaluator {
 
     log.info(s"truePositives: ${truePositives}")
 
-    val precision = truePositives / predictedRelations.count()
+    val recall: Recall = truePositives / evalDataPoints.count()
+    val precision: Precision = truePositives / predictedRelations.count()
 
     log.info(s"precision is $precision")
+    log.info(s"recall is $recall")
 
-    val evaluation: EvaluationResult = (1,1,1)
+    val f1 = computeF1(recall, precision)
+    val evaluation: EvaluationResult = (recall, precision, f1)
     log.info(s"EvaluationResult: $evaluation")
     sc.parallelize(Seq(evaluation))
   }
+
+  private def computeF1(recall: Recall, precision: Precision): F1 =
+    2 * (precision * recall) / (precision + recall)
 
   def save(data: RDD[EvaluationResult], path: String)(implicit sqlContext: SQLContext): Unit = {
     import sqlContext.implicits._
