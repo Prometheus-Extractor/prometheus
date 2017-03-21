@@ -41,7 +41,7 @@ object TokenEncoder {
 
     val pos = docs.flatMap(doc => {
       doc.nodes(classOf[Token]).asScala.toSeq.map(_.getPartOfSpeech)
-    }).distinct.zipWithIndex.map(p => (p._1, p._2.toInt + 1))
+    }).map(normalize).distinct.zipWithIndex.map(p => (p._1, p._2.toInt + 1))
 
     createTokenEncoder(pos)
 
