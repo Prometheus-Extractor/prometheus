@@ -5,7 +5,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import pipeline._
 
-case class Relation(name: String, id: String, classIdx: Int, entities: Seq[EntityPair] = List())
+case class Relation(name: String, id: String, classIdx: Int, entities: Seq[EntityPair] = Seq())
 case class EntityPair(source: String, dest: String)
 
 /** Represents the relations data

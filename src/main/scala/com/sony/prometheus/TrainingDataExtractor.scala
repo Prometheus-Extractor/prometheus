@@ -1,5 +1,6 @@
 package com.sony.prometheus
 
+import it.unimi.dsi.fastutil.objects.{Object2ObjectMap, Object2ObjectOpenHashMap, ObjectOpenHashSet}
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -13,6 +14,8 @@ import se.lth.cs.docforia.query.QueryCollectors
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import pipeline._
+
+import scala.collection.mutable.ListBuffer
 
 /** Stage for training data extraction
  */
@@ -64,7 +67,17 @@ object TrainingDataExtractor {
    */
   def extract(docs: RDD[Document], relations: RDD[Relation])(implicit sparkContext: SparkContext): RDD[TrainingSentence] = {
 
-    val broadcastedRelations = relations.sparkContext.broadcast(relations.collect())
+    val relMapping = relations.map(r => {
+      val entPairMap = new Object2ObjectOpenHashMap[String, mutable.Set[String]]()
+        r.entities.foreach(ep =>{
+          val dests = entPairMap.getOrDefault(ep.source, new mutable.HashSet[String]())
+          dests += ep.dest
+          entPairMap.put(ep.source, dests)
+        })
+      (r, entPairMap)
+    })
+
+    val broadcastRM = sparkContext.broadcast(relMapping.collect())
 
     val data:RDD[TrainingSentence] = docs.flatMap(doc => {
 
@@ -79,31 +92,35 @@ object TrainingDataExtractor {
           .filter(pg => SENTENCE_MIN_LENGTH <= pg.key(S).length() && pg.key(S).length() <= SENTENCE_MAX_LENGTH)
           .flatMap(pg => {
 
-            if (doc.id() == null) {
-              // This is a work around for a bug in Docforia.
-              doc.setId("<null_id>")
-            }
-            val neds = new mutable.HashSet() ++ pg.list(NED).asScala.map(_.getIdentifier.split(":").last)
+            val neds = pg.list(NED).asScala.map(_.getIdentifier.split(":").last).toSet.subsets(2).map(_.toSeq).toSeq
             lazy val sDoc = doc.subDocument(pg.key(S).getStart, pg.key(S).getEnd)
 
-            val trainingData = broadcastedRelations.value.flatMap(relation => {
-              val pairs = relation.entities.toStream.filter(p => neds.contains(p.source) && neds.contains(p.dest))
-              if (pairs.length > 0) {
-                Seq(TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, pairs))
-              } else {
-                Seq()
+            val trainingData = broadcastRM.value.flatMap{
+              case (relation, mapping) => {
+                val pairs = neds.flatMap(pair => {
+                  val foundPairs = ListBuffer[EntityPair]()
+                  if(mapping.getOrDefault(pair(0), mutable.Set.empty).contains(pair(1))){
+                    foundPairs += EntityPair(pair(0), pair(1))
+                  }else if(mapping.getOrDefault(pair(1), mutable.Set.empty).contains(pair(0))){
+                    foundPairs += EntityPair(pair(1), pair(0))
+                  }
+                  foundPairs
+                })
+
+                if(pairs.length > 0)
+                  Seq(TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, pairs.toList))
+                else
+                  Seq()
               }
-            })
+            }
 
             trainingData
           })
 
         trainingSentences
-
       })
 
     data.repartition(Prometheus.DATA_PARTITIONS)
-
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[TrainingSentence] = {
