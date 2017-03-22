@@ -9,6 +9,8 @@ SPARK_SUBMIT="~/projects/spark-1.6.3-bin-hadoop2.6/bin/spark-submit"
 
 #Controls the max resultsize for a collect()
 SPARK_MAX_RESULTSIZE="8192m"
+HEAP_SIZE="5g"
+DRIVER_MEMORY="45g"
 
 #This is not the fastest GC, but works well under heavy GC load.
 JVMOPTS="-XX:+AggressiveOpts -XX:+PrintFlagsFinal -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35"
@@ -40,8 +42,7 @@ execute scp target/scala-2.10/$JAR_NAME $REMOTE_HOST:$WORK_PATH/$JAR_NAME
 printf "$GREEN == Running $JAR_NAME on exjobb8 == $RES\n"
 execute ssh $REMOTE_HOST 'bash -s' << EOF
   cd $WORK_PATH
-  $SPARK_SUBMIT --conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE \
-    --conf spark.executor.extraJavaOptions="$JVMOPTS" $JAR_NAME $args
+  $SPARK_SUBMIT --conf spark.driver.memory=$DRIVER_MEMORY --conf spark.executor.memory=$HEAP_SIZE --conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE \
+    --conf spark.executor.extraJavaOptions="$JVMOPTS" --master local[1] $JAR_NAME $args
 EOF
 printf "$GREEN == Done == $RES\n"
-
