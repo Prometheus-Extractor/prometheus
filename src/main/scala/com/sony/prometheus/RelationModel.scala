@@ -54,13 +54,14 @@ object RelationModel {
     val broadcastedFT = data.sparkContext.broadcast(featureTransformer)
 
     var labeledData = data.map(t => {
-      LabeledPoint(t.relationClass.toDouble, broadcastedFT.value.toFeatureVector(t.wordFeatures, t.posFeatures))
+      LabeledPoint(t.relationClass.toDouble, broadcastedFT.value.toFeatureVector(t.wordFeatures, t.posFeatures).toSparse)
     }).repartition(Prometheus.DATA_PARTITIONS) // perform repartition to force execution.
     labeledData.cache()
 
     val classifier = new LogisticRegressionWithLBFGS()
     classifier
       .setNumClasses(numClasses)
+      .setIntercept(true)
       .optimizer.setNumIterations(MAX_ITERATIONS)
     val model = classifier.run(labeledData)
 
