@@ -50,7 +50,7 @@ object Evaluator {
     (implicit sqlContext: SQLContext, sc: SparkContext): RDD[EvaluationResult] = {
 
     evalDataPoints.cache()
-    val nbrDataPoints = evalDataPoints.count()
+    val nbrDataPoints: Double = evalDataPoints.count()
     log.info(s"There are ${nbrDataPoints} EvaluationDataPoints")
 
     // Annotate all evidence
@@ -63,7 +63,7 @@ object Evaluator {
 
     predictedRelations.cache()
 
-    val nbrPredictedRelations = predictedRelations.count()
+    val nbrPredictedRelations: Double = predictedRelations.count()
     log.info(s"Extracted ${nbrPredictedRelations} relations")
 
     // Evaluate positive examples
