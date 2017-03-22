@@ -1,6 +1,7 @@
 package com.sony.prometheus
 
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
@@ -93,11 +94,13 @@ object Prometheus {
     log.info(s"Saved model to $path")
 
     // Evaluate
+    val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
+    val t = LocalDateTime.now()
     conf.evaluationFile.toOption.foreach(evalFile => {
       val evaluationData = new EvaluationData(evalFile)
       val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
       val evaluationTask = new EvaluatorStage(
-        conf.tempDataPath() + s"/evaluation/${LocalDateTime.now().toString}",
+        conf.tempDataPath() + s"/evaluation/${t.format(f).toString}",
         evaluationData,
         predictor)
       val evaluationPath = evaluationTask.getData()
