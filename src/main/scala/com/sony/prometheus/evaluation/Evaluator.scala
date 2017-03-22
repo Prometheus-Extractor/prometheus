@@ -31,17 +31,14 @@ class EvaluatorStage(
   override def run(): Unit = {
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
     val evaluation = Evaluator.evaluate(evalDataPoints, predictor)
-    // Evaluator.save(evaluation, path)
+    Evaluator.save(evaluation, path)
   }
 }
 
 /** Performs evaluation of [[EvaluationDataPoint]]:s
  */
 object Evaluator {
-  type Recall = Double
-  type Precision = Double
-  type F1 = Double
-  type EvaluationResult = Tuple3[Recall, Precision, F1]
+  case class EvaluationResult(recall: Double, precision: Double, f1: Double)
 
   val log = LogManager.getLogger(Evaluator.getClass)
 
@@ -53,7 +50,8 @@ object Evaluator {
     (implicit sqlContext: SQLContext, sc: SparkContext): RDD[EvaluationResult] = {
 
     evalDataPoints.cache()
-    log.info(s"There are ${evalDataPoints.count()} EvaluationDataPoints")
+    val nbrDataPoints = evalDataPoints.count()
+    log.info(s"There are ${nbrDataPoints} EvaluationDataPoints")
 
     // Annotate all evidence
     val annotatedEvidence =
@@ -65,7 +63,8 @@ object Evaluator {
 
     predictedRelations.cache()
 
-    log.info(s"Extracted ${predictedRelations.count()} relations")
+    val nbrPredictedRelations = predictedRelations.count()
+    log.info(s"Extracted ${nbrPredictedRelations} relations")
 
     // Evaluate positive examples
     val truePositives = evalDataPoints.zip(predictedRelations)
@@ -73,7 +72,6 @@ object Evaluator {
         dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2} // majority said yes
       .filter{case (dP, rels) =>
         rels.exists(rel => {
-          println(s"${dP.wd_pred} ${rel.predictedPredicate}")
           dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
         })
       }
@@ -81,19 +79,19 @@ object Evaluator {
 
     log.info(s"truePositives: ${truePositives}")
 
-    val recall: Recall = truePositives / evalDataPoints.count()
-    val precision: Precision = truePositives / predictedRelations.count()
+    val recall: Double = truePositives / nbrDataPoints
+    val precision: Double = truePositives / nbrPredictedRelations
 
     log.info(s"precision is $precision")
     log.info(s"recall is $recall")
 
     val f1 = computeF1(recall, precision)
-    val evaluation: EvaluationResult = (recall, precision, f1)
+    val evaluation: EvaluationResult = EvaluationResult(recall, precision, f1)
     log.info(s"EvaluationResult: $evaluation")
     sc.parallelize(Seq(evaluation))
   }
 
-  private def computeF1(recall: Recall, precision: Precision): F1 =
+  private def computeF1(recall: Double, precision: Double): Double =
     2 * (precision * recall) / (precision + recall)
 
   def save(data: RDD[EvaluationResult], path: String)(implicit sqlContext: SQLContext): Unit = {

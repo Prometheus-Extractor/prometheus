@@ -1,5 +1,7 @@
 package com.sony.prometheus
 
+import java.time.LocalDateTime
+
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
@@ -12,8 +14,8 @@ import pipeline._
 import interfaces._
 import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze._
-import scala.util.Properties.envOrNone
 
+import scala.util.Properties.envOrNone
 import scala.io.Source
 import annotaters.VildeAnnotater
 import evaluation._
@@ -95,7 +97,7 @@ object Prometheus {
       val evaluationData = new EvaluationData(evalFile)
       val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
       val evaluationTask = new EvaluatorStage(
-        conf.tempDataPath() + "/evaluation", // TODO: timestamp
+        conf.tempDataPath() + s"/evaluation/${LocalDateTime.now().toString}",
         evaluationData,
         predictor)
       val evaluationPath = evaluationTask.getData()
