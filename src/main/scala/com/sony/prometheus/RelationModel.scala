@@ -38,6 +38,8 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
  */
 object RelationModel {
 
+  val MAX_ITERATIONS = 10
+
   def printDataInfo(data: RDD[TrainingDataPoint], vocabSize: Int, numClasses: Int): Unit = {
     val log = LogManager.getLogger(RelationModel.getClass)
     log.info("Training Model")
@@ -57,7 +59,9 @@ object RelationModel {
     labeledData.cache()
 
     val classifier = new LogisticRegressionWithLBFGS()
-    classifier.setNumClasses(numClasses)
+    classifier
+      .setNumClasses(numClasses)
+      .optimizer.setNumIterations(MAX_ITERATIONS)
     val model = classifier.run(labeledData)
 
     new RelationModel(model)
