@@ -23,6 +23,9 @@ libraryDependencies += "se.lth.cs.nlp" % "docforia" % "1.0-SNAPSHOT"
 libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
 
+libraryDependencies += "org.deeplearning4j" % "deeplearning4j-core" % "0.8.0"
+libraryDependencies += "org.deeplearning4j" % "dl4j-spark-nlp_2.10" % "0.8.0_spark_1"
+
 val http4sVersion = "0.15.6"
 libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-dsl" % http4sVersion,

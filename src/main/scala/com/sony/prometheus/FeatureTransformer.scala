@@ -37,7 +37,7 @@ object FeatureTransformer {
 
   def apply(docs: RDD[Document])(implicit sqlContext: SQLContext): FeatureTransformer = {
 
-    val tokenEncoder = TokenEncoder.createWordEncoder(docs)
+    val tokenEncoder = TokenEncoder.createWord2VecEncoder(docs)
     val posEncoder = TokenEncoder.createPosEncoder(docs)
     new FeatureTransformer(tokenEncoder, posEncoder)
 
