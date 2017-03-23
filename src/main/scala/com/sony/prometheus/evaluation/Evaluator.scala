@@ -102,7 +102,6 @@ object Evaluator {
       .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
       .flatMap(rels => rels)
         .map(rel => {
-          println(rel)
           rel
         })
       .count()
@@ -114,6 +113,7 @@ object Evaluator {
         dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2} // majority said yes
       .filter{case (dP, rels) =>
         rels.exists(rel => {
+          println(s"Our prediction: $rel ==> $dP")
           dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
         })
       }
