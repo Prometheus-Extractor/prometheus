@@ -30,8 +30,9 @@ class EvaluatorStage(
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path))
+    if (!exists(path)) {
       run()
+    }
     path
   }
 
@@ -58,21 +59,25 @@ object Evaluator {
                       (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
     import sqlContext.implicits._
 
-    val cacheFile = path + "/cache/" + evalDataPoints.first.wd_pred
+    val relation = evalDataPoints.first.wd_pred
+    val l = path.split("/").length
+    val cachePath = path.split("/").slice(0, l - 1).mkString("/") + "/cache/" + relation
+    log.info(s"Caching to $cachePath")
 
-    if (Utils.pathExists(cacheFile)) {
-      sqlContext.read.parquet(cacheFile).as[Tuple1[Document]].rdd.map(tDoc => tDoc._1)
+    if (Utils.pathExists(cachePath)) {
+      log.info("Using cached Vilde-annotated test data")
+      sqlContext.read.parquet(cachePath).as[Tuple1[Document]].rdd.map(tDoc => tDoc._1)
     } else {
+      log.info("Did not find cached test data, annotating with Vilde...")
       val annotatedEvidence =
         evalDataPoints
           // treat multiple snippets as one string of multiple paragraphs
           .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
           .map(e => VildeAnnotater.annotate(e))
-
       annotatedEvidence
         .map(doc => Tuple1(doc.toBytes))
         .toDF("doc")
-        .write.parquet(cacheFile)
+        .write.parquet(cachePath)
       annotatedEvidence
     }
   }
@@ -133,13 +138,11 @@ object Evaluator {
     2 * (precision * recall) / (precision + recall)
 
   def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {
-    val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
-    val t = LocalDateTime.now()
     // Hadoop Config is accessible from SparkContext
     val fs = FileSystem.get(sc.hadoopConfiguration)
 
     // Output file can be created from file system.
-    val output = fs.create(new Path(path + s"${t.format(f)}-${data.relation}"))
+    val output = fs.create(new Path(path))
 
     // But BufferedOutputStream must be used to output an actual text file.
     val os = new BufferedOutputStream(output)
@@ -147,6 +150,7 @@ object Evaluator {
     os.write(data.toString.getBytes("UTF-8"))
 
     os.close()
+
   }
 
   case class EvaluationResult(relation: String, recall: Double, precision: Double, f1: Double) {

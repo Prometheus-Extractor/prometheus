@@ -94,12 +94,14 @@ object Prometheus {
     // Evaluate
     conf.evaluationFiles.foreach(evaluate => {
       log.info("Performing evaluation")
-
+      val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
+      val t = LocalDateTime.now()
       val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
       evaluate.foreach(evalFile => {
         log.info(s"Evaluating $evalFile")
         val evaluationData = new EvaluationData(evalFile)
-        val evalSavePath = conf.tempDataPath() + "/evaluation"
+        val evalSavePath = conf.tempDataPath() +
+          s"/evaluation/${t.format(f)}-${evalFile.split("/").last.split(".json")(0)}"
         val evaluationTask = new EvaluatorStage(
           evalSavePath,
           evaluationData,
