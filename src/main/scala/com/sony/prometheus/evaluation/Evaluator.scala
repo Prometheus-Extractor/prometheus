@@ -1,13 +1,15 @@
 package com.sony.prometheus.evaluation
 
-import org.apache.log4j.{Level, LogManager, Logger}
+import java.io.BufferedOutputStream
+
+import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import com.sony.prometheus.pipeline._
 import com.sony.prometheus.Predictor
 import org.apache.spark.sql.SQLContext
-import com.sony.prometheus.ExtractedRelation
 import org.apache.spark.rdd.RDD
 import com.sony.prometheus.annotaters.VildeAnnotater
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 
 /** Pipeline stage to run evaluation
@@ -38,7 +40,13 @@ class EvaluatorStage(
 /** Performs evaluation of [[EvaluationDataPoint]]:s
  */
 object Evaluator {
-  case class EvaluationResult(recall: Double, precision: Double, f1: Double)
+  case class EvaluationResult(relation: String, recall: Double, precision: Double, f1: Double) {
+    override def toString: String = {
+      s"""relation\trecall\tprecision\tf1
+        |$relation\t$recall\t$precision\t$f1
+      """.stripMargin
+    }
+  }
 
   val log = LogManager.getLogger(Evaluator.getClass)
 
@@ -47,12 +55,12 @@ object Evaluator {
     * @returns                a triple (recall, precision, f1)
    */
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], predictor: Predictor)
-    (implicit sqlContext: SQLContext, sc: SparkContext): RDD[EvaluationResult] = {
+    (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
     evalDataPoints.cache()
     val nbrDataPoints: Double = evalDataPoints.count()
-    log.info(s"There are ${nbrDataPoints} EvaluationDataPoints")
-
+    log.info(s"There are ${nbrDataPoints.toInt} EvaluationDataPoints")
+
     // Annotate all evidence
     val annotatedEvidence =
       evalDataPoints
@@ -67,7 +75,7 @@ object Evaluator {
       .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
       .flatMap(rels => rels)
       .count()
-    log.info(s"Extracted ${nbrPredictedRelations} relations")
+    log.info(s"Extracted ${nbrPredictedRelations.toInt} relations")
 
     // Evaluate positive examples
     val truePositives = evalDataPoints.zip(predictedRelations)
@@ -89,17 +97,28 @@ object Evaluator {
     log.info(s"recall is $recall")
 
     val f1 = computeF1(recall, precision)
-    val evaluation: EvaluationResult = EvaluationResult(recall, precision, f1)
+    val evaluation: EvaluationResult = EvaluationResult(evalDataPoints.first().wd_pred, recall, precision, f1)
     log.info(s"EvaluationResult: $evaluation")
-    sc.parallelize(Seq(evaluation))
+
+    evaluation
   }
 
   private def computeF1(recall: Double, precision: Double): Double =
     2 * (precision * recall) / (precision + recall)
 
-  def save(data: RDD[EvaluationResult], path: String)(implicit sqlContext: SQLContext): Unit = {
-    import sqlContext.implicits._
-    data.toDF().write.json(path)
+  def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {
+    // Hadoop Config is accessible from SparkContext
+    val fs = FileSystem.get(sc.hadoopConfiguration)
+
+    // Output file can be created from file system.
+    val output = fs.create(new Path(path))
+
+    // But BufferedOutputStream must be used to output an actual text file.
+    val os = new BufferedOutputStream(output)
+
+    os.write(data.toString.getBytes("UTF-8"))
+
+    os.close()
   }
 }
 
