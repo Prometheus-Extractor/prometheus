@@ -60,7 +60,6 @@ object Evaluator {
     evalDataPoints.cache()
     val nbrDataPoints: Double = evalDataPoints.count()
     log.info(s"There are ${nbrDataPoints.toInt} EvaluationDataPoints")
-
     // Annotate all evidence
     val annotatedEvidence =
       evalDataPoints

@@ -100,12 +100,13 @@ object Prometheus {
       evaluate.foreach(evalFile => {
         log.info(s"Evaluating $evalFile")
         val evaluationData = new EvaluationData(evalFile)
+        val evalSavePath = conf.tempDataPath() + s"/evaluation/${t.format(f)}-${evalFile.split("/").last}"
         val evaluationTask = new EvaluatorStage(
-          conf.tempDataPath() + s"/evaluation/${t.format(f)}-${evalFile}",
+          evalSavePath,
           evaluationData,
           predictor)
         val evaluationPath = evaluationTask.getData()
-        log.info(s"Saved evaluation to $path")
+        log.info(s"Saved evaluation to $evalSavePath")
       })
     })
 
