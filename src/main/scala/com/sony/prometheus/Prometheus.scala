@@ -31,20 +31,20 @@ object Prometheus {
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel [--sample-size=0.f] corpus-path relations-path temp-data-path
+    banner("""Usage: RelationModel [--sample-size=0.f] [--evalutionFiles=file1,file2,...] -corpus-path entities-path temp-data-path
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
     val corpusPath = trailArg[String](descr = "path to the corpus to train on")
-    val relationsPath = trailArg[String](descr = "path to a parquet file with the relations")
-    val tempDataPath= trailArg[String](descr= "path to a folder that will contain intermediate results")
+    val entitiesPath = trailArg[String](descr = "path to a parquet file containing the entities/relations to train for")
+    val tempDataPath= trailArg[String](descr= "path to a directory that will contain intermediate results")
     val sampleSize = opt[Double](
       descr = "use this sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
       default = Option(1.0))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
-    val evaluationFile = opt[String](descr = "path to file to evaluate")
+    val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
 
     verify()
 
@@ -57,8 +57,6 @@ object Prometheus {
     }
   }
   def main(args: Array[String]): Unit = {
-
-
     val conf = new Conf(args)
 
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -72,7 +70,7 @@ object Prometheus {
     implicit val sqlContext = new SQLContext(sc)
 
     val corpusData = new CorpusData(conf.corpusPath())
-    val relationsData = new RelationsData(conf.relationsPath())
+    val relationsData = new RelationsData(conf.entitiesPath())
     val trainingTask = new TrainingDataExtractorStage(
       conf.tempDataPath() + "/training_sentences",
       corpusData,
@@ -94,17 +92,21 @@ object Prometheus {
     log.info(s"Saved model to $path")
 
     // Evaluate
-    val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
-    val t = LocalDateTime.now()
-    conf.evaluationFile.toOption.foreach(evalFile => {
-      val evaluationData = new EvaluationData(evalFile)
+    conf.evaluationFiles.foreach(evaluate => {
+      log.info("Performing evaluation")
+      val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
+      val t = LocalDateTime.now()
       val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
-      val evaluationTask = new EvaluatorStage(
-        conf.tempDataPath() + s"/evaluation/${t.format(f).toString}",
-        evaluationData,
-        predictor)
-      val evaluationPath = evaluationTask.getData()
-      log.info(s"Saved evaluation to $path")
+      evaluate.foreach(evalFile => {
+        log.info(s"Evaluating $evalFile")
+        val evaluationData = new EvaluationData(evalFile)
+        val evaluationTask = new EvaluatorStage(
+          conf.tempDataPath() + s"/evaluation/${t.format(f)}-${evalFile}",
+          evaluationData,
+          predictor)
+        val evaluationPath = evaluationTask.getData()
+        log.info(s"Saved evaluation to $path")
+      })
     })
 
     // Serve HTTP API

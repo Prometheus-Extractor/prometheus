@@ -63,7 +63,10 @@ object Evaluator {
 
     predictedRelations.cache()
 
-    val nbrPredictedRelations: Double = predictedRelations.count()
+    val nbrPredictedRelations: Double = predictedRelations
+      .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
+      .flatMap(rels => rels)
+      .count()
     log.info(s"Extracted ${nbrPredictedRelations} relations")
 
     // Evaluate positive examples

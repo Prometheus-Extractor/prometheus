@@ -58,6 +58,7 @@ object Predictor {
 }
 
 class Predictor(model: RelationModel, transformer: FeatureTransformer, relations: RDD[Relation]) extends Serializable {
+  val UNKNOWN_CLASS = "<unknown_class>"
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
 
@@ -83,7 +84,7 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
 
       classes.zip(points).map{
         case (result: Double, point: TestDataPoint) =>
-          val predicate = classIdxToId.getOrElse(result.round.toInt, s"<unknown_class: $result>")
+          val predicate = classIdxToId.getOrElse(result.round.toInt, s"$UNKNOWN_CLASS: $result>")
           ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), -1.0)
       }
     })
