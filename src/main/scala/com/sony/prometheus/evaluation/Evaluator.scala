@@ -1,15 +1,20 @@
 package com.sony.prometheus.evaluation
 
 import java.io.BufferedOutputStream
+import java.nio.file.{Files, Paths}
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import com.sony.prometheus.pipeline._
 import com.sony.prometheus.Predictor
+import com.sony.prometheus.utils.Utils
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.rdd.RDD
 import com.sony.prometheus.annotaters.VildeAnnotater
 import org.apache.hadoop.fs.{FileSystem, Path}
+import se.lth.cs.docforia.Document
 
 
 /** Pipeline stage to run evaluation
@@ -32,7 +37,8 @@ class EvaluatorStage(
 
   override def run(): Unit = {
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
-    val evaluation = Evaluator.evaluate(evalDataPoints, predictor)
+    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path)
+    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor)
     Evaluator.save(evaluation, path)
   }
 }
@@ -40,11 +46,34 @@ class EvaluatorStage(
 /** Performs evaluation of [[EvaluationDataPoint]]:s
  */
 object Evaluator {
-  case class EvaluationResult(relation: String, recall: Double, precision: Double, f1: Double) {
-    override def toString: String = {
-      s"""relation\trecall\tprecision\tf1
-        |$relation\t$recall\t$precision\t$f1
-      """.stripMargin
+
+
+  /** Annotate the snippets data with VildeAnnotater, use cache if possible
+    *
+    * @param evalDataPoints   [[EvaluationDataPoint]]:s to annotate
+    * @param path             path to the cache file
+    * @return                 RDD of annotateted Documents
+    */
+  def annotateTestData(evalDataPoints: RDD[EvaluationDataPoint], path: String)
+                      (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
+    import sqlContext.implicits._
+
+    val cacheFile = path + "/cache/" + evalDataPoints.first.wd_pred
+
+    if (Utils.pathExists(cacheFile)) {
+      sqlContext.read.parquet(cacheFile).as[Tuple1[Document]].rdd.map(tDoc => tDoc._1)
+    } else {
+      val annotatedEvidence =
+        evalDataPoints
+          // treat multiple snippets as one string of multiple paragraphs
+          .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
+          .map(e => VildeAnnotater.annotate(e))
+
+      annotatedEvidence
+        .map(doc => Tuple1(doc.toBytes))
+        .toDF("doc")
+        .write.parquet(cacheFile)
+      annotatedEvidence
     }
   }
 
@@ -52,20 +81,14 @@ object Evaluator {
 
   /** Returns an [[EvaluationResult]]
     * @param evalDataPoints   RDD of [[EvaluationDataPoint]]
-    * @returns                a triple (recall, precision, f1)
+    * @return                 an [[EvaluationResult]] (relation, recall, precision, f1)
    */
-  def evaluate(evalDataPoints: RDD[EvaluationDataPoint], predictor: Predictor)
+  def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor)
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
-    evalDataPoints.cache()
     val nbrDataPoints: Double = evalDataPoints.count()
     log.info(s"There are ${nbrDataPoints.toInt} EvaluationDataPoints")
-    // Annotate all evidence
-    val annotatedEvidence =
-      evalDataPoints
-      // treat multiple snippets as one string of multiple paragraphs
-      .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
-      .map(e => VildeAnnotater.annotate(e))
+
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
 
     predictedRelations.cache()
@@ -73,6 +96,10 @@ object Evaluator {
     val nbrPredictedRelations: Double = predictedRelations
       .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
       .flatMap(rels => rels)
+        .map(rel => {
+          println(rel)
+          rel
+        })
       .count()
     log.info(s"Extracted ${nbrPredictedRelations.toInt} relations")
 
@@ -106,11 +133,13 @@ object Evaluator {
     2 * (precision * recall) / (precision + recall)
 
   def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {
+    val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
+    val t = LocalDateTime.now()
     // Hadoop Config is accessible from SparkContext
     val fs = FileSystem.get(sc.hadoopConfiguration)
 
     // Output file can be created from file system.
-    val output = fs.create(new Path(path))
+    val output = fs.create(new Path(path + s"${t.format(f)}-${data.relation}"))
 
     // But BufferedOutputStream must be used to output an actual text file.
     val os = new BufferedOutputStream(output)
@@ -118,6 +147,14 @@ object Evaluator {
     os.write(data.toString.getBytes("UTF-8"))
 
     os.close()
+  }
+
+  case class EvaluationResult(relation: String, recall: Double, precision: Double, f1: Double) {
+    override def toString: String = {
+      s"""relation\trecall\tprecision\tf1
+         |$relation\t$recall\t$precision\t$f1
+      """.stripMargin
+    }
   }
 }
 
