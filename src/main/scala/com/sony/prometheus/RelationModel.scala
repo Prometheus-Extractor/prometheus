@@ -54,7 +54,7 @@ object RelationModel {
     val broadcastedFT = data.sparkContext.broadcast(featureTransformer)
 
     var labeledData = data.map(t => {
-      LabeledPoint(t.relationClass.toDouble, broadcastedFT.value.toFeatureVector(t.wordFeatures, t.posFeatures).toSparse)
+      LabeledPoint(t.relationClass.toDouble, broadcastedFT.value.toFeatureVector(t.wordFeatures, t.posFeatures))
     }).repartition(Prometheus.DATA_PARTITIONS) // perform repartition to force execution.
     labeledData.cache()
 

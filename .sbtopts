@@ -1,4 +1,4 @@
--J-Xmx4g
+-J-Xmx10g
 -J-XX:+AggressiveOpts
 -J-XX:+UseG1GC
 -J-XX:+UnlockDiagnosticVMOptions

@@ -37,36 +37,28 @@ object FeatureTransformer {
 
   def apply(docs: RDD[Document])(implicit sqlContext: SQLContext): FeatureTransformer = {
 
-    val tokenEncoder = TokenEncoder.createWord2VecEncoder(docs)
+    val tokenEncoder = Word2VecEncoder(docs)
     val posEncoder = TokenEncoder.createPosEncoder(docs)
     new FeatureTransformer(tokenEncoder, posEncoder)
 
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): FeatureTransformer = {
-    val wordEncoder = TokenEncoder.load(path + "/word_encoder", sqlContext.sparkContext)
+    val wordEncoder = Word2VecEncoder.load(path + "/word_encoder", sqlContext.sparkContext)
     val posEncoder = TokenEncoder.load(path + "/pos_encoder", sqlContext.sparkContext)
     new FeatureTransformer(wordEncoder, posEncoder)
-  }
-
-  /**
-    * Performs one-hot encoding from of sequences of doubles that represent indexes in a sparse vector.
-    */
-  def oneHotEncode(features: Seq[Double], vocabSize: Int): Vector = {
-    val f = features.distinct.map(idx => (idx.toInt, 1.0))
-    Vectors.sparse(vocabSize, f)
   }
 
 }
 
 /** Transforms tokens with a [[com.sony.prometheus.TokenEncoder]]
  */
-class FeatureTransformer(val wordEncoder: TokenEncoder, val posEncoder: TokenEncoder) extends Serializable {
+class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: TokenEncoder) extends Serializable {
 
   /** Returns a transformed Seq of tokens as a Seq of Ints with [[com.sony.prometheus.TokenEncoder]]
     * @param tokens - the Seq of Strings to transform
    */
-  def transformWords(tokens: Seq[String]): Seq[Int] = {
+  def transformWords(tokens: Seq[String]): Seq[Vector] = {
     tokens.map(wordEncoder.index)
   }
 
@@ -74,8 +66,9 @@ class FeatureTransformer(val wordEncoder: TokenEncoder, val posEncoder: TokenEnc
     pos.map(posEncoder.index)
   }
 
-  def combinedFeatureSize(): Int = {
-    wordEncoder.vocabSize + posEncoder.vocabSize
+  private def oneHotEncode(features: Seq[Int], vocabSize: Int): Vector = {
+    val f = features.distinct.map(idx => (idx, 1.0))
+    Vectors.sparse(vocabSize, f)
   }
 
   /** Saves the feature mapping to the path specified by path
@@ -86,12 +79,14 @@ class FeatureTransformer(val wordEncoder: TokenEncoder, val posEncoder: TokenEnc
     posEncoder.save(path + "/pos_encoder", sqlContext)
   }
 
-  /** Creates a unified vector with [one-hot bag of words, one-hot pos1, one-hot pos2> ...]
+  /** Creates a unified vector with
     */
-  def toFeatureVector(wordFeatures: Seq[Double], posFeatures: Seq[Double]): Vector = {
-    val vocabSize = wordEncoder.vocabSize() + posFeatures.length * posEncoder.vocabSize()
-    val indexes: Seq[Double] = wordFeatures ++ posFeatures.zipWithIndex.map(p => wordFeatures.length + p._2 * posFeatures.length + p._1)
-    FeatureTransformer.oneHotEncode(indexes, vocabSize)
+  def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String]): Vector = {
+
+    val wordVectors = wordFeatures.map(wordEncoder.index).map(_.toArray).flatten.toArray
+    val posVectors = posFeatures.map(posEncoder.index).map(Seq(_)).map(oneHotEncode(_, posEncoder.vocabSize()).toArray).flatten.toArray
+    Vectors.dense(wordVectors ++ posVectors)
+
   }
 
 }

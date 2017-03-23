@@ -1,12 +1,14 @@
 package com.sony.prometheus
 
-import scala.collection.JavaConverters._
+import java.io.File
 
+import org.apache.spark.SparkContext
+import org.apache.spark.mllib.feature.{Word2Vec, Word2VecModel}
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
+
+import scala.collection.JavaConverters._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
-import org.deeplearning4j.spark.models.embeddings.word2vec.Word2Vec
-import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor
-import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.text.Sentence
 
@@ -15,15 +17,15 @@ import se.lth.cs.docforia.graph.text.Sentence
   */
 object Word2VecEncoder {
 
-  val MAX_SENTENCE_LENGTH = 200
+  val MAX_SENTENCE_LENGTH = 220
 
   def apply(docs: RDD[Document]): Word2VecEncoder = {
 
-    val sentences = docs.flatMap(doc => {
-      doc.nodes(classOf[Sentence]).asScala.map(_.text()).filter(_.length <= MAX_SENTENCE_LENGTH)
+    val sentences = docs.map(doc => {
+      doc.nodes(classOf[Sentence]).asScala.map(_.text()).filter(_.length <= MAX_SENTENCE_LENGTH).map(_.split(" ")).flatten
     })
 
-    val t = new DefaultTokenizerFactory()
+   /* val t = new DefaultTokenizerFactory()
     t.setTokenPreProcessor(new CommonPreprocessor())
 
     val word2Vec = new Word2Vec.Builder()
@@ -32,24 +34,30 @@ object Word2VecEncoder {
       .useUnknown(true).build()
 
     word2Vec.train(sentences)
-    new Word2VecEncoder(word2Vec)
+    */
+    val word2vec = new Word2Vec().setVectorSize(400).setWindowSize(5).setMinCount(5).setSeed(42L)
+    val model = word2vec.fit(sentences)
+    new Word2VecEncoder(model)
+  }
+
+  def load(path: String, sparkContext: SparkContext): Word2VecEncoder = {
+    new Word2VecEncoder(Word2VecModel.load(sparkContext, path))
   }
 
 }
 
-class Word2VecEncoder(model: Word2Vec) extends Serializable{
-  def index(token: String): Array[Double] = {
-    model.getWordVector(token)
-  }
+class Word2VecEncoder(model: Word2VecModel) extends Serializable{
 
-  def token(vec: Array[Double]): String = {
-    ???
-  }
+  val VEC_SIZE = model.getVectors.values.head.length
 
-  def vocabSize(): Int = {
-    model.getConfiguration.getVocabSize
+  def index(token: String): Vector = {
+    val vectors = model.getVectors
+    vectors.get(token).map(ar => Vectors.dense(ar.map(_.toDouble))).getOrElse(Vectors.zeros(VEC_SIZE))
   }
 
   def save(path: String, sqlContext: SQLContext): Unit = {
+    //WordVectorSerializer.writeWordVectors(model.lookupTable(), path)
+    model.save(sqlContext.sparkContext, path)
   }
 }
+

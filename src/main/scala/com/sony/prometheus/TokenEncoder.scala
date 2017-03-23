@@ -102,4 +102,3 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
   }
 
 }
-

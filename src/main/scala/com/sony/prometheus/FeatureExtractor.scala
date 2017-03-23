@@ -57,12 +57,10 @@ object FeatureExtractor {
       val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
         if(f.wordFeatures.length >= MIN_FEATURE_LENGTH) {
-          val wordFeats = ft.transformWords(f.wordFeatures).map(_.toDouble).filter(_ >= 0)
-          val posFeats = ft.transformPos(f.posFeatures).map(_.toDouble)
           if(neds.contains(f.subj) && neds.contains(f.obj)) {
-            Seq(TrainingDataPoint(t.relationId, t.relationName, t.relationClass, wordFeats, posFeats))
+            Seq(TrainingDataPoint(t.relationId, t.relationName, t.relationClass, f.wordFeatures, f.posFeatures))
           }else {
-            Seq(TrainingDataPoint("neg", "neg", 0, wordFeats, posFeats))
+            Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures))
           }
         }else{
           Seq()
@@ -85,9 +83,7 @@ object FeatureExtractor {
 
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
-        TestDataPoint(sentence, f.subj, f.obj,
-          ft.transformWords(f.wordFeatures).map(_.toDouble).filter(_ >= 0),
-          ft.transformPos(f.posFeatures).map(_.toDouble))
+        TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures)
       })
     })
 
@@ -117,14 +113,15 @@ object FeatureExtractor {
         /*
         Find the positions of the entities
          */
+
         val grp1 :: grp2 :: _ = set.toList
         val start1 = grp1.value(0, T).getTag("idx"): Int
         val end1 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
         val start2 = grp2.value(0, T).getTag("idx"): Int
         val end2 = grp2.value(grp2.size() - 1, T).getTag("idx"): Int
 
-        val words = wordFeatures(sentence, start1, end1, start2, end2)
-        val pos = posFeatures(sentence, start1, end1, start2, end2)
+        val words = tokenWindow(sentence, start1, end1, start2, end2, t => t.text)
+        val pos = tokenWindow(sentence, start1, end1, start2, end2, t => t.getPartOfSpeech)
 
         FeatureArray(sentence,
                      grp1.key(NED).getIdentifier.split(":").last,
@@ -137,31 +134,9 @@ object FeatureExtractor {
 
   }
 
-  /** Extracts a all words features as a list of strings
+  /** Extract string features from a Token window around two entities.
     */
-  private def wordFeatures(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int): Seq[String] = {
-    /*
-      Extract words before and after entity 1
-     */
-    val wordsBefore1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, start1)
-    val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + NBR_WORDS_AFTER, end1 + NBR_WORDS_AFTER + 1)
-
-    /*
-      Extract words before and after entity 2
-     */
-    val wordsBefore2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, start2)
-    val wordsAfter2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end2 + NBR_WORDS_AFTER, end2 + NBR_WORDS_AFTER + 1)
-
-    /*
-      Create string feature vector for the pair
-     */
-    val features = Seq(
-      wordsBefore1.map(_.text()), wordsAfter1.map(_.text()), wordsBefore2.map(_.text()), wordsAfter2.map(_.text())
-    ).flatten.filter(Filters.wordFilter)
-    features
-  }
-
-  private def posFeatures(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int): Seq[String] = {
+  private def tokenWindow(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int, f: Token => String): Seq[String] = {
     /*
       POS around entity 1 including for entity 1
      */
@@ -178,10 +153,10 @@ object FeatureExtractor {
       Create string feature vector for the pair
      */
     val features = Seq(
-      Seq.fill(NBR_WORDS_BEFORE - wordsBefore1.length)("<empty>") ++ wordsBefore1.map(_.getPartOfSpeech),
-      wordsAfter1.map(_.getPartOfSpeech) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter1.length)("<empty>"),
-      Seq.fill(NBR_WORDS_BEFORE - wordsBefore2.length)("<empty>") ++ wordsBefore2.map(_.getPartOfSpeech),
-      wordsAfter2.map(_.getPartOfSpeech) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter2.length)("<empty>")
+      Seq.fill(NBR_WORDS_BEFORE - wordsBefore1.length)("<empty>") ++ wordsBefore1.map(f),
+      wordsAfter1.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter1.length)("<empty>"),
+      Seq.fill(NBR_WORDS_BEFORE - wordsBefore2.length)("<empty>") ++ wordsBefore2.map(f),
+      wordsAfter2.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter2.length)("<empty>")
     ).flatten
     features
   }
@@ -203,6 +178,6 @@ object FeatureExtractor {
 }
 
 
-case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, wordFeatures: Seq[Double], posFeatures: Seq[Double])
-case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[Double], posFeatures: Seq[Double])
+case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, wordFeatures: Seq[String], posFeatures: Seq[String])
+case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[String], posFeatures: Seq[String])
 case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String], posFeatures: Seq[String])
