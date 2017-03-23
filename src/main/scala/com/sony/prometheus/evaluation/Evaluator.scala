@@ -91,7 +91,9 @@ object Evaluator {
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor)
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
-    val nbrDataPoints: Double = evalDataPoints.count()
+    val nbrDataPoints: Double = evalDataPoints
+      .filter(dP => dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0)
+      .count()
     log.info(s"There are ${nbrDataPoints.toInt} EvaluationDataPoints")
 
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
@@ -110,10 +112,10 @@ object Evaluator {
     // Evaluate positive examples
     val truePositives = evalDataPoints.zip(predictedRelations)
       .filter{ case (dP, _) =>
-        dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2} // majority said yes
+        dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0} // majority said yes
       .filter{case (dP, rels) =>
         rels.exists(rel => {
-          println(s"Our prediction: $rel ==> $dP")
+          log.info(s"Our prediction: $rel ==> $dP")
           dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
         })
       }
