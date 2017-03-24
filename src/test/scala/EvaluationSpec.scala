@@ -6,6 +6,8 @@ import com.sony.prometheus.evaluation._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import play.api.libs.json.Json
+import scala.io.Source.fromFile
 import se.lth.cs.docforia.Document
 
 class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext   {
@@ -43,15 +45,16 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
   }
 
   "Evaluator" should "evaluate" in {
-    val relationModelPath = new File("../data/0.1.0-27-gc3d511d/relation_model/en")
-    val entitiesFile = new File("../data/0.1.0-27-gc3d511d/entities")
-    val corpusPath = new File("../data/wikipedia-corpus-herd")
-    val evalFile = new File("../data/0.1.0-27-gc3d511d/relation_model/sv/eval_files/date_of_birth.json.txt")
+    val relationModelPath = new File("../data/0.1.0-32-g4d0b685/relation_model/en")
+    val entitiesFile = new File("../data/0.1.0-32-g4d0b685/entities")
+    val corpusPath = new File("../data/wikipedia-corpus-herd/en")
+    val evalFile = new File("../data/eval_files/place_of_birth.json")
 
     // First check that the required files are present, otherwise the test will take a long time
     relationModelPath should exist
     entitiesFile should exist
     corpusPath should exist
+    evalFile should exist
 
     // Run the pipeline
     implicit val sqlContext = new SQLContext(sc)
@@ -78,12 +81,18 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
     modelPath should exist
 
     val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
-    val evalDataPoints = EvaluationDataReader.load(evalFile.getPath())
 
-    val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
-    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path)
-    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor)
-    Evaluator.save(evaluation, path)
+    // Just read two lines from evalFile and test those
+    val evalDataPoints: RDD[EvaluationDataPoint] = sc.parallelize(
+      fromFile(evalFile)
+        .getLines()
+        .take(2)
+        .map(l => Json.parse(l).as[EvaluationDataPoint])
+        .toList)
+
+    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, "/tmp")(sqlContext, sc)
+    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor)(sqlContext, sc)
+
   }
 }
 

@@ -5,6 +5,7 @@ import com.sony.prometheus.pipeline._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import com.sony.prometheus.annotaters.VildeAnnotater
+import play.api.libs.json.Json
 import se.lth.cs.docforia.Document
 
 class EvaluationData(path: String)(implicit sc: SparkContext) extends Data {
@@ -20,9 +21,17 @@ case class Judgment(
   judgment: String,
   rater: String)
 
+object Judgment {
+  implicit val format = Json.format[Judgment]
+}
+
 case class Evidence(
   snippet: String,
   url: String)
+
+object Evidence {
+  implicit val format = Json.format[Evidence]
+}
 
 /** Data structure for both true and false examples of extracted relations and
   * their sources in the form of text snippets
@@ -36,6 +45,10 @@ case class EvaluationDataPoint(
   wd_obj: String,
   obj: String,
   wd_pred: String)
+
+object EvaluationDataPoint {
+  implicit val format = Json.format[EvaluationDataPoint]
+}
 
 object EvaluationDataReader {
 
