@@ -10,7 +10,7 @@ CLUSTER_SSH="sem4"
 CLUSTER_WORK_PATH="~/projects/prometheus-relation-model"
 
 #The jar to execute
-JAR_NAME="prometheus-relation-model-assembly-"$VERSION".jar"
+JAR_NAME="prometheus-relation-model_2.10-"$VERSION".jar"
 
 #Userdefined args
 JAR_USER_ARGS=""
@@ -35,14 +35,15 @@ function test {
 
 # Build jar
 echo " == Building fat jar =="
-test sbt -Dmode=cluster assembly
+# test sbt -Dmode=cluster assembly
+test sbt pack
 
 echo " == Synchronizing dependencies and executables =="
-#test rsync -av --delete -e ssh --progress target/lib/ $CLUSTER_SSH:$CLUSTER_WORK_PATH/lib/
+test rsync -av --delete --exclude $JAR_NAME -e ssh --progress target/pack/lib/ $CLUSTER_SSH:$CLUSTER_WORK_PATH/lib/
 test scp target/scala-2.10/$JAR_NAME $CLUSTER_SSH:$CLUSTER_WORK_PATH/$JAR_NAME
 
 #Runs python inline to construct the classpath list.
-#LIBS=$(python -c "import os; print(','.join(map(lambda fname: 'lib/' + fname, os.listdir('target/lib'))))")
+LIBS=$(python -c "import os; print(','.join(map(lambda fname: 'lib/' + fname, os.listdir('target/pack/lib'))))")
 
 #This is not the fastest GC, but works well under heavy GC load.
 JVMOPTS="-XX:+AggressiveOpts -XX:+PrintFlagsFinal -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35"
@@ -50,6 +51,6 @@ JVMOPTS="-XX:+AggressiveOpts -XX:+PrintFlagsFinal -XX:+UseG1GC -XX:+UnlockDiagno
 echo " == Running command on cluster == "
 test ssh $CLUSTER_SSH 'bash -s' << EOF
 	cd $CLUSTER_WORK_PATH
-	spark-submit --conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE --conf spark.executor.extraJavaOptions="$JVMOPTS" --conf spark.driver.extraLibraryPath=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native --conf spark.executor.extraLibraryPath=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native --conf spark.driver.userClassPathFirst=$SPARK_USER_CLASSPATH_FIRST --conf spark.executor.userClassPathFirst=$SPARK_USER_CLASSPATH_FIRST $JAR_NAME $JAR_USER_ARGS $args
+	spark-submit --conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE --conf spark.executor.extraJavaOptions="$JVMOPTS" --conf spark.driver.extraLibraryPath=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native --conf spark.executor.extraLibraryPath=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native --conf spark.driver.userClassPathFirst=$SPARK_USER_CLASSPATH_FIRST --conf spark.executor.userClassPathFirst=$SPARK_USER_CLASSPATH_FIRST --jars $LIBS $JAR_NAME $JAR_USER_ARGS $args
 EOF
 echo " == Done. == "

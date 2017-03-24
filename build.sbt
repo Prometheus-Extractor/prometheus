@@ -1,5 +1,7 @@
 name := """prometheus-relation-model"""
 
+packAutoSettings
+
 version := "0.1.0"
 
 organization := "sonymobile"
@@ -24,8 +26,8 @@ libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
 
 //libraryDependencies += "org.deeplearning4j" % "deeplearning4j-core" % "0.8.0"
-//libraryDependencies += "org.deeplearning4j" % "dl4j-spark-nlp_2.10" % "0.8.0_spark_1"
-//libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0"
+libraryDependencies += "org.deeplearning4j" % "dl4j-spark-nlp_2.10" % "0.8.0_spark_1"
+libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0"
 
 
 val http4sVersion = "0.15.6"
