@@ -15,6 +15,7 @@ import org.apache.spark.rdd.RDD
 import com.sony.prometheus.annotaters.VildeAnnotater
 import org.apache.hadoop.fs.{FileSystem, Path}
 import se.lth.cs.docforia.Document
+import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
 
 /** Pipeline stage to run evaluation
@@ -66,7 +67,10 @@ object Evaluator {
 
     if (Utils.pathExists(cachePath)) {
       log.info("Using cached Vilde-annotated test data")
-      sqlContext.read.parquet(cachePath).as[Tuple1[Document]].rdd.map(tDoc => tDoc._1)
+      val df = sqlContext.read.parquet(cachePath)
+      df.map(row => {
+        MemoryDocumentIO.getInstance().fromBytes(row.getAs(0): Array[Byte]): Document
+      })
     } else {
       log.info("Did not find cached test data, annotating with Vilde...")
       val annotatedEvidence =
