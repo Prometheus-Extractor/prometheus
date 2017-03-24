@@ -13,7 +13,7 @@ import play.api.libs.json._
 object REST {
   def api(predictor: Predictor)
          (implicit sc: SparkContext, sqlContext: SQLContext): HttpService = HttpService {
-    case req @ POST -> Root / "extract" =>
+    case req @ POST -> Root / "api" / "extract" =>
       val is = scalaz.stream.io.toInputStream(req.body)
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
       val doc = VildeAnnotater.annotate(input, lang = "sv", conf = "herd")

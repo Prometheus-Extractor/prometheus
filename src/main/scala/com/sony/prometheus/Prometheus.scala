@@ -110,7 +110,7 @@ object Prometheus {
         try {
           val task = BlazeBuilder
             .bindHttp(PORT, "localhost")
-            .mountService(REST.api(predictor), "/api")
+            .mountService(REST.api(predictor), "/")
             .run
           println(s"${GREEN}REST interface ready to accept connections${RESET}")
           task.awaitShutdown()
