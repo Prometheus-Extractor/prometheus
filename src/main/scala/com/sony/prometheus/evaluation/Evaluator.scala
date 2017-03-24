@@ -61,9 +61,9 @@ object Evaluator {
                       (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
     import sqlContext.implicits._
 
-    val relation = evalDataPoints.first.wd_pred
+    val file = path.split("-").last
     val l = path.split("/").length
-    val cachePath = path.split("/").slice(0, l - 1).mkString("/") + "/cache/" + relation
+    val cachePath = path.split("/").slice(0, l - 1).mkString("/") + "/cache/" + file + ".cache"
     log.info(s"Caching to $cachePath")
 
     if (Utils.pathExists(cachePath)) {
@@ -91,7 +91,7 @@ object Evaluator {
 
   /** Returns an [[EvaluationResult]]
     * @param evalDataPoints   RDD of [[EvaluationDataPoint]]
-    * @return                 an [[EvaluationResult]] (relation, recall, precision, f1)
+    * @return                 an [[EvaluationResult]]
    */
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor)
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
@@ -99,7 +99,7 @@ object Evaluator {
     val nbrDataPoints: Double = evalDataPoints
       .filter(dP => dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0)
       .count()
-    log.info(s"There are ${nbrDataPoints.toInt} true-judged EvaluationDataPoints")
+    log.info(s"There are ${nbrDataPoints.toInt} positive examples in the evaluation data")
 
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
 
@@ -112,7 +112,7 @@ object Evaluator {
           rel
         })
       .count()
-    log.info(s"Extracted ${nbrPredictedRelations.toInt} relations")
+    log.info(s"Extracted ${nbrPredictedRelations.toInt} relations from evaluation data")
 
     // Evaluate positive examples
     val truePositives = evalDataPoints.zip(predictedRelations)
@@ -131,7 +131,7 @@ object Evaluator {
     val recall: Double = truePositives / nbrDataPoints
     val precision: Double = truePositives / nbrPredictedRelations
 
-    log.info(s"precision is $precision")
+    log.info(s"~precision is $precision")
     log.info(s"recall is $recall")
 
     val f1 = computeF1(recall, precision)
@@ -163,7 +163,6 @@ object Evaluator {
     os.write(data.toString.getBytes("UTF-8"))
 
     os.close()
-
   }
 
   case class EvaluationResult(
