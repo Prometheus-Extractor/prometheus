@@ -115,21 +115,21 @@ object Evaluator {
     log.info(s"Extracted ${nbrPredictedRelations.toInt} relations from evaluation data")
 
     // Evaluate positive examples
-    val truePositives = evalDataPoints.zip(predictedRelations)
+    val nbrTruePositives = evalDataPoints.zip(predictedRelations)
       .filter{ case (dP, _) =>
         dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0} // majority said yes
       .filter{case (dP, rels) =>
-        rels.exists(rel => {
-          log.info(s"Our prediction: $rel ==> $dP")
-          dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
+      rels.exists(rel => {
+        log.info(s"Our prediction: $rel <==> $dP")
+        dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
         })
       }
       .count()
 
-    log.info(s"truePositives: ${truePositives}")
+    log.info(s"truePositives: ${nbrTruePositives}")
 
-    val recall: Double = truePositives / nbrDataPoints
-    val precision: Double = truePositives / nbrPredictedRelations
+    val recall: Double = nbrTruePositives / nbrDataPoints
+    val precision: Double = nbrTruePositives / nbrPredictedRelations
 
     log.info(s"~precision is $precision")
     log.info(s"recall is $recall")
@@ -138,7 +138,7 @@ object Evaluator {
     val evaluation: EvaluationResult = EvaluationResult(
       evalDataPoints.first().wd_pred,
       nbrDataPoints.toInt,
-      truePositives.toInt,
+      nbrTruePositives.toInt,
       recall,
       precision,
       f1)
@@ -155,7 +155,7 @@ object Evaluator {
     val fs = FileSystem.get(sc.hadoopConfiguration)
 
     // Output file can be created from file system.
-    val output = fs.create(new Path(path))
+    val output = fs.create(new Path(path + ".txt"))
 
     // But BufferedOutputStream must be used to output an actual text file.
     val os = new BufferedOutputStream(output)
