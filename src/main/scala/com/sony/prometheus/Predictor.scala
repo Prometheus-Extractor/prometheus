@@ -70,12 +70,7 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
       val sentences = doc.nodes(classOf[Sentence])
         .asScala
         .toSeq
-        .map(s => {
-          if (doc.id() == null) {
-            // This is a work around for a bug in Docforia.
-            doc.setId("<null_id>")
-          }
-        doc.subDocument(s.getStart, s.getEnd)})
+        .map(s => doc.subDocument(s.getStart, s.getEnd))
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(transformer, sentences)
       val classes = points

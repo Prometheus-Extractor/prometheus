@@ -39,6 +39,7 @@ class EvaluatorStage(
 
   override def run(): Unit = {
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
+      .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path)
     val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor)
     Evaluator.save(evaluation, path)
@@ -98,7 +99,7 @@ object Evaluator {
     val nbrDataPoints: Double = evalDataPoints
       .filter(dP => dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0)
       .count()
-    log.info(s"There are ${nbrDataPoints.toInt} EvaluationDataPoints")
+    log.info(s"There are ${nbrDataPoints.toInt} true-judged EvaluationDataPoints")
 
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
 
@@ -134,7 +135,13 @@ object Evaluator {
     log.info(s"recall is $recall")
 
     val f1 = computeF1(recall, precision)
-    val evaluation: EvaluationResult = EvaluationResult(evalDataPoints.first().wd_pred, recall, precision, f1)
+    val evaluation: EvaluationResult = EvaluationResult(
+      evalDataPoints.first().wd_pred,
+      nbrDataPoints.toInt,
+      truePositives.toInt,
+      recall,
+      precision,
+      f1)
     log.info(s"EvaluationResult: $evaluation")
 
     evaluation
@@ -159,10 +166,17 @@ object Evaluator {
 
   }
 
-  case class EvaluationResult(relation: String, recall: Double, precision: Double, f1: Double) {
+  case class EvaluationResult(
+    relation: String,
+    nbrDataPoints: Int,
+    truePositives: Int,
+    recall: Double,
+    precision: Double,
+    f1: Double) {
+
     override def toString: String = {
-      s"""relation\trecall\tprecision\tf1
-         |$relation\t$recall\t$precision\t$f1
+      s"""relation\tnbr data points\ttrue positives\trecall\tprecision\tf1
+         |$relation\t$nbrDataPoints\t$truePositives\t$recall\t$precision\t$f1
       """.stripMargin
     }
   }

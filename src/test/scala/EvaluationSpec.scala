@@ -52,7 +52,6 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
     relationModelPath should exist
     entitiesFile should exist
     corpusPath should exist
-    evalFile should exist
 
     // Run the pipeline
     implicit val sqlContext = new SQLContext(sc)
@@ -80,7 +79,11 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
 
     val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
     val evalDataPoints = EvaluationDataReader.load(evalFile.getPath())
-    Evaluator.evaluate(evalDataPoints, predictor)(sqlContext, sc)
+
+    val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
+    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path)
+    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor)
+    Evaluator.save(evaluation, path)
   }
 }
 
