@@ -2,23 +2,15 @@ package com.sony.prometheus
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
-import pipeline._
-
-import scalaz.concurrent.{Task => HttpTask}
-import pipeline._
+import utils.Utils.Colours._
 import interfaces._
-import org.http4s.server.{Server, ServerApp}
 import org.http4s.server.blaze._
-
 import scala.util.Properties.envOrNone
-import scala.io.Source
-import annotaters.VildeAnnotater
 import evaluation._
 
 /** Main class, sets up and runs the pipeline
@@ -26,6 +18,7 @@ import evaluation._
 object Prometheus {
 
   val DATA_PARTITIONS = 432
+  val PORT = 8080
 
   /** Provides arugment parsing
    */
@@ -68,61 +61,70 @@ object Prometheus {
 
     implicit val sc = new SparkContext(sparkConf)
     implicit val sqlContext = new SQLContext(sc)
+    try {
+      val corpusData = new CorpusData(conf.corpusPath())
+      val relationsData = new RelationsData(conf.entitiesPath())
+      val trainingTask = new TrainingDataExtractorStage(
+        conf.tempDataPath() + "/training_sentences",
+        corpusData,
+        relationsData)
+      val featureTransformerTask = new FeatureTransformerStage(
+        conf.tempDataPath() + "/feature_model",
+        corpusData)
+      val featureExtractionTask = new FeatureExtractorStage(
+        conf.tempDataPath() + "/features",
+        featureTransformerTask,
+        trainingTask)
+      val modelTrainingTask = new RelationModelStage(
+        conf.tempDataPath() + "/models",
+        featureExtractionTask,
+        featureTransformerTask,
+        relationsData)
 
-    val corpusData = new CorpusData(conf.corpusPath())
-    val relationsData = new RelationsData(conf.entitiesPath())
-    val trainingTask = new TrainingDataExtractorStage(
-      conf.tempDataPath() + "/training_sentences",
-      corpusData,
-      relationsData)
-    val featureTransformerTask = new FeatureTransformerStage(
-      conf.tempDataPath() + "/feature_model",
-      corpusData)
-    val featureExtractionTask = new FeatureExtractorStage(
-      conf.tempDataPath() + "/features",
-      featureTransformerTask,
-      trainingTask)
-    val modelTrainingTask = new RelationModelStage(
-      conf.tempDataPath() + "/models",
-      featureExtractionTask,
-      featureTransformerTask,
-      relationsData)
+      val path = modelTrainingTask.getData()
+      log.info(s"Saved model to $path")
 
-    val path = modelTrainingTask.getData()
-    log.info(s"Saved model to $path")
-
-    // Evaluate
-    conf.evaluationFiles.foreach(evaluate => {
-      log.info("Performing evaluation")
-      val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
-      val t = LocalDateTime.now()
-      val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
-      evaluate.foreach(evalFile => {
-        log.info(s"Evaluating $evalFile")
-        val evaluationData = new EvaluationData(evalFile)
-        val evalSavePath = conf.tempDataPath() +
-          s"/evaluation/${t.format(f)}-${evalFile.split("/").last.split(".json")(0)}"
-        val evaluationTask = new EvaluatorStage(
-          evalSavePath,
-          evaluationData,
-          predictor)
-        val evaluationPath = evaluationTask.getData()
-        log.info(s"Saved evaluation to $evalSavePath")
+      // Evaluate
+      conf.evaluationFiles.foreach(evaluate => {
+        log.info("Performing evaluation")
+        val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
+        val t = LocalDateTime.now()
+        val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+        evaluate.foreach(evalFile => {
+          log.info(s"Evaluating $evalFile")
+          val evaluationData = new EvaluationData(evalFile)
+          val evalSavePath = conf.tempDataPath() +
+            s"/evaluation/${t.format(f)}-${evalFile.split("/").last.split(".json")(0)}"
+          val evaluationTask = new EvaluatorStage(
+            evalSavePath,
+            evaluationData,
+            predictor)
+          val _ = evaluationTask.getData()
+          log.info(s"Saved evaluation to $evalSavePath")
+        })
       })
-    })
 
-    // Serve HTTP API
-    if (conf.demoServer()) {
-      val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
-      var task: Server = null
-      val blaze = BlazeBuilder.bindHttp(8080, "localhost")
-      task = blaze.mountService(REST.api(task, predictor), "/api").run
-      task.awaitShutdown()
-      println("Shutting down REST API")
+      // Serve HTTP API
+      if (conf.demoServer()) {
+        val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+        try {
+          val task = BlazeBuilder
+            .bindHttp(PORT, "localhost")
+            .mountService(REST.api(predictor), "/api")
+            .run
+          println(s"${GREEN}REST interface ready to accept connections${RESET}")
+          task.awaitShutdown()
+        } catch  {
+          case e: java.net.BindException => {
+            println(s"${BOLD}${RED}Error:${RESET} ${e.getMessage}")
+            sc.stop()
+            sys.exit(1)
+          }
+        }
+      }
+    } finally {
+      sc.stop()
     }
-
-    sc.stop()
-
   }
 }
 

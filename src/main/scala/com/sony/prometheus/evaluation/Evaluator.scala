@@ -73,7 +73,7 @@ object Evaluator {
         evalDataPoints
           // treat multiple snippets as one string of multiple paragraphs
           .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
-          .map(e => VildeAnnotater.annotate(e))
+          .map(e => VildeAnnotater.annotate(e, lang = "en", conf = "herd"))
       annotatedEvidence
         .map(doc => Tuple1(doc.toBytes))
         .toDF("doc")
