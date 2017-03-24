@@ -41,7 +41,7 @@ class EvaluatorStage(
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path)
-    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor)
+    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + " _debug.tsv"))
     Evaluator.save(evaluation, path)
   }
 }
@@ -64,16 +64,16 @@ object Evaluator {
     val file = path.split("-").last
     val l = path.split("/").length
     val cachePath = path.split("/").slice(0, l - 1).mkString("/") + "/cache/" + file + ".cache"
-    log.info(s"Caching to $cachePath")
+    log.info(s"Caching $file to $cachePath")
 
     if (Utils.pathExists(cachePath)) {
-      log.info("Using cached Vilde-annotated test data")
+      log.info(s"Using cached Vilde-annotated $file")
       val df = sqlContext.read.parquet(cachePath)
       df.map(row => {
         MemoryDocumentIO.getInstance().fromBytes(row.getAs(0): Array[Byte]): Document
       })
     } else {
-      log.info("Did not find cached test data, annotating with Vilde...")
+      log.info(s"Did not find cached $file, annotating with Vilde...")
       val annotatedEvidence =
         evalDataPoints
           // treat multiple snippets as one string of multiple paragraphs
@@ -93,7 +93,7 @@ object Evaluator {
     * @param evalDataPoints   RDD of [[EvaluationDataPoint]]
     * @return                 an [[EvaluationResult]]
    */
-  def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor)
+  def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor, debugOutFile: Option[String] = None)
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
     val nbrDataPoints: Double = evalDataPoints
@@ -125,6 +125,23 @@ object Evaluator {
         })
       }
       .count()
+
+    // Save debug information to CSV if debugOutFile supplied
+    debugOutFile.foreach(f => {
+      val fs = FileSystem.get(sc.hadoopConfiguration)
+      val output = fs.create(new Path(f))
+      val os = new BufferedOutputStream(output)
+      log.info(s"Saving debug information to $f...")
+      val data = evalDataPoints.zip(predictedRelations)
+        .filter{ case (dP, _) =>
+          dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0}
+        .flatMap{case (dP, rels) => rels.map(rel => s"$rel\t$dP")
+      }.collect().mkString("\n")
+
+      os.write("predicted relation\tevaluation data point".getBytes("UTF-8"))
+      os.write(data.getBytes("UTF-8"))
+      os.close()
+    })
 
     log.info(s"truePositives: ${nbrTruePositives}")
 
