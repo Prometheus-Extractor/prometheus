@@ -1,0 +1,5 @@
+REMOTE_HOST="sem4"
+WORK_PATH="~/projects/prometheus-relation-model"
+
+EXTRA_SPARK_OPTIONS="--conf spark.driver.extraLibraryPath=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native --conf spark.executor.extraLibraryPath=/opt/cloudera/parcels/CDH/lib/hadoop/lib/native"
+
