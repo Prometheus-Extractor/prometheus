@@ -27,6 +27,7 @@ import se.lth.cs.docforia.memstore.MemoryDocumentIO
 class EvaluatorStage(
   path: String,
   evaluationData: Data,
+  lang: String,
   predictor: Predictor)
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
@@ -40,7 +41,7 @@ class EvaluatorStage(
   override def run(): Unit = {
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
-    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path)
+    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
     val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + " _debug.tsv"))
     Evaluator.save(evaluation, path)
   }
@@ -57,7 +58,7 @@ object Evaluator {
     * @param path             path to the cache file
     * @return                 RDD of annotateted Documents
     */
-  def annotateTestData(evalDataPoints: RDD[EvaluationDataPoint], path: String)
+  def annotateTestData(evalDataPoints: RDD[EvaluationDataPoint], path: String, lang: String)
                       (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
     import sqlContext.implicits._
 
@@ -78,7 +79,7 @@ object Evaluator {
         evalDataPoints
           // treat multiple snippets as one string of multiple paragraphs
           .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
-          .map(e => VildeAnnotater.annotate(e, lang = "en", conf = "herd"))
+          .map(e => VildeAnnotater.annotate(e, lang = lang, conf = "herd"))
       annotatedEvidence
         .map(doc => Tuple1(doc.toBytes))
         .toDF("doc")

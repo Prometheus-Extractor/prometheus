@@ -24,7 +24,7 @@ object Prometheus {
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel [--sample-size=0.f] [--evalutionFiles=file1,file2,...] -corpus-path entities-path temp-data-path
+    banner("""Usage: RelationModel --language={sv|en} [--sample-size=0.f] [--evaluationFiles=file1,file2,...] corpus-path entities-path temp-data-path
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
@@ -32,12 +32,17 @@ object Prometheus {
     val entitiesPath = trailArg[String](descr = "path to a parquet file containing the entities/relations to train for")
     val tempDataPath= trailArg[String](descr= "path to a directory that will contain intermediate results")
     val sampleSize = opt[Double](
-      descr = "use this sample a fraction of the corpus",
+      descr = "use this to sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
       default = Option(1.0))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
+    val language = opt[String](
+      required = true,
+      default = Some("sv"),
+      validate = l => l == "sv" || l == "en",
+      descr = "the language to use for the pipeline (default to sv)")
 
     verify()
 
@@ -54,29 +59,32 @@ object Prometheus {
 
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
-
     val log = LogManager.getLogger(Prometheus.getClass)
     val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
 
     implicit val sc = new SparkContext(sparkConf)
     implicit val sqlContext = new SQLContext(sc)
+
+    val tempDataPath = conf.tempDataPath() + "/" + conf.language()
+    log.info("Running pipeline...")
+    log.info(s"language is ${conf.language()}")
     try {
       val corpusData = new CorpusData(conf.corpusPath())
       val relationsData = new RelationsData(conf.entitiesPath())
       val trainingTask = new TrainingDataExtractorStage(
-        conf.tempDataPath() + "/training_sentences",
+        tempDataPath + "/training_sentences",
         corpusData,
         relationsData)
       val featureTransformerTask = new FeatureTransformerStage(
-        conf.tempDataPath() + "/feature_model",
+        tempDataPath + "/feature_model",
         corpusData)
       val featureExtractionTask = new FeatureExtractorStage(
-        conf.tempDataPath() + "/features",
+        tempDataPath + "/features",
         featureTransformerTask,
         trainingTask)
       val modelTrainingTask = new RelationModelStage(
-        conf.tempDataPath() + "/models",
+        tempDataPath + "/models",
         featureExtractionTask,
         featureTransformerTask,
         relationsData)
@@ -93,11 +101,12 @@ object Prometheus {
         evaluate.foreach(evalFile => {
           log.info(s"Evaluating $evalFile")
           val evaluationData = new EvaluationData(evalFile)
-          val evalSavePath = conf.tempDataPath() +
+          val evalSavePath = tempDataPath +
             s"/evaluation/${t.format(f)}-${evalFile.split("/").last.split(".json")(0)}"
           val evaluationTask = new EvaluatorStage(
             evalSavePath,
             evaluationData,
+            conf.language(),
             predictor)
           val _ = evaluationTask.getData()
           log.info(s"Saved evaluation to $evalSavePath")
