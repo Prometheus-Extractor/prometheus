@@ -172,7 +172,7 @@ object Evaluator {
     val fs = FileSystem.get(sc.hadoopConfiguration)
 
     // Output file can be created from file system.
-    val output = fs.create(new Path(path + ".txt"))
+    val output = fs.create(new Path(path + ".tsv"))
 
     // But BufferedOutputStream must be used to output an actual text file.
     val os = new BufferedOutputStream(output)
