@@ -121,7 +121,7 @@ object Prometheus {
             .bindHttp(PORT, "localhost")
             .mountService(REST.api(predictor), "/")
             .run
-          println(s"${GREEN}REST interface ready to accept connections${RESET}")
+          println(s"${GREEN}REST interface ready to accept connections on $PORT ${RESET}")
           task.awaitShutdown()
         } catch  {
           case e: java.net.BindException => {
