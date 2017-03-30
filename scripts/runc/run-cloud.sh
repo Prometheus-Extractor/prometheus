@@ -39,7 +39,6 @@ printf "$CYAN%-20s\t%s$RES\n" "EXTRA_SPARK_OPTIONS:" $EXTRA_SPARK_OPTIONS
 printf "$CYAN%-20s\t%s$RES\n" "args:" $args
 
 function execute {
-  "$@"
   local status=$?
   if [ $status -ne 0 ]; then
     printf "$L_RED Error with $1$RES\n" >&2
