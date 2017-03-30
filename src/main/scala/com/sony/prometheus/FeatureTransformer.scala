@@ -32,6 +32,7 @@ class FeatureTransformerStage(
     val word2vec = Word2VecEncoder(word2vecData.getData())
     val model = FeatureTransformer(docs, word2vec)
     model.value.save(path, word2vecData.getData(), sqlContext)
+    model.destroy()
   }
 }
 

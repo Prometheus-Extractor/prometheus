@@ -1,7 +1,7 @@
 REMOTE_HOST="exjobb8"
 WORK_PATH="~/projects"
-DRIVER_MEMORY="5g"
-HEAP_SIZE="20g"
-EXTRA_SPARK_OPTIONS="--conf spark.driver.memory=$DRIVER_MEMORY --conf spark.executor.memory=$HEAP_SIZE --master local[1]"
+DRIVER_MEMORY="16g"
+HEAP_SIZE="16g"
+EXTRA_SPARK_OPTIONS="--conf spark.driver.memory=$DRIVER_MEMORY --conf spark.executor.memory=$HEAP_SIZE --master local[*]"
 SPARK_SUBMIT="~/projects/spark-1.6.3-bin-hadoop2.6/bin/spark-submit"
 
