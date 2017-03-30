@@ -74,7 +74,7 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
   /** Gets the index of token
     *
     *  @param token   the String to map to Int
-    *  @return        the Int that maps to the token or -1 if not found
+    *  @return        the Int that maps to the token or 0 if not found
     */
   def index(token: String): Int = {
     val t = TokenEncoder.normalize(token)
@@ -91,7 +91,7 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
   }
 
   def vocabSize(): Int = {
-    token2Id.size()
+    id2Token.size() + 1 // offset for unknown id
   }
 
   /** Saves the TokenEncoder to disk

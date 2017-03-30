@@ -2,6 +2,8 @@ package com.sony.prometheus
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import scala.collection.JavaConverters._
+
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
@@ -10,8 +12,10 @@ import org.rogach.scallop.exceptions._
 import utils.Utils.Colours._
 import interfaces._
 import org.http4s.server.blaze._
+
 import scala.util.Properties.envOrNone
 import evaluation._
+import se.lth.cs.docforia.graph.text.Sentence
 
 /** Main class, sets up and runs the pipeline
  */
@@ -31,6 +35,7 @@ object Prometheus {
     val corpusPath = trailArg[String](descr = "path to the corpus to train on")
     val entitiesPath = trailArg[String](descr = "path to a parquet file containing the entities/relations to train for")
     val tempDataPath= trailArg[String](descr= "path to a directory that will contain intermediate results")
+    val word2vecPath = trailArg[String](descr = "path to a word2vec model in the C binary format")
     val sampleSize = opt[Double](
       descr = "use this sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
@@ -61,19 +66,21 @@ object Prometheus {
 
     implicit val sc = new SparkContext(sparkConf)
     implicit val sqlContext = new SQLContext(sc)
+
     try {
       val corpusData = new CorpusData(conf.corpusPath())
       val relationsData = new RelationsData(conf.entitiesPath())
+      val word2VecData = new Word2VecData(conf.word2vecPath())
       val trainingTask = new TrainingDataExtractorStage(
         conf.tempDataPath() + "/training_sentences",
         corpusData,
         relationsData)
       val featureTransformerTask = new FeatureTransformerStage(
         conf.tempDataPath() + "/feature_model",
-        corpusData)
+        corpusData,
+        word2VecData)
       val featureExtractionTask = new FeatureExtractorStage(
         conf.tempDataPath() + "/features",
-        featureTransformerTask,
         trainingTask)
       val modelTrainingTask = new RelationModelStage(
         conf.tempDataPath() + "/models",

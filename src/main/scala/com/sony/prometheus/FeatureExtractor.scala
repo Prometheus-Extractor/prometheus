@@ -18,7 +18,6 @@ import pipeline._
  */
 class FeatureExtractorStage(
    path: String,
-   featureTransformer: Data,
    trainingDataExtractor: Data)
    (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
@@ -31,8 +30,7 @@ class FeatureExtractorStage(
 
   override def run(): Unit = {
     val trainingSentences = TrainingDataExtractor.load(trainingDataExtractor.getData())
-    val ft = FeatureTransformer.load(featureTransformer.getData())
-    val data = FeatureExtractor.trainingData(ft, trainingSentences)
+    val data = FeatureExtractor.trainingData(trainingSentences)
     FeatureExtractor.save(data, path)
   }
 }
@@ -40,6 +38,8 @@ class FeatureExtractorStage(
 /** Extracts features for training/prediction
  */
 object FeatureExtractor {
+
+  val EMPTY_TOKEN = "<empty>"
   val NBR_WORDS_BEFORE = 3
   val NBR_WORDS_AFTER = 3
   val MIN_FEATURE_LENGTH = 2
@@ -48,10 +48,9 @@ object FeatureExtractor {
     *
     * Use this to collect training data for [[com.sony.prometheus.RelationModel]]
     *
-    * @param ft                 - a [[com.sony.prometheus.FeatureTransformer]]
     * @param trainingSentences  - an RDD of [[com.sony.prometheus.TrainingSentence]]
     */
-  def trainingData(ft: FeatureTransformer, trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
+  def trainingData(trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
     val trainingPoints = trainingSentences.flatMap(t => {
       val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
@@ -76,10 +75,9 @@ object FeatureExtractor {
     *
     *   Use this to collect test data for [[com.sony.prometheus.RelationModel]]
     *
-    *   @param ft     - a [[com.sony.prometheus.FeatureTransformer]]
     *   @param sentences  - a Seq of Docforia Documents
     */
-  def testData(ft: FeatureTransformer, sentences: Seq[Document])(implicit sqlContext: SQLContext): Seq[TestDataPoint] = {
+  def testData(sentences: Seq[Document])(implicit sqlContext: SQLContext): Seq[TestDataPoint] = {
 
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
@@ -153,10 +151,10 @@ object FeatureExtractor {
       Create string feature vector for the pair
      */
     val features = Seq(
-      Seq.fill(NBR_WORDS_BEFORE - wordsBefore1.length)("<empty>") ++ wordsBefore1.map(f),
-      wordsAfter1.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter1.length)("<empty>"),
-      Seq.fill(NBR_WORDS_BEFORE - wordsBefore2.length)("<empty>") ++ wordsBefore2.map(f),
-      wordsAfter2.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter2.length)("<empty>")
+      Seq.fill(NBR_WORDS_BEFORE - wordsBefore1.length)(EMPTY_TOKEN) ++ wordsBefore1.map(f),
+      wordsAfter1.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter1.length)(EMPTY_TOKEN),
+      Seq.fill(NBR_WORDS_BEFORE - wordsBefore2.length)(EMPTY_TOKEN) ++ wordsBefore2.map(f),
+      wordsAfter2.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter2.length)(EMPTY_TOKEN)
     ).flatten
     features
   }

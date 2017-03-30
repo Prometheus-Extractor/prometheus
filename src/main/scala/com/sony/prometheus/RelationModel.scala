@@ -2,6 +2,7 @@ package com.sony.prometheus
 
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -49,12 +50,10 @@ object RelationModel {
     data.map(t => (t.relationId, 1)).reduceByKey(_+_).map(t=> s"${t._2}\t${t._1}").collect().map(log.info)
   }
 
-  def apply(data: RDD[TrainingDataPoint], featureTransformer: FeatureTransformer, numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
-
-    val broadcastedFT = data.sparkContext.broadcast(featureTransformer)
+  def apply(data: RDD[TrainingDataPoint], featureTransformer: Broadcast[FeatureTransformer], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
     var labeledData = data.map(t => {
-      LabeledPoint(t.relationClass.toDouble, broadcastedFT.value.toFeatureVector(t.wordFeatures, t.posFeatures))
+      LabeledPoint(t.relationClass.toDouble, featureTransformer.value.toFeatureVector(t.wordFeatures, t.posFeatures))
     }).repartition(Prometheus.DATA_PARTITIONS) // perform repartition to force execution.
     labeledData.cache()
 
