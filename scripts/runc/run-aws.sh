@@ -48,7 +48,7 @@ test scp target/scala-2.10/$JAR_NAME $CLUSTER_SSH:$CLUSTER_WORK_PATH/$JAR_NAME
 JVMOPTS="-XX:+AggressiveOpts -XX:+PrintFlagsFinal -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35"
 
 echo " == Running command on cluster == "
-test ssh ç 'bash -s' << EOF
+test ssh $CLUSTER_SSH 'bash -s' << EOF
   mkdir -p $CLUSTER_WORK_PATH
 	cd $CLUSTER_WORK_PATH
 	spark-submit --conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE --conf spark.executor.extraJavaOptions="$JVMOPTS" $JAR_NAME $JAR_USER_ARGS $args
