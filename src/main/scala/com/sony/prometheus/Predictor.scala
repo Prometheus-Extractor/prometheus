@@ -4,9 +4,11 @@ import com.sony.prometheus.pipeline.{Data, Task}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.text.Sentence
 import play.api.libs.json._
+
 import scala.collection.JavaConverters._
 
 class PredictorStage(
@@ -57,13 +59,11 @@ object Predictor {
 
 }
 
-class Predictor(model: RelationModel, transformer: FeatureTransformer, relations: RDD[Relation]) extends Serializable {
+class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: RDD[Relation]) extends Serializable {
 
   val UNKNOWN_CLASS = "<unknown_class>"
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
-
-    val broadcastedFT = relations.sparkContext.broadcast(transformer)
 
     val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).collect().toList.toMap
 
@@ -73,9 +73,9 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
         .toSeq
         .map(s => doc.subDocument(s.getStart, s.getEnd))
 
-      val points: Seq[TestDataPoint] = FeatureExtractor.testData(transformer, sentences)
+      val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
-        .map(p => broadcastedFT.value.toFeatureVector(p.wordFeatures, p.posFeatures))
+        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures))
         .map(model.predict)
 
       classes.zip(points).map{
