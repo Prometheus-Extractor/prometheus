@@ -56,7 +56,7 @@ execute sbt pack # -Dmode=cluster?
 LIBS=$(python -c "import os; print(','.join(map(lambda fname: 'lib/' + fname, os.listdir('target/pack/lib'))))")
 
 printf "$GREEN == Synchronizing dependencies and executables == $RES\n"
-execute rsync -av --delete --exclude $JAR_NAME -e ssh --progress target/pack/lib/ $REMOTE_HOST:$WORK_PATH/lib/
+execute rsync -av --delete -e ssh --progress target/pack/lib/ $REMOTE_HOST:$WORK_PATH/lib/
 execute scp target/scala-2.10/$JAR_NAME $REMOTE_HOST:$WORK_PATH/$JAR_NAME
 
 printf "$GREEN == Running $JAR_NAME on $REMOTE_HOST == $RES\n"
