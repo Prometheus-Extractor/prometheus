@@ -33,10 +33,10 @@ GREEN="\e[32m"
 CYAN="\e[95m"
 
 printf "$CYAN == Environment == $RES\n"
-printf "$CYAN%-20s\t%s$RES\n" "REMOTE_HOST:" $REMOTE_HOST
-printf "$CYAN%-20s\t%s$RES\n" "WORK_PATH:" $WORK_PATH
-printf "$CYAN%-20s\t%s$RES\n" "EXTRA_SPARK_OPTIONS:" $EXTRA_SPARK_OPTIONS
-printf "$CYAN%-20s\t%s$RES\n" "args:" $args
+printf "$CYAN%-25s %s $RES\n" "REMOTE_HOST:" "$REMOTE_HOST"
+printf "$CYAN%-25s %s $RES\n" "WORK_PATH:" "$WORK_PATH"
+printf "$CYAN%-25s %s $RES\n" "EXTRA_SPARK_OPTIONS:" "$EXTRA_SPARK_OPTIONS"
+printf "$CYAN%-25s %s $RES\n" "args:" "$args"
 
 function execute {
   "$@"
