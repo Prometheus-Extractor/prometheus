@@ -1,5 +1,6 @@
 package com.sony.prometheus.utils
 
+import java.net.URI
 import java.nio.file.{Files, Paths}
 
 import org.apache.spark.SparkContext
@@ -20,8 +21,9 @@ object Utils {
     */
   def pathExists(path: String)(implicit sc: SparkContext): Boolean = {
     if (path.split(":")(0) == "hdfs") {
-      val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
-      fs.exists(new org.apache.hadoop.fs.Path(path.split(":")(1)))
+      val fs = org.apache.hadoop.fs.FileSystem.get(new URI("hdfs://semantica004.cs.lth.se:8020"), sc.hadoopConfiguration)
+      fs.exists(new org.apache.hadoop.fs.Path(path))
+      true
     } else {
       Files.exists(Paths.get(path))
     }

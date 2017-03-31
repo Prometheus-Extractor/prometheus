@@ -13,7 +13,8 @@ import scala.collection.JavaConverters._
 class PredictorStage(
   path: String,
   modelStage: Data,
-  featureTransformer: Data,
+  posEncoder: Data,
+  word2VecData: Word2VecData,
   relationsData: Data,
   docs: RDD[Document])
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
@@ -25,7 +26,8 @@ class PredictorStage(
   }
 
   override def run(): Unit = {
-    val predictor = Predictor(modelStage, featureTransformer, relationsData)
+
+    val predictor = Predictor(modelStage, posEncoder: Data, word2VecData: Word2VecData, relationsData)
     val data = predictor.extractRelations(docs)
     Predictor.save(data, path)
   }
@@ -36,14 +38,12 @@ class PredictorStage(
   */
 object Predictor {
 
-  def apply(modelStage: Data, featureTransformer: Data, relationData: Data)
+  def apply(modelStage: Data, posEncoder: Data, word2VecData: Word2VecData, relationData: Data)
            (implicit sqlContext: SQLContext): Predictor = {
-
+    val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData())
     val model = RelationModel.load(modelStage.getData(), sqlContext.sparkContext)
-    val transformer = FeatureTransformer.load(featureTransformer.getData())
-
     val relations = RelationsReader.readRelations(relationData.getData())
-    new Predictor(model, transformer, relations)
+    new Predictor(model, featureTransformer, relations)
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[ExtractedRelation] = {
@@ -58,7 +58,7 @@ object Predictor {
 
 }
 
-class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: RDD[Relation]) extends Serializable {
+class Predictor(model: RelationModel, transformer: FeatureTransformer, relations: RDD[Relation]) extends Serializable {
 
   val UNKNOWN_CLASS = "<unknown_class>"
 
@@ -74,7 +74,7 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
-        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures))
+        .map(p => transformer.toFeatureVector(p.wordFeatures, p.posFeatures))
         .map(model.predict)
 
       classes.zip(points).map{

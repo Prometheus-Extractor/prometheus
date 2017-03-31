@@ -85,17 +85,20 @@ object Prometheus {
         tempDataPath + "/training_sentences",
         corpusData,
         relationsData)
-      val featureTransformerTask = new FeatureTransformerStage(
-        tempDataPath + "/feature_model",
-        corpusData,
-        word2VecData)
+      val posEncoderStage = new PosEncoderStage(
+        tempDataPath + "/pos_encoder",
+        corpusData
+      )
       val featureExtractionTask = new FeatureExtractorStage(
         tempDataPath + "/features",
         trainingTask)
+
+      posEncoderStage.getData()
       val modelTrainingTask = new RelationModelStage(
         tempDataPath + "/models",
         featureExtractionTask,
-        featureTransformerTask,
+        posEncoderStage,
+        word2VecData,
         relationsData)
 
       val path = modelTrainingTask.getData()
@@ -106,7 +109,7 @@ object Prometheus {
         log.info("Performing evaluation")
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
         val t = LocalDateTime.now()
-        val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+        val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, relationsData)
         evaluate.foreach(evalFile => {
           log.info(s"Evaluating $evalFile")
           val evaluationData = new EvaluationData(evalFile)
@@ -124,7 +127,7 @@ object Prometheus {
 
       // Serve HTTP API
       if (conf.demoServer()) {
-        val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+        val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, relationsData)
         try {
           val task = BlazeBuilder
             .bindHttp(PORT, "localhost")

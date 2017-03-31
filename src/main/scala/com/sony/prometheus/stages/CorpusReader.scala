@@ -16,7 +16,7 @@ class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
     if (exists(path)) {
       path
     } else {
-      throw new Exception("Corpus data missing")
+      throw new Exception(s"Corpus data missing $path")
     }
   }
 }

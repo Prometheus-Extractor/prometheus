@@ -13,7 +13,7 @@ import org.apache.spark.sql.SQLContext
 
 /** Builds the RelationModel
  */
-class RelationModelStage(path: String, featureExtractor: Data, featureTransformerStage: Data,
+class RelationModelStage(path: String, featureExtractor: Data, posEncoder: Data, word2vec: Data,
                          relationsReader: Data)
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
@@ -27,7 +27,7 @@ class RelationModelStage(path: String, featureExtractor: Data, featureTransforme
   override def run(): Unit = {
 
     val data:RDD[TrainingDataPoint] = FeatureExtractor.load(featureExtractor.getData())
-    val featureTransformer = FeatureTransformer.load(featureTransformerStage.getData())
+    val featureTransformer = FeatureTransformer(word2vec.getData(), posEncoder.getData())
     val numClasses = RelationsReader.readRelations(relationsReader.getData()).count().toInt + 1
 
     val model = RelationModel(data, featureTransformer, numClasses)
@@ -50,10 +50,10 @@ object RelationModel {
     data.map(t => (t.relationId, 1)).reduceByKey(_+_).map(t=> s"${t._2}\t${t._1}").collect().map(log.info)
   }
 
-  def apply(data: RDD[TrainingDataPoint], featureTransformer: Broadcast[FeatureTransformer], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
+  def apply(data: RDD[TrainingDataPoint], featureTransformer: FeatureTransformer, numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
     var labeledData = data.map(t => {
-      LabeledPoint(t.relationClass.toDouble, featureTransformer.value.toFeatureVector(t.wordFeatures, t.posFeatures))
+      LabeledPoint(t.relationClass.toDouble, featureTransformer.toFeatureVector(t.wordFeatures, t.posFeatures))
     }).repartition(Prometheus.DATA_PARTITIONS) // perform repartition to force execution.
     labeledData.cache()
 

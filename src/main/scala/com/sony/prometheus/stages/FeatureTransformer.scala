@@ -1,56 +1,26 @@
 package com.sony.prometheus.stages
 
-import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 
-/** Stage in the pipeline for feature transformation
- */
-class FeatureTransformerStage(
-  path: String,
-  corpusData: Data,
-  word2vecData: Data)
-  (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
-
-  override def getData(): String = {
-    if (!exists(path)) {
-      run()
-    }
-    path
-  }
-
-  override def run(): Unit = {
-    val docs = CorpusReader.readCorpus(corpusData.getData())
-    val word2vec = Word2VecEncoder(word2vecData.getData())
-    val model = FeatureTransformer(docs, word2vec)
-    model.value.save(path, word2vecData.getData(), sqlContext)
-    model.destroy()
-  }
-}
-
 /** Used for creating a FeatureTransformer
  */
 object FeatureTransformer {
 
-  def apply(docs: RDD[Document], tokenEncoder: Word2VecEncoder)(implicit sqlContext: SQLContext): Broadcast[FeatureTransformer] = {
-    val posEncoder = TokenEncoder.createPosEncoder(docs)
-    sqlContext.sparkContext.broadcast(new FeatureTransformer(tokenEncoder, posEncoder))
-  }
-
-  def load(path: String)(implicit sqlContext: SQLContext): Broadcast[FeatureTransformer] = {
-    val word2vec = sqlContext.sparkContext.textFile(path + "/word2vec").collect().mkString
-    val posEncoder = TokenEncoder.load(path + "/pos_encoder", sqlContext.sparkContext)
-    sqlContext.sparkContext.broadcast(new FeatureTransformer(Word2VecEncoder(word2vec), posEncoder))
+  def apply(pathToWord2Vec: String, pathToPosEncoder: String)(implicit sqlContext: SQLContext): FeatureTransformer = {
+    val posEncoder = StringIndexer.load(pathToPosEncoder, sqlContext.sparkContext)
+    val word2vec = Word2VecEncoder.apply(pathToWord2Vec)
+    new FeatureTransformer(word2vec, posEncoder)
   }
 
 }
 
 /** Transforms tokens with a [[stages.TokenEncoder]]
  */
-class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: TokenEncoder) extends Serializable {
+class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: StringIndexer) extends Serializable {
 
   /** Returns a transformed Seq of tokens as a Seq of Ints with [[stages.TokenEncoder]]
     *

@@ -8,10 +8,10 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.{Level, Logger}
 import com.holdenkarau.spark.testing.SharedSparkContext
-import com.sony.prometheus.stages.TokenEncoder
+import com.sony.prometheus.stages.StringIndexer
 import com.sony.prometheus.utils.Filters
 
-class TokenEncoderSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext {
+class StringIndexerSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext {
 
   trait TestDocument {
     val stringDoc = """

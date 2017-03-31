@@ -28,6 +28,7 @@ object Word2VecEncoder {
     val log = LogManager.getLogger(Word2VecEncoder.getClass)
 
     val startTime = System.currentTimeMillis()
+    log.info("Reading word2vec")
     val model = WordVectorSerializer.readWord2VecModel(modelPath)
     log.info(s"Read binary word2vec model in ${(System.currentTimeMillis() - startTime)/1000} s")
     new Word2VecEncoder(model)
