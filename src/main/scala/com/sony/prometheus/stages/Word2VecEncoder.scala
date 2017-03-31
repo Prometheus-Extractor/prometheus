@@ -1,23 +1,10 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
-import java.io.File
-import javax.annotation.RegEx
-
-import com.sony.prometheus.pipeline.Data
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-
-import scala.collection.JavaConverters._
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SQLContext
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer
 import org.deeplearning4j.models.embeddings.wordvectors.WordVectors
-import org.deeplearning4j.spark.models.embeddings.word2vec.Word2Vec
-import org.deeplearning4j.text.tokenization.tokenizer.preprocessor.CommonPreprocessor
-import org.deeplearning4j.text.tokenization.tokenizerfactory.DefaultTokenizerFactory
-import se.lth.cs.docforia.Document
-import se.lth.cs.docforia.graph.text.Sentence
 
 class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
 

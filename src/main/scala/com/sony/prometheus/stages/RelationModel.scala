@@ -1,14 +1,14 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
+import com.sony.prometheus._
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
-import pipeline._
+import org.apache.spark.sql.SQLContext
 
 
 /** Builds the RelationModel

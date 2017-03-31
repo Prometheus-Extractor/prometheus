@@ -1,4 +1,4 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
 import java.io.IOError
 
@@ -8,7 +8,6 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{Accumulator, SparkContext}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
-import pipeline._
 
 /** Represents the corpus data used to train on
  */

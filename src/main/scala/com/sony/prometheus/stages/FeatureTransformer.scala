@@ -1,16 +1,11 @@
-package com.sony.prometheus
-import akka.event.slf4j.Logger
+package com.sony.prometheus.stages
+
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.ml.feature.{StringIndexer, StringIndexerModel}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
-import se.lth.cs.docforia.graph.text.Token
-import pipeline._
-
-import scala.collection.JavaConverters._
 
 /** Stage in the pipeline for feature transformation
  */
@@ -53,11 +48,12 @@ object FeatureTransformer {
 
 }
 
-/** Transforms tokens with a [[com.sony.prometheus.TokenEncoder]]
+/** Transforms tokens with a [[stages.TokenEncoder]]
  */
 class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: TokenEncoder) extends Serializable {
 
-  /** Returns a transformed Seq of tokens as a Seq of Ints with [[com.sony.prometheus.TokenEncoder]]
+  /** Returns a transformed Seq of tokens as a Seq of Ints with [[stages.TokenEncoder]]
+    *
     * @param tokens - the Seq of Strings to transform
    */
   def transformWords(tokens: Seq[String]): Seq[Vector] = {

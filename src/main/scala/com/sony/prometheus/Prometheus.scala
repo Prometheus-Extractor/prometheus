@@ -2,8 +2,10 @@ package com.sony.prometheus
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import scala.collection.JavaConverters._
 
+import com.sony.prometheus.stages._
+
+import scala.collection.JavaConverters._
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}

@@ -1,5 +1,6 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
+import com.sony.prometheus.utils.Filters
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.apache.spark.SparkContext

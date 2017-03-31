@@ -7,8 +7,7 @@ import java.time.format.DateTimeFormatter
 
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
-import com.sony.prometheus.pipeline._
-import com.sony.prometheus.Predictor
+import com.sony.prometheus.stages.{Predictor, _}
 import com.sony.prometheus.utils.Utils
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.rdd.RDD

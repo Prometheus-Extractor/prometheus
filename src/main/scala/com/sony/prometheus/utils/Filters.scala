@@ -1,4 +1,4 @@
-package com.sony.prometheus
+package com.sony.prometheus.utils
 
 import java.util.regex.Pattern
 

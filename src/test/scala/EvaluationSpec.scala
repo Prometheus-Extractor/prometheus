@@ -3,10 +3,12 @@ import java.io.File
 import com.holdenkarau.spark.testing.SharedSparkContext
 import com.sony.prometheus._
 import com.sony.prometheus.evaluation._
+import com.sony.prometheus.stages._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import play.api.libs.json.Json
+
 import scala.io.Source.fromFile
 import se.lth.cs.docforia.Document
 

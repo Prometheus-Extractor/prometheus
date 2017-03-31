@@ -1,13 +1,12 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
-import com.sony.prometheus.pipeline.{Data, Task}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
+import play.api.libs.json._
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.text.Sentence
-import play.api.libs.json._
 
 import scala.collection.JavaConverters._
 

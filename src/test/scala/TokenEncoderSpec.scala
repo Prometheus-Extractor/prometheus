@@ -1,14 +1,15 @@
-import org.scalatest.{FlatSpec, BeforeAndAfter, Matchers}
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocument
 import se.lth.cs.docforia.graph.text.{Sentence, Token}
+
 import scala.collection.JavaConverters._
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.{Level, Logger}
-import com.sony.prometheus.TokenEncoder
-import com.sony.prometheus.Filters
 import com.holdenkarau.spark.testing.SharedSparkContext
+import com.sony.prometheus.stages.TokenEncoder
+import com.sony.prometheus.utils.Filters
 
 class TokenEncoderSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext {
 

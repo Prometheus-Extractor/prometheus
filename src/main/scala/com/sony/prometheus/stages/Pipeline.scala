@@ -1,11 +1,11 @@
-package com.sony.prometheus.pipeline
+package com.sony.prometheus.stages
 
 import java.nio.file.{Files, Paths}
 
 import com.sony.prometheus.utils.Utils
 import org.apache.spark.SparkContext
 
-/** A runnable task in the Pipeline, implemented by eg [[com.sony.prometheus.FeatureExtractorStage]]
+/** A runnable task in the Pipeline, implemented by eg [[FeatureExtractorStage]]
  */
 trait Task {
 

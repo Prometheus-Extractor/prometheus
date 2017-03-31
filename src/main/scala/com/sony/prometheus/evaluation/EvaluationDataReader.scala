@@ -1,7 +1,7 @@
 package com.sony.prometheus.evaluation
 
 import org.apache.spark.SparkContext
-import com.sony.prometheus.pipeline._
+import com.sony.prometheus.stages._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import com.sony.prometheus.annotaters.VildeAnnotater
