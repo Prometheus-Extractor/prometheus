@@ -3,6 +3,7 @@ package com.sony.prometheus.stages
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
+import com.sony.prometheus.utils.Utils.pathExists
 
 case class Relation(name: String, id: String, classIdx: Int, entities: Seq[EntityPair] = Seq())
 case class EntityPair(source: String, dest: String)
@@ -11,7 +12,7 @@ case class EntityPair(source: String, dest: String)
  */
 class RelationsData(path: String)(implicit sc: SparkContext) extends Data {
   override def getData(): String = {
-    if (exists(path)) {
+    if (pathExists(path)) {
       path
     } else {
       throw new Exception("Relations data missing")

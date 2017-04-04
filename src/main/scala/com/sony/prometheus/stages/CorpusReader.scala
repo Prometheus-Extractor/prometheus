@@ -8,12 +8,13 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.{Accumulator, SparkContext}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
+import com.sony.prometheus.utils.Utils.pathExists
 
 /** Represents the corpus data used to train on
  */
 class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
   override def getData(): String = {
-    if (exists(path)) {
+    if (pathExists(path)) {
       path
     } else {
       throw new Exception(s"Corpus data missing $path")

@@ -6,6 +6,7 @@ import java.time.format.DateTimeFormatter
 import com.sony.prometheus.stages._
 
 import scala.collection.JavaConverters._
+import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
@@ -63,19 +64,17 @@ object Prometheus {
   }
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
     val log = LogManager.getLogger(Prometheus.getClass)
     val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
 
+
     implicit val sc = new SparkContext(sparkConf)
     implicit val sqlContext = new SQLContext(sc)
 
     val tempDataPath = conf.tempDataPath() + "/" + conf.language()
-    log.info("Running pipeline...")
-    log.info(s"language is ${conf.language()}")
 
     try {
       val corpusData = new CorpusData(conf.corpusPath())

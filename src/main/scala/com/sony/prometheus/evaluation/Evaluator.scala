@@ -5,6 +5,7 @@ import java.nio.file.{Files, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import com.sony.prometheus.stages.{Predictor, _}
@@ -31,7 +32,7 @@ class EvaluatorStage(
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path)) {
+    if (!pathExists(path)) {
       run()
     }
     path

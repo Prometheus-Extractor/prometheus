@@ -24,11 +24,5 @@ trait Data {
     * @returns  - the path to the data
    */
   def getData(): String
-
-  /** Returns true if data is available in path
-   * @param path - the path to check
-   */
-  def exists(path: String)(implicit sc: SparkContext): Boolean = Utils.pathExists(path)
-
 }
 

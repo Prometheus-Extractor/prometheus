@@ -1,5 +1,6 @@
 package com.sony.prometheus.evaluation
 
+import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.spark.SparkContext
 import com.sony.prometheus.stages._
 import org.apache.spark.rdd.RDD
@@ -10,7 +11,7 @@ import se.lth.cs.docforia.Document
 
 class EvaluationData(path: String)(implicit sc: SparkContext) extends Data {
   override def getData(): String = {
-    if (exists(path))
+    if (pathExists(path))
       path
     else
       throw new Exception("Evaluation Data missing")

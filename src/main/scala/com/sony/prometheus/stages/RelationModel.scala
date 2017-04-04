@@ -9,6 +9,7 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
+import com.sony.prometheus.utils.Utils.pathExists
 
 
 /** Builds the RelationModel
@@ -18,7 +19,7 @@ class RelationModelStage(path: String, featureExtractor: Data, posEncoder: Data,
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path)) {
+    if (!pathExists(path)) {
       run()
     }
     path

@@ -10,13 +10,14 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.text.Token
 
 import scala.collection.JavaConverters._
+import com.sony.prometheus.utils.Utils.pathExists
 
 class PosEncoderStage(path: String,
                       corpusData: Data)
                      (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path)) {
+    if (!pathExists(path)) {
       run()
     }
     path

@@ -8,6 +8,7 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.query.QueryCollectors
+import com.sony.prometheus.utils.Utils.pathExists
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -21,7 +22,7 @@ class FeatureExtractorStage(
    (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path)) {
+    if (!pathExists(path)) {
       run()
     }
     path

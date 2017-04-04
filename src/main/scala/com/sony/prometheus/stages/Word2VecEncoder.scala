@@ -5,11 +5,12 @@ import org.apache.spark.SparkContext
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.deeplearning4j.models.embeddings.loader.WordVectorSerializer
 import org.deeplearning4j.models.embeddings.wordvectors.WordVectors
+import com.sony.prometheus.utils.Utils.pathExists
 
 class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
 
   override def getData(): String = {
-    if(exists(path)) {
+    if (pathExists(path)) {
       path
     } else {
       throw new Exception(s"Missing Word2Vec model $path")
@@ -29,9 +30,9 @@ object Word2VecEncoder {
 
     val startTime = System.currentTimeMillis()
     log.info("Reading word2vec")
-    val model = WordVectorSerializer.readWord2VecModel(modelPath)
+    //val model = WordVectorSerializer.readWord2VecModel(modelPath)
     log.info(s"Read binary word2vec model in ${(System.currentTimeMillis() - startTime)/1000} s")
-    new Word2VecEncoder(model)
+    new Word2VecEncoder(null)
 
   }
 }
