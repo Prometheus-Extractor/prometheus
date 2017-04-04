@@ -1,90 +1,23 @@
-package com.sony.prometheus.stages
+package se.lth.cs.nlp.entiforia
 
-import java.io.File
-import java.nio.{ByteBuffer, ByteOrder}
+import java.io.{File, IOException}
+import java.nio.{ByteBuffer, ByteOrder, FloatBuffer}
 import java.nio.channels.FileChannel
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.stream.Collectors
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
-import org.apache.log4j.LogManager
-import org.apache.spark.{SparkContext, SparkFiles}
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import com.sony.prometheus.utils.Utils.pathExists
+import org.nd4j.linalg.api.ndarray.INDArray
+import org.nd4j.linalg.factory.Nd4j
 
-class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
-
-  var hasUploaded = false
-
-  private def uploadFiles(): Unit = {
-    sc.addFile(path + "/model.opt.vocab")
-    sc.addFile(path + "/model.opt.vecs")
-    hasUploaded = true
-  }
-
-  private def getPaths(): String = {
-    s"${SparkFiles.get("model.opt.vocab")}\n${SparkFiles.get("model.opt.vecs")}"
-  }
-
-  override def getData(): String = {
-    if(pathExists(path)) {
-      if(!hasUploaded){
-        uploadFiles()
-      }
-      getPaths()
-    } else {
-      throw new Exception(s"Missing Word2Vec model $path")
-    }
-  }
-
-}
-
-/**
-  * Created by erik on 2017-03-22.
-  */
-object Word2VecEncoder {
-
-  def apply(modelPath: String): Word2VecEncoder = {
-
-    val log = LogManager.getLogger(Word2VecEncoder.getClass)
-
-    val startTime = System.currentTimeMillis()
-    log.info("Reading word2vec")
-    val vocabFile = new File(modelPath.split("\n")(0))
-    val vecsFile = new File(modelPath.split("\n")(1))
-    val model = new Word2VecDict(vocabFile, vecsFile)
-    log.info(s"Read binary word2vec model in ${(System.currentTimeMillis() - startTime)/1000} s")
-    new Word2VecEncoder(model)
-
-  }
-}
-
-/**
-  * This class wraps the specific Word2Vec implementation. We've tried Spark's, DL4J's and now Marcus'.
-  * @param model
-  */
-class Word2VecEncoder(model: Word2VecDict) extends Serializable{
-
-  def index(token: String): Vector = {
-    val idx = model.vectorIdx(token)
-    if(idx == -1){
-      Vectors.zeros(model.dim)
-    }else{
-      Vectors.dense(model.vector(idx).map(_.toDouble))
-    }
-  }
-
-  def vectorSize(): Int = model.dim
-
-}
-
+import scala.collection.mutable
 
 /**
   * Created by marcusk on 2017-03-20.
   */
-class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UNKNOWN__") extends Serializable {
+class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UNKNOWN__") {
   private val vocab : Object2IntOpenHashMap[String] = loadVocab(vocabFile.getAbsolutePath)
-  private val vecs  : Array[Array[Float]]                   = loadVectors(vocab.size(), vecsFile.getAbsolutePath)
+  private val vecs  : INDArray                      = loadVectors(vocab.size(), vecsFile.getAbsolutePath)
 
   /**
     * Load the vectors
@@ -92,7 +25,7 @@ class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UN
     * @param path the path to the binary vectors
     * @return matrix of all word vectors
     */
-  private def loadVectors(vocabsize: Int, path: String): Array[Array[Float]] = {
+  private def loadVectors(vocabsize: Int, path: String): INDArray = {
     val start = System.currentTimeMillis
     System.out.println("Loading vectors...")
     val ch = FileChannel.open(Paths.get(path), StandardOpenOption.READ)
@@ -131,7 +64,7 @@ class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UN
     val end = System.currentTimeMillis
     System.out.println("Done in " + (end - start) + " ms")
     System.out.println(String.format("Read %s vectors.", Integer.valueOf(matrix.length)))
-    matrix
+    Nd4j.create(matrix)
   }
 
   /**
@@ -158,14 +91,12 @@ class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UN
     lookupIndex
   }
 
-  def dim = vecs(0).length
-  def numwords = vecs.length
+  def dim = vecs.columns()
+  def numwords = vecs.rows()
 
-  def vector(idx : Int) : Array[Float] = vecs(idx)
+  def vector(idx : Int) : INDArray = vecs.getRow(idx)
   def vectorIdx(str : String) : Int = {
     vocab.getInt(str)
   }
-  def vector(str : String) : Array[Float] = vecs(vocab.getInt(str))
+  def vector(str : String) : INDArray = vecs.getRow(vocab.getInt(str))
 }
-
-

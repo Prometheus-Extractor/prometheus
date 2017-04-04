@@ -80,25 +80,29 @@ object Prometheus {
       val corpusData = new CorpusData(conf.corpusPath())
       val relationsData = new RelationsData(conf.entitiesPath())
       val word2VecData = new Word2VecData(conf.word2vecPath())
+
       val trainingTask = new TrainingDataExtractorStage(
         tempDataPath + "/training_sentences",
         corpusData,
         relationsData)
+
       val posEncoderStage = new PosEncoderStage(
         tempDataPath + "/pos_encoder",
-        corpusData
-      )
+        corpusData)
+
       val featureExtractionTask = new FeatureExtractorStage(
         tempDataPath + "/features",
         trainingTask)
 
-      posEncoderStage.getData()
+      val featureTransformerTask = new FeatureTransformerStage(
+        tempDataPath + "/transformed_features",
+        featureExtractionTask,
+        word2VecData,
+        posEncoderStage)
+
       val modelTrainingTask = new RelationModelStage(
         tempDataPath + "/models",
-        featureExtractionTask,
-        posEncoderStage,
-        word2VecData,
-        relationsData)
+        featureTransformerTask)
 
       val path = modelTrainingTask.getData()
       log.info(s"Saved model to $path")

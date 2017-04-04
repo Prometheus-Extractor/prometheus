@@ -14,8 +14,7 @@ import com.sony.prometheus.utils.Utils.pathExists
 
 /** Builds the RelationModel
  */
-class RelationModelStage(path: String, featureExtractor: Data, posEncoder: Data, word2vec: Data,
-                         relationsReader: Data)
+class RelationModelStage(path: String, featureTransformerStage: Data)
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -27,11 +26,10 @@ class RelationModelStage(path: String, featureExtractor: Data, posEncoder: Data,
 
   override def run(): Unit = {
 
-    val data:RDD[TrainingDataPoint] = FeatureExtractor.load(featureExtractor.getData())
-    val featureTransformer = FeatureTransformer(word2vec.getData(), posEncoder.getData())
-    val numClasses = RelationsReader.readRelations(relationsReader.getData()).count().toInt + 1
+    val data = FeatureTransformer.load(featureTransformerStage.getData())
+    val numClasses = data.map(d => d.classIdx).distinct().count().toInt
 
-    val model = RelationModel(data, featureTransformer, numClasses)
+    val model = RelationModel(data, numClasses)
     model.save(path, data.sparkContext)
   }
 }
@@ -51,12 +49,11 @@ object RelationModel {
     data.map(t => (t.relationId, 1)).reduceByKey(_+_).map(t=> s"${t._2}\t${t._1}").collect().map(log.info)
   }
 
-  def apply(data: RDD[TrainingDataPoint], featureTransformer: FeatureTransformer, numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
+  def apply(data: RDD[TransformedFeature], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
-    var labeledData = data.map(t => {
-      LabeledPoint(t.relationClass.toDouble, featureTransformer.toFeatureVector(t.wordFeatures, t.posFeatures))
-    }).repartition(Prometheus.DATA_PARTITIONS) // perform repartition to force execution.
-    labeledData.cache()
+    val labeledData = data.map(t => {
+      LabeledPoint(t.classIdx, t.featureVector)
+    }).cache()
 
     val classifier = new LogisticRegressionWithLBFGS()
     classifier

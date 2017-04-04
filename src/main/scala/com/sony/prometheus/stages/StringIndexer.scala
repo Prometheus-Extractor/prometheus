@@ -14,7 +14,7 @@ import com.sony.prometheus.utils.Utils.pathExists
 
 class PosEncoderStage(path: String,
                       corpusData: Data)
-                     (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+                     (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data{
 
   override def getData(): String = {
     if (!pathExists(path)) {
