@@ -120,7 +120,7 @@ class Word2VecEncoder extends Externalizable{
   */
 class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UNKNOWN__") extends Serializable {
   private val vocab : Object2IntOpenHashMap[String] = loadVocab(vocabFile.getAbsolutePath)
-  private val vecs  : Array[Array[Float]]                   = loadVectors(vocab.size(), vecsFile.getAbsolutePath)
+  private val vecs  : Array[Array[Float]] = loadVectors(vocab.size(), vecsFile.getAbsolutePath)
 
   /**
     * Load the vectors
