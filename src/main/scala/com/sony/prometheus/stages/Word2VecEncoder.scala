@@ -17,9 +17,10 @@ class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
   var hasUploaded = false
 
   private def uploadFiles(): Unit = {
+    val log = LogManager.getLogger(this.getClass)
+    log.info(s"Uploading word2vec binary model to SparkFiles from $path")
     sc.addFile(path + "/model.opt.vocab")
     sc.addFile(path + "/model.opt.vecs")
-
     hasUploaded = true
   }
 
@@ -50,7 +51,6 @@ object Word2VecEncoder {
     val word2vec = new Word2VecEncoder()
     word2vec.vecName = "model.opt.vecs"
     word2vec.vocabName = "model.opt.vocab"
-
     word2vec
   }
 }
@@ -102,13 +102,13 @@ class Word2VecEncoder extends Externalizable{
   def vectorSize(): Int = {setup(); model.dim}
 
   override def writeExternal(out: ObjectOutput): Unit = {
-    println("Serializing word2vec model")
+    LogManager.getLogger(Word2VecEncoder.getClass).info("Serializing word2vec model")
     out.writeUTF(vocabName)
     out.writeUTF(vecName)
   }
 
   override def readExternal(in: ObjectInput): Unit = {
-    println("Deserializing word2vec model")
+    LogManager.getLogger(Word2VecEncoder.getClass).info("Deserializing word2vec model")
     vocabName = in.readUTF()
     vecName = in.readUTF()
   }

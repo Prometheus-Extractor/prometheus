@@ -36,7 +36,7 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
     pos.map(posEncoder.index)
   }
 
-  private def oneHotEncode(features: Seq[Int], vocabSize: Int): Vector = {
+  def oneHotEncode(features: Seq[Int], vocabSize: Int): Vector = {
     val f = features.distinct.map(idx => (idx, 1.0))
     Vectors.sparse(vocabSize, f)
   }
