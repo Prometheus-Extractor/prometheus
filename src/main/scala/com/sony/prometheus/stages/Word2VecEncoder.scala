@@ -1,6 +1,6 @@
 package com.sony.prometheus.stages
 
-import java.io.File
+import java.io.{Externalizable, File, ObjectInput, ObjectOutput}
 import java.nio.{ByteBuffer, ByteOrder}
 import java.nio.channels.FileChannel
 import java.nio.file.{Files, Paths, StandardOpenOption}
@@ -19,6 +19,7 @@ class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
   private def uploadFiles(): Unit = {
     sc.addFile(path + "/model.opt.vocab")
     sc.addFile(path + "/model.opt.vecs")
+
     hasUploaded = true
   }
 
@@ -46,16 +47,11 @@ object Word2VecEncoder {
 
   def apply(modelPath: String): Word2VecEncoder = {
 
-    val log = LogManager.getLogger(Word2VecEncoder.getClass)
+    val word2vec = new Word2VecEncoder()
+    word2vec.vecName = "model.opt.vecs"
+    word2vec.vocabName = "model.opt.vocab"
 
-    val startTime = System.currentTimeMillis()
-    log.info("Reading word2vec")
-    val vocabFile = new File(modelPath.split("\n")(0))
-    val vecsFile = new File(modelPath.split("\n")(1))
-    val model = new Word2VecDict(vocabFile, vecsFile)
-    log.info(s"Read binary word2vec model in ${(System.currentTimeMillis() - startTime)/1000} s")
-    new Word2VecEncoder(model)
-
+    word2vec
   }
 }
 
@@ -63,9 +59,38 @@ object Word2VecEncoder {
   * This class wraps the specific Word2Vec implementation. We've tried Spark's, DL4J's and now Marcus'.
   * @param model
   */
-class Word2VecEncoder(model: Word2VecDict) extends Serializable{
+class Word2VecEncoder extends Externalizable{
+
+  var model: Word2VecDict = null
+  var vocabName: String = null
+  var vecName: String = null
+
+  /**
+    * This method deserializes the file from the binary model file.
+    */
+  private def setup(): Unit = {
+
+    if(model != null){
+      return
+    }
+
+    this.synchronized {
+      if(model != null){
+        return
+      }
+
+      val log = LogManager.getLogger(Word2VecEncoder.getClass)
+      log.info("Reading word2vec")
+      val vocabFile = new File(SparkFiles.get(vocabName))
+      val vecsFile = new File(SparkFiles.get(vecName))
+      val startTime = System.currentTimeMillis()
+      model = new Word2VecDict(vocabFile, vecsFile)
+      log.info(s"Read binary word2vec model in ${(System.currentTimeMillis() - startTime)/1000} s")
+    }
+  }
 
   def index(token: String): Vector = {
+    setup()
     val idx = model.vectorIdx(token)
     if(idx == -1){
       Vectors.zeros(model.dim)
@@ -74,8 +99,19 @@ class Word2VecEncoder(model: Word2VecDict) extends Serializable{
     }
   }
 
-  def vectorSize(): Int = model.dim
+  def vectorSize(): Int = {setup(); model.dim}
 
+  override def writeExternal(out: ObjectOutput): Unit = {
+    println("Serializing word2vec model")
+    out.writeUTF(vocabName)
+    out.writeUTF(vecName)
+  }
+
+  override def readExternal(in: ObjectInput): Unit = {
+    println("Deserializing word2vec model")
+    vocabName = in.readUTF()
+    vecName = in.readUTF()
+  }
 }
 
 

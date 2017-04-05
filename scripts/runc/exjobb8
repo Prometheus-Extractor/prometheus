@@ -1,9 +1,7 @@
 REMOTE_HOST="exjobb8"
 WORK_PATH="~/projects"
-DRIVER_MEMORY="30g"
-HEAP_SIZE="20g"
+DRIVER_MEMORY="50g"
+HEAP_SIZE="5g"
 EXTRA_SPARK_OPTIONS="--conf spark.driver.memory=$DRIVER_MEMORY --conf spark.executor.memory=$HEAP_SIZE --master local[1]"
 SPARK_SUBMIT="~/projects/spark-1.6.3-bin-hadoop2.6/bin/spark-submit"
-
 EXTRA_ENVS='HDFS_ADDRESS="hdfs://semantica004.cs.lth.se:8020"'
-

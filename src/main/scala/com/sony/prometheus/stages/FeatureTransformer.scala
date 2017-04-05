@@ -8,31 +8,6 @@ import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 import com.sony.prometheus.utils.Utils.pathExists
 
-class FeatureTransformerStage(path: String, featureExtractor: Data, word2vecData: Data, posEncoder: Data)
-                             (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
-
-  override def getData(): String = {
-    if (!pathExists(path)) {
-      run()
-    }
-    path
-  }
-
-  override def run(): Unit = {
-
-    // This code is run at the master because serializing the word2vec model is problematic
-    val data: RDD[TrainingDataPoint] = FeatureExtractor.load(featureExtractor.getData())
-    val featureTransformer = sc.broadcast(FeatureTransformer(word2vecData.getData(), posEncoder.getData()))
-
-    import sqlContext.implicits._
-    data.map(d => {
-      TransformedFeature(d.relationClass, featureTransformer.value.toFeatureVector(d.wordFeatures, d.posFeatures))
-    }).toDF().write.parquet(path)
-
-
-  }
-}
-
 /** Used for creating a FeatureTransformer
  */
 object FeatureTransformer {
@@ -41,13 +16,6 @@ object FeatureTransformer {
     val posEncoder = StringIndexer.load(pathToPosEncoder, sqlContext.sparkContext)
     val word2vec = Word2VecEncoder.apply(pathToWord2Vec)
     new FeatureTransformer(word2vec, posEncoder)
-  }
-
-  /** Loads the data from path
-    */
-  def load(path: String)(implicit sqlContext: SQLContext): RDD[TransformedFeature]  = {
-    import sqlContext.implicits._
-    sqlContext.read.parquet(path).as[TransformedFeature].rdd
   }
 
 }
@@ -73,14 +41,6 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
     Vectors.sparse(vocabSize, f)
   }
 
-  /** Saves the feature mapping to the path specified by path
-   * @param path - the path to save to
-   */
-  def save(path: String, word2vecPath: String, sqlContext: SQLContext): Unit = {
-    sqlContext.sparkContext.parallelize(List(word2vecPath)).repartition(1).saveAsTextFile(path + "/word2vec")
-    posEncoder.save(path + "/pos_encoder", sqlContext)
-  }
-
   /** Creates a unified vector with
     */
   def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String]): Vector = {
@@ -92,4 +52,4 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
 
 }
 
-case class TransformedFeature(classIdx: Long, featureVector: Vector)
+

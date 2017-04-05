@@ -93,15 +93,11 @@ object Prometheus {
         tempDataPath + "/features",
         trainingTask)
 
-      val featureTransformerTask = new FeatureTransformerStage(
-        tempDataPath + "/transformed_features",
+      val modelTrainingTask = new RelationModelStage(
+        tempDataPath + "/models",
         featureExtractionTask,
         word2VecData,
         posEncoderStage)
-
-      val modelTrainingTask = new RelationModelStage(
-        tempDataPath + "/models",
-        featureTransformerTask)
 
       val path = modelTrainingTask.getData()
       log.info(s"Saved model to $path")
