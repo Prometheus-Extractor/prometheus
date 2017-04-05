@@ -6,6 +6,7 @@ import java.nio.file.{Files, Paths}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkContext
+import scala.util.Properties.envOrNone
 
 /**
   * Created by axel on 2017-03-23.
@@ -26,8 +27,9 @@ object Utils {
   def pathExists(path: String)(implicit sc: SparkContext): Boolean = {
     if (path.split(":")(0) == "hdfs") {
       val conf = sc.hadoopConfiguration
-      System.getProperty("HDFS_ADDRESS")
-      conf.set("fs.default.name", "hdfs://semantica004.cs.lth.se:8020")
+      envOrNone("HDFS_ADDRESS").foreach(fsName =>
+        conf.set("fs.default.name", fsName)
+      )
       val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
       fs.exists(new Path(path.split(":")(1)))
     } else {

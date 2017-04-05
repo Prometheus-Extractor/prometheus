@@ -16,7 +16,7 @@ import utils.Utils.Colours._
 import interfaces._
 import org.http4s.server.blaze._
 
-import scala.util.Properties.envOrNone
+import scala.util.Properties.{envOrNone, propOrNone}
 import evaluation._
 import se.lth.cs.docforia.graph.text.Sentence
 
@@ -31,7 +31,7 @@ object Prometheus {
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel --language={sv|en} [--sample-size=0.f] [--evaluationFiles=file1,file2,...] corpus-path entities-path temp-data-path
+    banner("""Usage: RelationModel [--language={sv|en}] [--sample-size=0.f] [--evaluationFiles=file1,file2,...] corpus-path entities-path temp-data-path --word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
@@ -69,7 +69,6 @@ object Prometheus {
     val log = LogManager.getLogger(Prometheus.getClass)
     val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
-
 
     implicit val sc = new SparkContext(sparkConf)
     implicit val sqlContext = new SQLContext(sc)

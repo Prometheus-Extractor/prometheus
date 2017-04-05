@@ -5,3 +5,5 @@ HEAP_SIZE="20g"
 EXTRA_SPARK_OPTIONS="--conf spark.driver.memory=$DRIVER_MEMORY --conf spark.executor.memory=$HEAP_SIZE --master local[1]"
 SPARK_SUBMIT="~/projects/spark-1.6.3-bin-hadoop2.6/bin/spark-submit"
 
+EXTRA_ENVS='HDFS_ADDRESS="hdfs://semantica004.cs.lth.se:8020"'
+
