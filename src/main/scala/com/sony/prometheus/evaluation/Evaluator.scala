@@ -42,7 +42,7 @@ class EvaluatorStage(
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
-    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + " _debug.tsv"))
+    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"))
     Evaluator.save(evaluation, path)
   }
 }
