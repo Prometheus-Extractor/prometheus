@@ -13,10 +13,10 @@ import com.sony.prometheus.utils.Utils.pathExists
 
 class PredictorStage(
   path: String,
-  modelStage: Data,
-  posEncoder: Data,
+  modelStage: RelationModelStage,
+  posEncoder: PosEncoderStage,
   word2VecData: Word2VecData,
-  relationsData: Data,
+  relationsData: RelationsData,
   docs: RDD[Document])
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
@@ -28,7 +28,7 @@ class PredictorStage(
 
   override def run(): Unit = {
 
-    val predictor = Predictor(modelStage, posEncoder: Data, word2VecData: Word2VecData, relationsData)
+    val predictor = Predictor(modelStage, posEncoder, word2VecData: Word2VecData, relationsData)
     val data = predictor.extractRelations(docs)
     Predictor.save(data, path)
   }
@@ -39,7 +39,7 @@ class PredictorStage(
   */
 object Predictor {
 
-  def apply(modelStage: Data, posEncoder: Data, word2VecData: Word2VecData, relationData: Data)
+  def apply(modelStage: RelationModelStage, posEncoder: PosEncoderStage, word2VecData: Word2VecData, relationData: RelationsData)
            (implicit sqlContext: SQLContext): Predictor = {
     val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData())
     val model = RelationModel.load(modelStage.getData(), sqlContext.sparkContext)

@@ -15,7 +15,7 @@ import org.apache.spark.storage.StorageLevel
 
 /** Builds the RelationModel
  */
-class RelationModelStage(path: String, featureExtractor: Data, word2VecData: Data, posEncoder: Data)
+class RelationModelStage(path: String, featureExtractor: FeatureExtractorStage, word2VecData: Word2VecData, posEncoder: PosEncoderStage)
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
