@@ -2,8 +2,11 @@ package com.sony.prometheus
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import scala.collection.JavaConverters._
 
+import com.sony.prometheus.stages._
+
+import scala.collection.JavaConverters._
+import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
@@ -13,7 +16,7 @@ import utils.Utils.Colours._
 import interfaces._
 import org.http4s.server.blaze._
 
-import scala.util.Properties.envOrNone
+import scala.util.Properties.{envOrNone, propOrNone}
 import evaluation._
 import se.lth.cs.docforia.graph.text.Sentence
 
@@ -28,7 +31,7 @@ object Prometheus {
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel --language={sv|en} [--sample-size=0.f] [--evaluationFiles=file1,file2,...] corpus-path entities-path temp-data-path
+    banner("""Usage: RelationModel [--language={sv|en}] [--sample-size=0.f] [--evaluationFiles=file1,file2,...] corpus-path entities-path temp-data-path --word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
@@ -61,7 +64,6 @@ object Prometheus {
   }
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
-
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
     val log = LogManager.getLogger(Prometheus.getClass)
@@ -72,29 +74,30 @@ object Prometheus {
     implicit val sqlContext = new SQLContext(sc)
 
     val tempDataPath = conf.tempDataPath() + "/" + conf.language()
-    log.info("Running pipeline...")
-    log.info(s"language is ${conf.language()}")
 
     try {
       val corpusData = new CorpusData(conf.corpusPath())
       val relationsData = new RelationsData(conf.entitiesPath())
       val word2VecData = new Word2VecData(conf.word2vecPath())
+
       val trainingTask = new TrainingDataExtractorStage(
         tempDataPath + "/training_sentences",
         corpusData,
         relationsData)
-      val featureTransformerTask = new FeatureTransformerStage(
-        tempDataPath + "/feature_model",
-        corpusData,
-        word2VecData)
+
+      val posEncoderStage = new PosEncoderStage(
+        tempDataPath + "/pos_encoder",
+        corpusData)
+
       val featureExtractionTask = new FeatureExtractorStage(
         tempDataPath + "/features",
         trainingTask)
+
       val modelTrainingTask = new RelationModelStage(
         tempDataPath + "/models",
         featureExtractionTask,
-        featureTransformerTask,
-        relationsData)
+        word2VecData,
+        posEncoderStage)
 
       val path = modelTrainingTask.getData()
       log.info(s"Saved model to $path")
@@ -104,7 +107,7 @@ object Prometheus {
         log.info("Performing evaluation")
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
         val t = LocalDateTime.now()
-        val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+        val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, relationsData)
         evaluate.foreach(evalFile => {
           log.info(s"Evaluating $evalFile")
           val evaluationData = new EvaluationData(evalFile)
@@ -122,7 +125,7 @@ object Prometheus {
 
       // Serve HTTP API
       if (conf.demoServer()) {
-        val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+        val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, relationsData)
         try {
           val task = BlazeBuilder
             .bindHttp(PORT, "localhost")

@@ -1,6 +1,7 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
-import it.unimi.dsi.fastutil.objects.{Object2ObjectMap, Object2ObjectOpenHashMap, ObjectOpenHashSet}
+import com.sony.prometheus._
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
@@ -10,11 +11,10 @@ import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Sentence
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import se.lth.cs.docforia.query.QueryCollectors
+import com.sony.prometheus.utils.Utils.pathExists
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import pipeline._
-
 import scala.collection.mutable.ListBuffer
 
 /** Stage for training data extraction
@@ -26,7 +26,7 @@ class TrainingDataExtractorStage(
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path)) {
+    if (!pathExists(path)) {
       run()
     }
     path
@@ -63,7 +63,7 @@ object TrainingDataExtractor {
   }
 
   /**
-   * Extracts RDD of [[com.sony.prometheus.TrainingSentence]]
+   * Extracts RDD of [[TrainingSentence]]
    */
   def extract(docs: RDD[Document], relations: RDD[Relation])(implicit sparkContext: SparkContext): RDD[TrainingSentence] = {
 

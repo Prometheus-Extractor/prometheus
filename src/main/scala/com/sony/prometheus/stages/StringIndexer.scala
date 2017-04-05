@@ -1,5 +1,6 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
+import com.sony.prometheus.utils.Filters
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.apache.spark.SparkContext
@@ -9,14 +10,35 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.text.Token
 
 import scala.collection.JavaConverters._
+import com.sony.prometheus.utils.Utils.pathExists
+
+class PosEncoderStage(path: String,
+                      corpusData: Data)
+                     (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data{
+
+  override def getData(): String = {
+    if (!pathExists(path)) {
+      run()
+    }
+    path
+  }
+
+  override def run(): Unit = {
+    val docs = CorpusReader.readCorpus(corpusData.getData())
+    val encoder = StringIndexer.createPosEncoder(docs)
+    encoder.save(path, sqlContext)
+  }
+
+}
+
 
 /** Provides String indexer
  */
-object TokenEncoder {
+object StringIndexer {
 
   val TOKEN_MIN_COUNT = 3
 
-  def createWordEncoder(docs: RDD[Document]): TokenEncoder = {
+  def createWordEncoder(docs: RDD[Document]): StringIndexer = {
 
     val tokens = docs.flatMap(doc => {
       doc.nodes(classOf[Token]).asScala.toSeq.map(t => t.text())
@@ -36,7 +58,7 @@ object TokenEncoder {
     createIndexEncoder(zippedTokens)
   }
 
-  def createPosEncoder(docs: RDD[Document]): TokenEncoder = {
+  def createPosEncoder(docs: RDD[Document]): StringIndexer = {
 
     val pos = docs.flatMap(doc => {
       doc.nodes(classOf[Token]).asScala.toSeq.map(_.getPartOfSpeech)
@@ -48,12 +70,12 @@ object TokenEncoder {
     token.toLowerCase
   }
 
-  def load(path: String, context: SparkContext): TokenEncoder = {
+  def load(path: String, context: SparkContext): StringIndexer = {
     val zippedTokens = context.objectFile[(String, Int)](path)
     createIndexEncoder(zippedTokens)
   }
 
-  private def createIndexEncoder(zippedTokens: RDD[(String, Int)]): TokenEncoder = {
+  def createIndexEncoder(zippedTokens: RDD[(String, Int)]): StringIndexer = {
     val token2Id = new Object2IntOpenHashMap[String]()
     val id2Token = new Int2ObjectOpenHashMap[String]()
     zippedTokens.collect().foreach(t => {
@@ -61,7 +83,7 @@ object TokenEncoder {
       id2Token.put(t._2, t._1)
     })
 
-    new TokenEncoder(token2Id, id2Token)
+    new StringIndexer(token2Id, id2Token)
   }
 }
 
@@ -69,7 +91,7 @@ object TokenEncoder {
   * Index 0 is always "unknown token"
  */
 @SerialVersionUID(1)
-class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2ObjectOpenHashMap[String]) extends Serializable{
+class StringIndexer(token2Id: Object2IntOpenHashMap[String], id2Token: Int2ObjectOpenHashMap[String]) extends Serializable{
 
   /** Gets the index of token
     *
@@ -77,7 +99,7 @@ class TokenEncoder(token2Id: Object2IntOpenHashMap[String], id2Token: Int2Object
     *  @return        the Int that maps to the token or 0 if not found
     */
   def index(token: String): Int = {
-    val t = TokenEncoder.normalize(token)
+    val t = StringIndexer.normalize(token)
     token2Id.getOrDefault(t, 0)
   }
 

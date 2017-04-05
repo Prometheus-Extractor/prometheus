@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.2.0
+VERSION=0.3.0
 JAR_NAME="prometheus-relation-model_2.10-"$VERSION".jar"
 args=${@:2}
 
@@ -33,10 +33,12 @@ GREEN="\e[32m"
 CYAN="\e[95m"
 
 printf "$CYAN == Environment == $RES\n"
-printf "$CYAN%-20s\t%s$RES\n" "REMOTE_HOST:" $REMOTE_HOST
-printf "$CYAN%-20s\t%s$RES\n" "WORK_PATH:" $WORK_PATH
-printf "$CYAN%-20s\t%s$RES\n" "EXTRA_SPARK_OPTIONS:" $EXTRA_SPARK_OPTIONS
-printf "$CYAN%-20s\t%s$RES\n" "args:" $args
+printf "$CYAN%-25s %s $RES\n" "REMOTE_HOST:" "$REMOTE_HOST"
+printf "$CYAN%-25s %s $RES\n" "WORK_PATH:" "$WORK_PATH"
+printf "$CYAN%-25s %s $RES\n" "EXTRA_SPARK_OPTIONS:" "$EXTRA_SPARK_OPTIONS"
+printf "$CYAN%-25s %s $RES\n" "args:" "$args"
+printf "$CYAN%-25s %s $RES\n" "EXTRA_ENVS:" "$EXTRA_ENVS"
+
 
 function execute {
   "$@"
@@ -51,7 +53,8 @@ function execute {
 }
 
 printf "$GREEN == Packing jars == $RES\n"
-execute sbt pack # -Dmode=cluster?
+execute sbt pack
+
 # Run python inline to construct the classpath list
 LIBS=$(python -c "import os; print(','.join(map(lambda fname: 'lib/' + fname, os.listdir('target/pack/lib'))))")
 
@@ -62,7 +65,7 @@ execute scp target/scala-2.10/$JAR_NAME $REMOTE_HOST:$WORK_PATH/$JAR_NAME
 printf "$GREEN == Running $JAR_NAME on $REMOTE_HOST == $RES\n"
 execute ssh $REMOTE_HOST 'bash -s' << EOF
   cd $WORK_PATH
-  $SPARK_SUBMIT \
+  $EXTRA_ENVS $SPARK_SUBMIT \
     --conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE \
     --conf spark.executor.extraJavaOptions="$JVMOPTS" \
     --jars $LIBS \

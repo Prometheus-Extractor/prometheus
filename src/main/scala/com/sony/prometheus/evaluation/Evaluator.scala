@@ -5,10 +5,10 @@ import java.nio.file.{Files, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
-import com.sony.prometheus.pipeline._
-import com.sony.prometheus.Predictor
+import com.sony.prometheus.stages.{Predictor, _}
 import com.sony.prometheus.utils.Utils
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.rdd.RDD
@@ -32,7 +32,7 @@ class EvaluatorStage(
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path)) {
+    if (!pathExists(path)) {
       run()
     }
     path
@@ -42,7 +42,7 @@ class EvaluatorStage(
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
-    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + " _debug.tsv"))
+    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"))
     Evaluator.save(evaluation, path)
   }
 }

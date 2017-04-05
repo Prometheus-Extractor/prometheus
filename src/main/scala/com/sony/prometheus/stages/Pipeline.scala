@@ -1,11 +1,11 @@
-package com.sony.prometheus.pipeline
+package com.sony.prometheus.stages
 
 import java.nio.file.{Files, Paths}
 
 import com.sony.prometheus.utils.Utils
 import org.apache.spark.SparkContext
 
-/** A runnable task in the Pipeline, implemented by eg [[com.sony.prometheus.FeatureExtractorStage]]
+/** A runnable task in the Pipeline, implemented by eg [[FeatureExtractorStage]]
  */
 trait Task {
 
@@ -24,11 +24,5 @@ trait Data {
     * @returns  - the path to the data
    */
   def getData(): String
-
-  /** Returns true if data is available in path
-   * @param path - the path to check
-   */
-  def exists(path: String)(implicit sc: SparkContext): Boolean = Utils.pathExists(path)
-
 }
 

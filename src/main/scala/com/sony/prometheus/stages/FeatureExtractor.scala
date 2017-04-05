@@ -1,17 +1,17 @@
-package com.sony.prometheus
+package com.sony.prometheus.stages
 
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
+import com.sony.prometheus._
 import org.apache.spark.SparkContext
-import org.apache.spark.mllib.linalg.{SparseVector, Vector, Vectors}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.query.QueryCollectors
+import com.sony.prometheus.utils.Utils.pathExists
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
-import pipeline._
 
 /**
  * Stage to extract features, will not run if output already exists
@@ -22,7 +22,7 @@ class FeatureExtractorStage(
    (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
-    if (!exists(path)) {
+    if (!pathExists(path)) {
       run()
     }
     path
@@ -44,11 +44,11 @@ object FeatureExtractor {
   val NBR_WORDS_AFTER = 3
   val MIN_FEATURE_LENGTH = 2
 
-  /** Returns an RDD of [[com.sony.prometheus.TrainingDataPoint]]
+  /** Returns an RDD of [[TrainingDataPoint]]
     *
-    * Use this to collect training data for [[com.sony.prometheus.RelationModel]]
+    * Use this to collect training data for [[RelationModel]]
     *
-    * @param trainingSentences  - an RDD of [[com.sony.prometheus.TrainingSentence]]
+    * @param trainingSentences  - an RDD of [[TrainingSentence]]
     */
   def trainingData(trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
@@ -71,9 +71,9 @@ object FeatureExtractor {
     trainingPoints.repartition(Prometheus.DATA_PARTITIONS)
   }
 
-  /** Returns an RDD of [[com.sony.prometheus.TestDataPoint]]
+  /** Returns an RDD of [[TestDataPoint]]
     *
-    *   Use this to collect test data for [[com.sony.prometheus.RelationModel]]
+    *   Use this to collect test data for [[RelationModel]]
     *
     *   @param sentences  - a Seq of Docforia Documents
     */

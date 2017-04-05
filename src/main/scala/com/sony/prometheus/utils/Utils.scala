@@ -1,8 +1,12 @@
 package com.sony.prometheus.utils
 
+
 import java.nio.file.{Files, Paths}
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.SparkContext
+import scala.util.Properties.envOrNone
 
 /**
   * Created by axel on 2017-03-23.
@@ -15,13 +19,19 @@ object Utils {
     final val GREEN: String = "\u001B[32m"
   }
 
-  /** Check if file exists, supports both local and hdfs storage
-    *
+
+  /** Returns true if path (file or dir) exists
+    * @param path - the path to check, hdfs or local
+    * @return     - true if path exists
     */
   def pathExists(path: String)(implicit sc: SparkContext): Boolean = {
     if (path.split(":")(0) == "hdfs") {
+      val conf = sc.hadoopConfiguration
+      envOrNone("HDFS_ADDRESS").foreach(fsName =>
+        conf.set("fs.default.name", fsName)
+      )
       val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
-      fs.exists(new org.apache.hadoop.fs.Path(path.split(":")(1)))
+      fs.exists(new Path(path.split(":")(1)))
     } else {
       Files.exists(Paths.get(path))
     }

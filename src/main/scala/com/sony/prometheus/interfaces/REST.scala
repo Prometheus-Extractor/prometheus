@@ -2,12 +2,12 @@ package com.sony.prometheus.interfaces
 
 import org.http4s._
 import org.http4s.dsl._
-import org.http4s.headers.{ `Content-Type`}
+import org.http4s.headers.`Content-Type`
 import org.http4s.MediaType._
 import com.sony.prometheus.annotaters._
+import com.sony.prometheus.stages.Predictor
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
-import com.sony.prometheus.Predictor
 import play.api.libs.json._
 
 object REST {
