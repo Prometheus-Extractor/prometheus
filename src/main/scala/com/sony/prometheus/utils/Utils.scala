@@ -2,9 +2,7 @@ package com.sony.prometheus.utils
 
 
 import java.nio.file.{Files, Paths}
-
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.{Path}
 import org.apache.spark.SparkContext
 import scala.util.Properties.envOrNone
 
@@ -25,15 +23,26 @@ object Utils {
     * @return     - true if path exists
     */
   def pathExists(path: String)(implicit sc: SparkContext): Boolean = {
-    if (path.split(":")(0) == "hdfs") {
-      val conf = sc.hadoopConfiguration
-      envOrNone("HDFS_ADDRESS").foreach(fsName =>
-        conf.set("fs.default.name", fsName)
-      )
-      val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
-      fs.exists(new Path(path.split(":")(1)))
-    } else {
-      Files.exists(Paths.get(path))
+    path.split(":") match {
+      case Array("hdfs", suffix) => {
+        val conf = sc.hadoopConfiguration
+        envOrNone("HDFS_ADDRESS").foreach(fsName =>
+          conf.set("fs.default.name", fsName)
+        )
+        val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
+        val exists = fs.exists(new Path(suffix))
+        println(s"HDFS file $suffix $exists")
+        exists
+      }
+      case Array("file", suffix) => {
+        val exists = Files.exists(Paths.get(suffix))
+        println(s"Local file $suffix $exists")
+        exists
+      }
+      case _ => {
+        System.err.println(s"Illegal pattern for $path, specify path prefix (hdfs: or file:)")
+        true
+      }
     }
   }
 }

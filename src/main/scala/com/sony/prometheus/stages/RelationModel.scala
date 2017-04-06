@@ -55,7 +55,7 @@ object RelationModel {
 
     val broadcastedFT = sqlContext.sparkContext.broadcast(featureTransformer)
     val labeledData = data.map(t => {
-      val vec = broadcastedFT.value.toFeatureVector(t.wordFeatures, t.posFeatures)
+      val vec = broadcastedFT.value.toFeatureVector(t.wordFeatures, t.posFeatures, t.ent1PosTags, t.ent2PosTags)
       LabeledPoint(t.relationClass, vec)
     }).persist(StorageLevel.MEMORY_AND_DISK)
 

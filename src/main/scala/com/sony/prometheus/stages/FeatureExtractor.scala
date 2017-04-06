@@ -18,7 +18,7 @@ import scala.collection.mutable
  */
 class FeatureExtractorStage(
    path: String,
-   trainingDataExtractor: Data)
+   trainingDataExtractor: TrainingDataExtractorStage)
    (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -57,9 +57,16 @@ object FeatureExtractor {
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
         if(f.wordFeatures.length >= MIN_FEATURE_LENGTH) {
           if(neds.contains(f.subj) && neds.contains(f.obj)) {
-            Seq(TrainingDataPoint(t.relationId, t.relationName, t.relationClass, f.wordFeatures, f.posFeatures))
+            Seq(TrainingDataPoint(
+              t.relationId,
+              t.relationName,
+              t.relationClass,
+              f.wordFeatures,
+              f.posFeatures,
+              f.ent1PosFeatures,
+              f.ent2PosFeatures))
           }else {
-            Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures))
+            Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures))
           }
         }else{
           Seq()
@@ -81,14 +88,14 @@ object FeatureExtractor {
 
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
-        TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures)
+        TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures)
       })
     })
 
     testPoints
   }
 
-  private def featureArray(sentence: Document):Seq[FeatureArray] = {
+  private def featureArray(sentence: Document): Seq[FeatureArray] = {
 
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
@@ -111,21 +118,26 @@ object FeatureExtractor {
         /*
         Find the positions of the entities
          */
-
         val grp1 :: grp2 :: _ = set.toList
+        val ent1TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
         val start1 = grp1.value(0, T).getTag("idx"): Int
         val end1 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
+
+        val ent2TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
         val start2 = grp2.value(0, T).getTag("idx"): Int
         val end2 = grp2.value(grp2.size() - 1, T).getTag("idx"): Int
 
         val words = tokenWindow(sentence, start1, end1, start2, end2, t => t.text)
         val pos = tokenWindow(sentence, start1, end1, start2, end2, t => t.getPartOfSpeech)
 
-        FeatureArray(sentence,
-                     grp1.key(NED).getIdentifier.split(":").last,
-                     grp2.key(NED).getIdentifier.split(":").last,
-                     words,
-                     pos)
+        FeatureArray(
+          sentence,
+          grp1.key(NED).getIdentifier.split(":").last,
+          grp2.key(NED).getIdentifier.split(":").last,
+          words,
+          pos,
+          ent1TokensPos,
+          ent2TokensPos)
       }).toSeq
 
     features
@@ -136,7 +148,7 @@ object FeatureExtractor {
     */
   private def tokenWindow(sentence: Document, start1: Int, end1: Int, start2: Int, end2: Int, f: Token => String): Seq[String] = {
     /*
-      POS around entity 1 including for entity 1
+      Extract words before and after entity 1
      */
     val wordsBefore1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, start1)
     val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + NBR_WORDS_AFTER, end1 + NBR_WORDS_AFTER + 1)
@@ -176,6 +188,29 @@ object FeatureExtractor {
 }
 
 
-case class TrainingDataPoint(relationId: String, relationName: String, relationClass: Long, wordFeatures: Seq[String], posFeatures: Seq[String])
-case class TestDataPoint(sentence: Document, qidSource: String ,qidDest: String, wordFeatures: Seq[String], posFeatures: Seq[String])
-case class FeatureArray(sentence: Document, subj: String, obj: String, wordFeatures: Seq[String], posFeatures: Seq[String])
+case class TrainingDataPoint(
+  relationId: String,
+  relationName: String,
+  relationClass: Long,
+  wordFeatures: Seq[String],
+  posFeatures: Seq[String],
+  ent1PosTags: Seq[String],
+  ent2PosTags: Seq[String])
+
+case class TestDataPoint(
+  sentence: Document,
+  qidSource: String,
+  qidDest: String,
+  wordFeatures: Seq[String],
+  posFeatures: Seq[String],
+  ent1PosFeatures: Seq[String],
+  ent2PosFeatures: Seq[String])
+
+case class FeatureArray(
+  sentence: Document,
+  subj: String,
+  obj: String,
+  wordFeatures: Seq[String],
+  posFeatures: Seq[String],
+  ent1PosFeatures: Seq[String],
+  ent2PosFeatures: Seq[String])

@@ -9,6 +9,7 @@ organization := "sonymobile"
 scalaVersion := "2.10.6"
 ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 dependencyOverrides += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+
 publishTo := Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository")))
 
 resolvers += Resolver.mavenLocal

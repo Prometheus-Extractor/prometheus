@@ -135,25 +135,30 @@ object TrainingDataExtractor {
   }
 
   def save(data: RDD[TrainingSentence], path: String)(implicit sqlContext: SQLContext): Unit = {
-
+    println(s"Saving training data to $path")
     import sqlContext.implicits._
     val serializable = data.map(ts => {
-      SerializedTrainingSentence(ts.relationId, ts.relationName, ts.relationClass,
-                                 ts.sentenceDoc.toBytes(), ts.entityPair)
+      SerializedTrainingSentence(
+        ts.relationId,
+        ts.relationName,
+        ts.relationClass,
+        ts.sentenceDoc.toBytes(),
+        ts.entityPair)
     }).toDF()
     serializable.write.parquet(path)
   }
-
 }
 
-case class TrainingSentence(relationId: String,
-                            relationName: String,
-                            relationClass: Int,
-                            sentenceDoc: Document,
-                            entityPair: Seq[EntityPair])
+case class TrainingSentence(
+  relationId: String,
+  relationName: String,
+  relationClass: Int,
+  sentenceDoc: Document,
+  entityPair: Seq[EntityPair])
 
-private case class SerializedTrainingSentence(relationId: String,
-                                              relationName: String,
-                                              relationClass: Int,
-                                              sentenceDoc: Array[Byte],
-                                              entityPair: Seq[EntityPair])
+private case class SerializedTrainingSentence(
+  relationId: String,
+  relationName: String,
+  relationClass: Int,
+  sentenceDoc: Array[Byte],
+  entityPair: Seq[EntityPair])
