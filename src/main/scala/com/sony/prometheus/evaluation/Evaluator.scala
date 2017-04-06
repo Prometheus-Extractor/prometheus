@@ -105,7 +105,7 @@ object Evaluator {
     val herdEnts = evalDataPoints.zip(annotatedEvidence).filter{case (dP, evidence) => {
       val ents = evidence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq.map(_.getIdentifier.split(":").last)
       ents.contains(dP.wd_obj) && ents.contains(dP.wd_sub)
-    }}.count()
+    }}.count().toDouble
 
     val herdRecall = herdEnts / nbrEvalDataPoints
     log.info(s"HERD recall is $herdRecall")
@@ -213,4 +213,3 @@ object Evaluator {
     }
   }
 }
-
