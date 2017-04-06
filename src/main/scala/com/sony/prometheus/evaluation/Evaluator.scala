@@ -102,6 +102,7 @@ object Evaluator {
       .count()
     log.info(s"There are ${nbrDataPoints.toInt} positive examples in the evaluation data")
 
+
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
 
     predictedRelations.cache()
@@ -127,7 +128,7 @@ object Evaluator {
       }
       .count()
 
-    // Save debug information to CSV if debugOutFile supplied
+    // Save debug information to TSV if debugOutFile supplied
     debugOutFile.foreach(f => {
       val fs = FileSystem.get(sc.hadoopConfiguration)
       val output = fs.create(new Path(f))
