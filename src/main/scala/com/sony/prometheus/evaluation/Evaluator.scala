@@ -114,7 +114,7 @@ object Evaluator {
       .filter(dP => dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0)
       .count()
     log.info(s"There are ${nbrTrueDataPoints.toInt} positive examples in the evaluation data")
-    log.info(s"There are ${evalDataPoints.count() - nbrTrueDataPoints} negative examples in the evaluation data")
+    log.info(s"There are ${nbrEvalDataPoints - nbrTrueDataPoints} negative examples in the evaluation data")
 
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
     predictedRelations.cache()
