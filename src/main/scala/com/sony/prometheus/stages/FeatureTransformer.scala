@@ -25,9 +25,7 @@ class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncode
       val vector = featureTransformer.value.toFeatureVector(d.wordFeatures, d.posFeatures).toArray.map(_.toFloat)
       val features = Nd4j.create(vector)
       val label = Nd4j.create(featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray)
-      //val label = featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray.map(_.toFloat)
-      new DataSet(label, features)
-      //VectorizedTrainingPoint(label, vector)
+      new DataSet(features, label)
 
     }).saveAsObjectFile(path)
     featureTransformer.destroy()
