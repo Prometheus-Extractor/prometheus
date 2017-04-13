@@ -1,6 +1,6 @@
 package com.sony.prometheus.stages
 
-import java.io.File
+import java.io.{BufferedOutputStream, File}
 
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
@@ -8,12 +8,14 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import com.sony.prometheus.utils.Utils.pathExists
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.storage.StorageLevel
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.Updater
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.layers.{DenseLayer, OutputLayer}
+import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.spark.api.RDDTrainingApproach
 import org.deeplearning4j.spark.impl.multilayer.SparkDl4jMultiLayer
@@ -55,6 +57,8 @@ object RelationModel {
 
   def apply(data: RDD[DataSet], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
+    var log = LogManager.getLogger(classOf[RelationModel])
+
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
@@ -67,6 +71,9 @@ object RelationModel {
 
     val input_size = data.take(1)(0).getFeatures.length
     val output_size = numClasses
+    log.info(s"Training NN!")
+    log.info(s"Input size: $input_size")
+    log.info(s"Ouput size: $output_size")
 
     val networkConfig = new NeuralNetConfiguration.Builder()
       .miniBatch(true)
@@ -88,6 +95,8 @@ object RelationModel {
       .pretrain(false).backprop(true)
       .build()
 
+    log.info(networkConfig.toString)
+
     //Create the SparkDl4jMultiLayer instance
     val sparkNetwork = new SparkDl4jMultiLayer(sqlContext.sparkContext, networkConfig, trainingMaster)
     sparkNetwork.setCollectTrainingStats(false)
@@ -99,33 +108,30 @@ object RelationModel {
     }
 
     println(s"Network score: ${sparkNetwork.getScore}")
-    new RelationModel(sparkNetwork)
+    new RelationModel(sparkNetwork.getNetwork)
   }
 
   def load(path: String, context: SparkContext): RelationModel = {
-    val network = ModelSerializer.restoreMultiLayerNetwork(new File("/home/ine11ega/dl4j_model.zip"))
-    //new SparkDl4jMultiLayer(context, )
-    //new RelationModel(LogisticRegressionModel.load(context, path))
-    val sparkNetwork = new SparkDl4jMultiLayer(context, network, null)
-    new RelationModel(sparkNetwork)
+    val fs = FileSystem.get(context.hadoopConfiguration)
+    val input = fs.open(new Path(path + "/dl4j_model.bin"))
+    val network = ModelSerializer.restoreMultiLayerNetwork(input.getWrappedStream)
+    new RelationModel(network)
   }
 
 }
 
-class RelationModel(model: SparkDl4jMultiLayer) extends Serializable {
+class RelationModel(model: MultiLayerNetwork) extends Serializable {
 
   def save(path: String, context: SparkContext): Unit = {
-    ModelSerializer.writeModel(model.getNetwork, new File("/home/ine11ega/dl4j_model.zip"), true)
+    val fs = FileSystem.get(context.hadoopConfiguration)
+    val output = fs.create(new Path(path + "/dl4j_model.bin"))
+    val os = new BufferedOutputStream(output)
+    ModelSerializer.writeModel(model, output, true)
+    os.close()
   }
 
   def predict(vector: Vector): Double = {
-    model.predict(vector).argmax.toDouble
-  }
-
-  def predict(vectors: RDD[Vector]): RDD[Double] = {
-    vectors.map(v => {
-      model.predict(v).argmax.toDouble
-    })
+    model.predict(Nd4j.create(vector.toArray))(0).toDouble
   }
 
 }
