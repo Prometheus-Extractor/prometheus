@@ -115,6 +115,7 @@ object RelationModel {
     val fs = FileSystem.get(context.hadoopConfiguration)
     val input = fs.open(new Path(path + "/dl4j_model.bin"))
     val network = ModelSerializer.restoreMultiLayerNetwork(input.getWrappedStream)
+    input.close()
     new RelationModel(network)
   }
 

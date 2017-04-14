@@ -3,37 +3,20 @@ package com.sony.prometheus.stages
 import java.io.{Externalizable, File, ObjectInput, ObjectOutput}
 import java.nio.{ByteBuffer, ByteOrder}
 import java.nio.channels.FileChannel
-import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.util.stream.Collectors
+import java.nio.file.{Paths, StandardOpenOption}
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap
 import org.apache.log4j.LogManager
 import org.apache.spark.{SparkContext, SparkFiles}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import com.sony.prometheus.utils.Utils.pathExists
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
 
-  var hasUploaded = false
-
-  private def uploadFiles(): Unit = {
-    val log = LogManager.getLogger(this.getClass)
-    log.info(s"Uploading word2vec binary model to SparkFiles from $path")
-    sc.addFile(path + "/model.opt.vocab")
-    sc.addFile(path + "/model.opt.vecs")
-    hasUploaded = true
-  }
-
-  private def getPaths(): String = {
-    s"${SparkFiles.get("model.opt.vocab")}\n${SparkFiles.get("model.opt.vecs")}"
-  }
-
   override def getData(): String = {
     if(pathExists(path)) {
-      if(!hasUploaded){
-        uploadFiles()
-      }
-      getPaths()
+      path
     } else {
       throw new Exception(s"Missing Word2Vec model $path")
     }
@@ -47,11 +30,8 @@ class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
 object Word2VecEncoder {
 
   def apply(modelPath: String): Word2VecEncoder = {
-
-    val word2vec = new Word2VecEncoder()
-    word2vec.vecName = "model.opt.vecs"
-    word2vec.vocabName = "model.opt.vocab"
-    word2vec
+    val models = Word2VecDict(modelPath + "/model.opt.vocab", modelPath + "/model.opt.vecs")
+    val word2vec = new Word2VecEncoder(models)
   }
 }
 
@@ -59,38 +39,9 @@ object Word2VecEncoder {
   * This class wraps the specific Word2Vec implementation. We've tried Spark's, DL4J's and now Marcus'.
   * @param model
   */
-class Word2VecEncoder extends Externalizable{
-
-  var model: Word2VecDict = null
-  var vocabName: String = null
-  var vecName: String = null
-
-  /**
-    * This method deserializes the file from the binary model file.
-    */
-  private def setup(): Unit = {
-
-    if(model != null){
-      return
-    }
-
-    this.synchronized {
-      if(model != null){
-        return
-      }
-
-      val log = LogManager.getLogger(Word2VecEncoder.getClass)
-      log.info("Reading word2vec")
-      val vocabFile = new File(SparkFiles.get(vocabName))
-      val vecsFile = new File(SparkFiles.get(vecName))
-      val startTime = System.currentTimeMillis()
-      model = new Word2VecDict(vocabFile, vecsFile)
-      log.info(s"Read binary word2vec model in ${(System.currentTimeMillis() - startTime)/1000} s")
-    }
-  }
+class Word2VecEncoder(model: Word2VecDict) {
 
   def index(token: String): Vector = {
-    setup()
     val idx = model.vectorIdx(token)
     if(idx == -1){
       Vectors.zeros(model.dim)
@@ -99,31 +50,77 @@ class Word2VecEncoder extends Externalizable{
     }
   }
 
-  def vectorSize(): Int = {setup(); model.dim}
+  def vectorSize(): Int = {model.dim}
 
-  override def writeExternal(out: ObjectOutput): Unit = {
-    LogManager.getLogger(Word2VecEncoder.getClass).info("Serializing word2vec model")
-    out.writeUTF(vocabName)
-    out.writeUTF(vecName)
-  }
-
-  override def readExternal(in: ObjectInput): Unit = {
-    LogManager.getLogger(Word2VecEncoder.getClass).info("Deserializing word2vec model")
-    vocabName = in.readUTF()
-    vecName = in.readUTF()
-  }
 }
 
 
-/**
-  * Created by marcusk on 2017-03-20.
-  */
-class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UNKNOWN__") extends Serializable {
-  private val vocab : Object2IntOpenHashMap[String] = loadVocab(vocabFile.getAbsolutePath)
-  private val vecs  : Array[Array[Float]] = loadVectors(vocab.size(), vecsFile.getAbsolutePath)
+object Word2VecDict {
+
+  def apply(vocabFile : String, vecsFile: String, unknownWord : String="__UNKNOWN__")
+           (implicit context: SparkContext): Word2VecDict  = {
+
+    val vocab = loadVocab(vocabFile, unknownWord)
+    val vecs = directLoadVectors(vecsFile, vocab.size)
+
+    new Word2VecDict(vocab, vecs)
+  }
+
+  private def directLoadVectors(path: String, vocabSize: Int)(implicit context: SparkContext): Array[Array[Float]] = {
+    val fs = FileSystem.get(context.hadoopConfiguration)
+    val input = fs.open(new Path("file://" + path))
+
+    var buff = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
+    var bytes = new Array[Byte](4)
+
+    input.read(bytes)
+    buff.put(bytes)
+    buff.rewind()
+
+    val dimensions = buff.asIntBuffer().get()
+    val matrix : Array[Array[Float]] = Array.ofDim[Float](vocabSize, dimensions)
+
+    System.out.println("Start reading...")
+    for(i <- (0 until vocabSize)) {
+      buff = ByteBuffer.allocate(dimensions * 4).order(ByteOrder.LITTLE_ENDIAN)
+      bytes = new Array[Byte](dimensions * 4)
+      input.read(bytes)
+      buff.put(bytes)
+      buff.rewind()
+      buff.asFloatBuffer().get(matrix(i))
+    }
+    input.close()
+    matrix
+  }
 
   /**
-    * Load the vectors
+    * Load the vocabulary
+    * @param path the path to the vocabulary
+    * @return initilized vocabulary index
+    */
+  private def loadVocab(path : String, unknownWord: String)
+                       (implicit context: SparkContext) : Object2IntOpenHashMap[String] = {
+    //var lines = Files.lines(Paths.get(path)).collect(Collectors.toList[String])
+    var lines = context.textFile(path).collect().toSeq
+    val vocabsize = lines(0).toInt
+    lines = lines.slice(1, lines.size)
+
+    System.out.println("Loading vocab...")
+    val lookupIndex = new Object2IntOpenHashMap[String]
+    lookupIndex.defaultReturnValue(-1)
+
+    var i = 0
+    while (i < lines.size) {
+      lookupIndex.put(lines(i), i)
+      i += 1
+    }
+
+    lookupIndex.defaultReturnValue(lookupIndex.getInt(unknownWord))
+    lookupIndex
+  }
+
+  /**
+    * Load the vectors using memory mapping. Does not work over HDFS.
     * @param vocabsize the size of the vocabulary
     * @param path the path to the binary vectors
     * @return matrix of all word vectors
@@ -137,6 +134,7 @@ class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UN
     ch.read(dim, 0)
     dim.rewind
     val dims = dim.asIntBuffer.get
+    println(s"expected dims $dims")
 
     val matrix : Array[Array[Float]] = Array.ofDim[Float](vocabsize, dims)
 
@@ -170,30 +168,12 @@ class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UN
     matrix
   }
 
-  /**
-    * Load the vocabulary
-    * @param path the path to the vocabulary
-    * @return initilized vocabulary index
-    */
-  private def loadVocab(path : String) : Object2IntOpenHashMap[String] = {
-    var lines = Files.lines(Paths.get(path)).collect(Collectors.toList[String])
-    val vocabsize = lines.get(0).toInt
-    lines = lines.subList(1, lines.size)
+}
 
-    System.out.println("Loading vocab...")
-    val lookupIndex = new Object2IntOpenHashMap[String]
-    lookupIndex.defaultReturnValue(-1)
-
-    var i = 0
-    while (i < lines.size) {
-      lookupIndex.put(lines.get(i), i)
-      i += 1
-    }
-
-    lookupIndex.defaultReturnValue(lookupIndex.getInt(unknownWord))
-    lookupIndex
-  }
-
+/**
+  * Created by marcusk on 2017-03-20.
+  */
+class Word2VecDict(vocab: Object2IntOpenHashMap[String], vecs:  Array[Array[Float]]) extends Serializable {
   def dim = vecs(0).length
   def numwords = vecs.length
 
