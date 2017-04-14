@@ -28,6 +28,7 @@ libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
 //libraryDependencies += "org.deeplearning4j" % "deeplearning4j-core" % "0.8.0"
 libraryDependencies += "org.deeplearning4j" % "dl4j-spark-nlp_2.10" % "0.8.0_spark_1"
 libraryDependencies += "org.nd4j" % "nd4j-native-platform" % "0.8.0"
+// libraryDependencies += "org.nd4j" % "nd4j-cuda-8.0" % "0.8.0"
 
 
 val http4sVersion = "0.15.6"

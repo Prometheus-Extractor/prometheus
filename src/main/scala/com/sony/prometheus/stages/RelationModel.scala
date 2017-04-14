@@ -53,7 +53,7 @@ class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomer
  */
 object RelationModel {
 
-  val MAX_ITERATIONS = 10
+  val ITERATIONS = 10
 
   def apply(data: RDD[DataSet], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
@@ -62,7 +62,7 @@ object RelationModel {
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(20)
+      .batchSizePerWorker(200)
       .averagingFrequency(10)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
@@ -73,7 +73,7 @@ object RelationModel {
     val output_size = numClasses
     log.info(s"Training NN!")
     log.info(s"Input size: $input_size")
-    log.info(s"Ouput size: $output_size")
+    log.info(s"Output size: $output_size")
 
     val networkConfig = new NeuralNetConfiguration.Builder()
       .miniBatch(true)
@@ -82,8 +82,6 @@ object RelationModel {
       .weightInit(WeightInit.XAVIER)
       .learningRate(0.02)
       .updater(Updater.ADAGRAD)
-      //.momentum(0.9)
-      //.regularization(true).l2(1e-4)
       .dropOut(0.5)
       .useDropConnect(true)
       .list()
@@ -95,19 +93,20 @@ object RelationModel {
       .pretrain(false).backprop(true)
       .build()
 
-    log.info(networkConfig.toString)
+    log.info(s"Iterations: ${networkConfig.getIterationCount}")
+    log.info(s"Network: ${networkConfig.toString}")
 
     //Create the SparkDl4jMultiLayer instance
     val sparkNetwork = new SparkDl4jMultiLayer(sqlContext.sparkContext, networkConfig, trainingMaster)
-    sparkNetwork.setCollectTrainingStats(false)
+    sparkNetwork.setCollectTrainingStats(true)
 
     try{
       sparkNetwork.fit(data)
+      log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
     }finally {
       //trainingMaster.deleteTempFiles(sqlContext.sparkContext)
     }
 
-    println(s"Network score: ${sparkNetwork.getScore}")
     new RelationModel(sparkNetwork.getNetwork)
   }
 

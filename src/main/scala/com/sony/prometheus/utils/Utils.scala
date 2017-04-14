@@ -32,6 +32,12 @@ object Utils {
       )
       val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
       fs.exists(new Path(path.split(":")(1)))
+    } else if (path.split(":")(0) == "s3") {
+      val conf = sc.hadoopConfiguration
+      conf.set("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+      conf.set("fs.default.name", "s3://sony-prometheus-data")
+      val fs = org.apache.hadoop.fs.FileSystem.get(conf)
+      fs.exists(new Path(path.split(":")(1)))
     } else {
       Files.exists(Paths.get(path))
     }
