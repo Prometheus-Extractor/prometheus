@@ -1,6 +1,6 @@
 REMOTE_HOST="sem4"
 WORK_PATH="~/projects/prometheus-relation-model"
-HEAP_SIZE="5g"
+HEAP_SIZE="15g"
 OFF_HEAP_SIZE="0g"
 CPP_MAXPHY_BYTES="22g"
 CPP_MAX_BYTES="5g"

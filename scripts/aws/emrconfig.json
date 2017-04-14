@@ -28,7 +28,6 @@
     {
       "Classification": "spark-defaults",
       "Properties": {
-        "spark.executor.instances": 1
       }
     }
 ]

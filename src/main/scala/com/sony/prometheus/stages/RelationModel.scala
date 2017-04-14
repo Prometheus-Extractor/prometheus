@@ -53,7 +53,7 @@ class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomer
  */
 object RelationModel {
 
-  val ITERATIONS = 10
+  val ITERATIONS = 1
 
   def apply(data: RDD[DataSet], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
@@ -62,7 +62,7 @@ object RelationModel {
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(200)
+      .batchSizePerWorker(500)
       .averagingFrequency(10)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
@@ -77,11 +77,12 @@ object RelationModel {
 
     val networkConfig = new NeuralNetConfiguration.Builder()
       .miniBatch(true)
-      .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT).iterations(1)
+      .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+      .iterations(1) // Not the same as epoch
       .activation(Activation.RELU)
-      .weightInit(WeightInit.XAVIER)
+      .weightInit(WeightInit.RELU)
       .learningRate(0.02)
-      .updater(Updater.ADAGRAD)
+      .updater(Updater.ADAM)
       .dropOut(0.5)
       .useDropConnect(true)
       .list()
@@ -93,16 +94,16 @@ object RelationModel {
       .pretrain(false).backprop(true)
       .build()
 
-    log.info(s"Iterations: ${networkConfig.getIterationCount}")
-    log.info(s"Network: ${networkConfig.toString}")
+    log.info(s"Network: ${networkConfig.toYaml}")
 
     //Create the SparkDl4jMultiLayer instance
     val sparkNetwork = new SparkDl4jMultiLayer(sqlContext.sparkContext, networkConfig, trainingMaster)
-    sparkNetwork.setCollectTrainingStats(true)
+    sparkNetwork.setCollectTrainingStats(false)
 
     try{
       sparkNetwork.fit(data)
       log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
+      log.info(sparkNetwork.getNetwork.summary())
     }finally {
       //trainingMaster.deleteTempFiles(sqlContext.sparkContext)
     }
@@ -130,6 +131,7 @@ class RelationModel(model: MultiLayerNetwork) extends Serializable {
   }
 
   def predict(vector: Vector): Double = {
+    val pred = model.output(Nd4j.create(vector.toArray), false)
     model.predict(Nd4j.create(vector.toArray))(0).toDouble
   }
 
