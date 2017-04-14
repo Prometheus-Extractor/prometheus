@@ -8,5 +8,6 @@ NUM_EXECUTORS=4
 EXECUTOR_CORES=7
 NODE_MANAGER_MEM_MB=60000
 NODE_MANAGER_VCORES=7
+DRIVER_MEM="30g"
 JVMOPTS="-Dorg.bytedeco.javacpp.maxbytes=$CPP_MAX_BYTES -Dorg.bytedeco.javacpp.maxphysicalbytes=$CPP_MAXPHY_BYTES -Dorg.bytedeco.javacpp.maxretries=100"
-EXTRA_SPARK_OPTIONS="--conf spark.yarn.nodemanager.resource.memory-mb=$NODE_MANAGER_MEM_MB --conf spark.yarn.nodemanager.resource.cpu-vcores=$NODE_MANAGER_VCORES --num-executors $NUM_EXECUTORS --executor-cores $EXECUTOR_CORES --conf spark.yarn.executor.memoryOverhead=$OFF_HEAP_SIZE --conf spark.executor.memory=$HEAP_SIZE --conf spark.locality.wait=0 --conf spark.worker.cleanup.enabled=true"
+EXTRA_SPARK_OPTIONS="--driver-memory=$DRIVER_MEM --conf spark.yarn.nodemanager.resource.memory-mb=$NODE_MANAGER_MEM_MB --conf spark.yarn.nodemanager.resource.cpu-vcores=$NODE_MANAGER_VCORES --num-executors $NUM_EXECUTORS --executor-cores $EXECUTOR_CORES --conf spark.yarn.executor.memoryOverhead=$OFF_HEAP_SIZE --conf spark.executor.memory=$HEAP_SIZE --conf spark.locality.wait=0 --conf spark.worker.cleanup.enabled=true"
