@@ -1,32 +1,45 @@
 package com.sony.prometheus.stages
 
+import java.util
+
+import com.sony.prometheus.Prometheus
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
+import scala.collection.JavaConversions._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 import com.sony.prometheus.utils.Utils.pathExists
+import org.apache.log4j.LogManager
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.dataset.DataSet
+
+import scala.collection.mutable.ListBuffer
 
 class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
                              featureExtractorStage: FeatureExtractorStage)
                             (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
-  /** Runs the task, saving results to disk
+  /**
+    * Runs the task, saving results to disk
     */
   override def run(): Unit = {
+
+    val data = FeatureExtractor.load(featureExtractorStage.getData())
+    val labelNames:util.List[String] = ListBuffer(
+      data.map(d => (d.relationClass, d.relationId)).distinct().collect().sortBy(_._1).map(_._2).toList: _*)
+    val numClasses = data.map(d => d.relationClass).distinct().count().toInt
+    val balancedData = FeatureTransformer.balanceData(data, false)
+
     val featureTransformer = sqlContext.sparkContext.broadcast(
       FeatureTransformer(word2VecData.getData(), posEncoderStage.getData()))
-    val data = FeatureExtractor.load(featureExtractorStage.getData())
-    val numClasses = data.map(d => d.relationClass).distinct().count().toInt
-
-    data.map(d => {
+    balancedData.map(d => {
       val vector = featureTransformer.value.toFeatureVector(d.wordFeatures, d.posFeatures).toArray.map(_.toFloat)
       val features = Nd4j.create(vector)
       val label = Nd4j.create(featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray)
-      new DataSet(features, label)
-
+      val dataset = new DataSet(features, label)
+      dataset.setLabelNames(labelNames)
+      dataset
     }).saveAsObjectFile(path)
     featureTransformer.destroy()
 
@@ -45,6 +58,8 @@ class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncode
  */
 object FeatureTransformer {
 
+  val log = LogManager.getLogger(classOf[FeatureTransformer])
+
   def apply(pathToWord2Vec: String, pathToPosEncoder: String)(implicit sqlContext: SQLContext): FeatureTransformer = {
     val posEncoder = StringIndexer.load(pathToPosEncoder, sqlContext.sparkContext)
     val word2vec = Word2VecEncoder.apply(pathToWord2Vec)
@@ -53,6 +68,28 @@ object FeatureTransformer {
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[DataSet] = {
     sqlContext.sparkContext.objectFile[DataSet](path)
+  }
+
+  /**
+    * Rebalances an imbalanced dataset. Either undersample or oversample.
+    * Balances to match biggest or smallest class, excluding class 0, i.e. the negative class.
+    */
+  def balanceData(rawData: RDD[TrainingDataPoint], underSample: Boolean = false): RDD[TrainingDataPoint] = {
+
+    log.info(s"Rebalancing dataset (${if (underSample) "undersample" else "oversample"})")
+    val classCount = rawData.map(d => d.relationClass).countByValue()
+    val realClasses = classCount.filter(_._1 != 0)
+    val sampleTo = if (underSample) realClasses.map(_._2).min else realClasses.map(_._2).max
+    classCount.foreach(pair => log.info(s" Class ${pair._1}: ${pair._2} => ${sampleTo}"))
+
+    val balancedDataset = classCount.map{
+      case (key:Long, count: Long) =>
+        val samplePercentage = sampleTo / count.toDouble
+        val replacement = sampleTo > count
+        rawData.filter(d => d.relationClass == key).sample(replacement, samplePercentage)
+    }.reduce(_.union(_))
+
+    balancedDataset.repartition(Prometheus.DATA_PARTITIONS)
   }
 
 }
@@ -87,5 +124,3 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
   }
 
 }
-
-//case class VectorizedTrainingPoint(label: Array[Float], dataset: Array[Float])

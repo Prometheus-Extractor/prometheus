@@ -1,6 +1,6 @@
 package com.sony.prometheus.stages
 
-import java.io.{BufferedOutputStream, File}
+import java.io.{BufferedOutputStream, File, PrintWriter}
 
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
@@ -9,7 +9,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.storage.StorageLevel
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
 import org.deeplearning4j.nn.conf.Updater
@@ -25,6 +24,12 @@ import org.nd4j.linalg.activations.Activation
 import org.nd4j.linalg.dataset.DataSet
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.lossfunctions.LossFunctions
+import java.text.SimpleDateFormat
+import java.util.Date
+
+import com.sony.prometheus.Prometheus
+import org.deeplearning4j.eval.Evaluation
+import org.deeplearning4j.optimize.listeners.ScoreIterationListener
 
 
 /** Builds the RelationModel
@@ -53,60 +58,67 @@ class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomer
  */
 object RelationModel {
 
-  val ITERATIONS = 1
+  val log = LogManager.getLogger(classOf[RelationModel])
 
-  def apply(data: RDD[DataSet], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
+  val NUM_EPOCHS = 10
 
-    var log = LogManager.getLogger(classOf[RelationModel])
+  def splitToTestTrain(data: RDD[DataSet], testPercentage: Double = 0.1): (RDD[DataSet], RDD[DataSet]) = {
+    log.info(s"Splitting data into ${1 - testPercentage}:$testPercentage")
+    val splits = data.randomSplit(Array(1 - testPercentage, testPercentage))
+    (splits(0), splits(1))
+  }
+
+  def apply(rawData: RDD[DataSet], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
+
+    val (trainData, testData) = splitToTestTrain(rawData, 0.05)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(500)
+      .batchSizePerWorker(256)
       .averagingFrequency(10)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
-      .storageLevel(StorageLevel.NONE)
+      .storageLevel(StorageLevel.MEMORY_AND_DISK_SER)
       .build()
 
-    val input_size = data.take(1)(0).getFeatures.length
+    val input_size = trainData.take(1)(0).getFeatures.length
     val output_size = numClasses
-    log.info(s"Training NN!")
-    log.info(s"Input size: $input_size")
-    log.info(s"Output size: $output_size")
 
     val networkConfig = new NeuralNetConfiguration.Builder()
       .miniBatch(true)
       .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-      .iterations(1) // Not the same as epoch
+      .iterations(1) // Not the same as epoch. Should probably only ever be 1.
       .activation(Activation.RELU)
-      .weightInit(WeightInit.RELU)
-      .learningRate(0.02)
-      .updater(Updater.ADAM)
+      .weightInit(WeightInit.XAVIER)
+      .learningRate(0.005)
+      .updater(Updater.NESTEROVS)
+      .momentum(0.9)
       .dropOut(0.5)
       .useDropConnect(true)
       .list()
-      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(4096).build())
-      .layer(1, new DenseLayer.Builder().nIn(4096).nOut(2048).build())
-      .layer(2, new DenseLayer.Builder().nIn(2048).nOut(512).build())
-      .layer(3, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
-        .activation(Activation.SOFTMAX).nIn(512).nOut(output_size).build())
-      .pretrain(false).backprop(true)
+      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(256).build())
+      .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
+        .activation(Activation.SOFTMAX).nIn(256).nOut(output_size).build())
+      .pretrain(true).backprop(true)
       .build()
 
-    log.info(s"Network: ${networkConfig.toYaml}")
+    log.info(s"Training Network, in: $input_size out: $output_size")
+    log.debug(s"Network: ${networkConfig.toYaml}")
 
     //Create the SparkDl4jMultiLayer instance
     val sparkNetwork = new SparkDl4jMultiLayer(sqlContext.sparkContext, networkConfig, trainingMaster)
-    sparkNetwork.setCollectTrainingStats(false)
+    sparkNetwork.setCollectTrainingStats(false) // Not that useful info. Mostly times for steps.
 
-    try{
-      sparkNetwork.fit(data)
-      log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
-      log.info(sparkNetwork.getNetwork.summary())
-    }finally {
-      //trainingMaster.deleteTempFiles(sqlContext.sparkContext)
+    for(i <- (1 to NUM_EPOCHS)){
+      log.info(s"Epoch: $i/$NUM_EPOCHS")
+      sparkNetwork.fit(trainData)
+      val evaluation = sparkNetwork.evaluate(testData)
+      log.info(evaluation.stats)
+      log.info(s"\n${evaluation.confusionToString()}")
     }
+    log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
+    log.info(sparkNetwork.getNetwork.summary())
 
     new RelationModel(sparkNetwork.getNetwork)
   }
@@ -114,7 +126,7 @@ object RelationModel {
   def load(path: String, context: SparkContext): RelationModel = {
     val fs = FileSystem.get(context.hadoopConfiguration)
     val input = fs.open(new Path(path + "/dl4j_model.bin"))
-    val network = ModelSerializer.restoreMultiLayerNetwork(input.getWrappedStream)
+    val network = ModelSerializer.restoreMultiLayerNetwork(input.getWrappedStream, true)
     new RelationModel(network)
   }
 
@@ -123,15 +135,36 @@ object RelationModel {
 class RelationModel(model: MultiLayerNetwork) extends Serializable {
 
   def save(path: String, context: SparkContext): Unit = {
+
+    // Save model
     val fs = FileSystem.get(context.hadoopConfiguration)
-    val output = fs.create(new Path(path + "/dl4j_model.bin"))
-    val os = new BufferedOutputStream(output)
+    var output = fs.create(new Path(path + "/dl4j_model.bin"))
+    var os = new BufferedOutputStream(output)
     ModelSerializer.writeModel(model, output, true)
     os.close()
+    output.close()
+
+    // Save
+    output = fs.create(new Path(path + "/model_info.txt"))
+    os = new BufferedOutputStream(output)
+    var pw = new PrintWriter(os)
+    val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+    pw.write(s"Created: ${sdf.format(new Date())}")
+    pw.write("Model Info:")
+    pw.write(s"Score: ${model.score}")
+    pw.write("Summary:")
+    pw.write(model.summary())
+    pw.write("Config:")
+    pw.write(model.conf().toJson)
+    pw.close()
+    os.close()
+    output.close()
+
   }
 
   def predict(vector: Vector): Double = {
-    val pred = model.output(Nd4j.create(vector.toArray), false)
+    //val pred = model.output(Nd4j.create(vector.toArray), false)
+    //LogManager.getLogger(classOf[RelationModel]).info("Prediction:" + (0 until OUTPUT_SIZE).map(pred.getFloat(_)).mkString(","))
     model.predict(Nd4j.create(vector.toArray))(0).toDouble
   }
 
