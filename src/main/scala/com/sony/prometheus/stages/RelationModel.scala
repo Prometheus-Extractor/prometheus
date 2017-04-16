@@ -1,6 +1,6 @@
 package com.sony.prometheus.stages
 
-import java.io.{BufferedOutputStream, File, PrintWriter}
+import java.io.{BufferedOutputStream, PrintWriter}
 
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
@@ -26,11 +26,6 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.lossfunctions.LossFunctions
 import java.text.SimpleDateFormat
 import java.util.Date
-
-import com.sony.prometheus.Prometheus
-import org.deeplearning4j.eval.Evaluation
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener
-
 
 /** Builds the RelationModel
  */
@@ -60,7 +55,7 @@ object RelationModel {
 
   val log = LogManager.getLogger(classOf[RelationModel])
 
-  val NUM_EPOCHS = 10
+  val NUM_EPOCHS = 5
 
   def splitToTestTrain(data: RDD[DataSet], testPercentage: Double = 0.1): (RDD[DataSet], RDD[DataSet]) = {
     log.info(s"Splitting data into ${1 - testPercentage}:$testPercentage")
@@ -75,11 +70,11 @@ object RelationModel {
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(256)
+      .batchSizePerWorker(1024)
       .averagingFrequency(10)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
-      .storageLevel(StorageLevel.MEMORY_AND_DISK_SER)
+      .storageLevel(StorageLevel.NONE)
       .build()
 
     val input_size = trainData.take(1)(0).getFeatures.length
@@ -97,9 +92,9 @@ object RelationModel {
       .dropOut(0.5)
       .useDropConnect(true)
       .list()
-      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(256).build())
+      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(2048).build())
       .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
-        .activation(Activation.SOFTMAX).nIn(256).nOut(output_size).build())
+        .activation(Activation.SOFTMAX).nIn(2048).nOut(output_size).build())
       .pretrain(true).backprop(true)
       .build()
 
@@ -112,9 +107,15 @@ object RelationModel {
 
     for(i <- (1 to NUM_EPOCHS)){
       log.info(s"Epoch: $i/$NUM_EPOCHS")
+      val start = System.currentTimeMillis
       sparkNetwork.fit(trainData)
+      log.info(s"Epoch finished in ${(System.currentTimeMillis() - start) / 1000}s")
+
       val evaluation = sparkNetwork.evaluate(testData)
-      log.info(evaluation.stats)
+
+      for(i <- (0 until numClasses))
+        log.info(s"$i\tRecall: ${evaluation.recall(i)}\t Precision: ${evaluation.precision(i)}\t F1: ${evaluation.f1(i)}")
+      log.info(s"T\tRecall: ${evaluation.recall}\t Precision: ${evaluation.precision}\t F1: ${evaluation.f1}\t Acc: ${evaluation.accuracy()}")
       log.info(s"\n${evaluation.confusionToString()}")
     }
     log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
@@ -163,8 +164,6 @@ class RelationModel(model: MultiLayerNetwork) extends Serializable {
   }
 
   def predict(vector: Vector): Double = {
-    //val pred = model.output(Nd4j.create(vector.toArray), false)
-    //LogManager.getLogger(classOf[RelationModel]).info("Prediction:" + (0 until OUTPUT_SIZE).map(pred.getFloat(_)).mkString(","))
     model.predict(Nd4j.create(vector.toArray))(0).toDouble
   }
 
