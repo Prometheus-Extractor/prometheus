@@ -27,6 +27,8 @@ import org.nd4j.linalg.lossfunctions.LossFunctions
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import org.deeplearning4j.eval.Evaluation
+
 /** Builds the RelationModel
  */
 class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomerStage)
@@ -43,9 +45,8 @@ class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomer
 
     val data = FeatureTransformer.load(featureTransfomerStage.getData())
     val numClasses = data.take(1)(0).getLabels.length
+    val model = RelationModel(data, numClasses, path)
 
-    val model = RelationModel(data, numClasses)
-    model.save(path, data.sparkContext)
   }
 }
 
@@ -63,14 +64,14 @@ object RelationModel {
     (splits(0), splits(1))
   }
 
-  def apply(rawData: RDD[DataSet], numClasses: Int)(implicit sqlContext: SQLContext): RelationModel = {
+  def apply(rawData: RDD[DataSet], numClasses: Int, path: String)(implicit sqlContext: SQLContext): RelationModel = {
 
     val (trainData, testData) = splitToTestTrain(rawData, 0.05)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(1024)
+      .batchSizePerWorker(256)
       .averagingFrequency(10)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
@@ -92,9 +93,9 @@ object RelationModel {
       .dropOut(0.5)
       .useDropConnect(true)
       .list()
-      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(2048).build())
+      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(256).build())
       .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
-        .activation(Activation.SOFTMAX).nIn(2048).nOut(output_size).build())
+        .activation(Activation.SOFTMAX).nIn(256).nOut(output_size).build())
       .pretrain(true).backprop(true)
       .build()
 
@@ -103,15 +104,15 @@ object RelationModel {
 
     //Create the SparkDl4jMultiLayer instance
     val sparkNetwork = new SparkDl4jMultiLayer(sqlContext.sparkContext, networkConfig, trainingMaster)
-    sparkNetwork.setCollectTrainingStats(false) // Not that useful info. Mostly times for steps.
 
+    var evaluation: Evaluation = null
     for(i <- (1 to NUM_EPOCHS)){
       log.info(s"Epoch: $i/$NUM_EPOCHS")
       val start = System.currentTimeMillis
       sparkNetwork.fit(trainData)
       log.info(s"Epoch finished in ${(System.currentTimeMillis() - start) / 1000}s")
 
-      val evaluation = sparkNetwork.evaluate(testData)
+      evaluation = sparkNetwork.evaluate(testData)
 
       for(i <- (0 until numClasses))
         log.info(s"$i\tRecall: ${evaluation.recall(i)}\t Precision: ${evaluation.precision(i)}\t F1: ${evaluation.f1(i)}")
@@ -121,7 +122,11 @@ object RelationModel {
     log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
     log.info(sparkNetwork.getNetwork.summary())
 
-    new RelationModel(sparkNetwork.getNetwork)
+    val relModel = new RelationModel(sparkNetwork.getNetwork)
+    if(path != "")
+      save(relModel, sqlContext.sparkContext, evaluation, path)
+
+    relModel
   }
 
   def load(path: String, context: SparkContext): RelationModel = {
@@ -131,12 +136,9 @@ object RelationModel {
     new RelationModel(network)
   }
 
-}
+  def save(relModel: RelationModel, context: SparkContext, evaluation: Evaluation, path: String) : Unit = {
 
-class RelationModel(model: MultiLayerNetwork) extends Serializable {
-
-  def save(path: String, context: SparkContext): Unit = {
-
+    val model = relModel.model
     // Save model
     val fs = FileSystem.get(context.hadoopConfiguration)
     var output = fs.create(new Path(path + "/dl4j_model.bin"))
@@ -157,14 +159,21 @@ class RelationModel(model: MultiLayerNetwork) extends Serializable {
     pw.write(model.summary())
     pw.write("Config:")
     pw.write(model.conf().toJson)
+
+    for(i <- (0 until model.getLabels.length))
+      pw.write(s"$i\tRecall: ${evaluation.recall(i)}\t Precision: ${evaluation.precision(i)}\t F1: ${evaluation.f1(i)}")
+    pw.write(s"T\tRecall: ${evaluation.recall}\t Precision: ${evaluation.precision}\t F1: ${evaluation.f1}\t Acc: ${evaluation.accuracy()}")
+    pw.write(s"\n${evaluation.confusionToString()}")
+
     pw.close()
     os.close()
     output.close()
-
   }
 
+}
+
+class RelationModel(val model: MultiLayerNetwork) extends Serializable {
   def predict(vector: Vector): Double = {
     model.predict(Nd4j.create(vector.toArray))(0).toDouble
   }
-
 }
