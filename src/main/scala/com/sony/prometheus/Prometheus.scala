@@ -25,8 +25,8 @@ object Prometheus {
   /** Provides arugment parsing
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
-    version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel [options] corpus-path entities-path temp-data-path --word2vecPath
+    version("Prometheus Model Trainer")
+    banner("""Usage: RelationModel [options] corpus-path entities-path temp-data-path word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
@@ -69,8 +69,9 @@ object Prometheus {
       path.split(":") match {
         case Array("hdfs", _) => true
         case Array("file", _) => true
+        case Array("s3", _) => true
         case _ => {
-          System.err.println(s"""$path must be prefixed with either "hdfs:" or "file:"""")
+          System.err.println(s"""$path must be prefixed with either "hdfs:" or "file: or s3:"""")
           false
         }
       }
