@@ -46,6 +46,10 @@ object Prometheus {
       descr = "use this to sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
       default = Option(1.0))
+    val epochs = opt[Int](
+      descr = "number of epochs for neural network",
+      validate = x => (x > 0),
+      default = Option(5))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
@@ -135,7 +139,8 @@ object Prometheus {
 
       val modelTrainingTask = new RelationModelStage(
         tempDataPath + "/models",
-        featureTransfomerStage
+        featureTransfomerStage,
+        conf.epochs()
       )
 
       val path = modelTrainingTask.getData()

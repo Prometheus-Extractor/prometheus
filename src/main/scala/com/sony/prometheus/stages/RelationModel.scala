@@ -31,7 +31,7 @@ import org.deeplearning4j.eval.Evaluation
 
 /** Builds the RelationModel
  */
-class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomerStage)
+class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomerStage, epochs: Int)
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -45,7 +45,7 @@ class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomer
 
     val data = FeatureTransformer.load(featureTransfomerStage.getData())
     val numClasses = data.take(1)(0).getLabels.length
-    val model = RelationModel(data, numClasses, path)
+    val model = RelationModel(data, numClasses, path, epochs)
 
   }
 }
@@ -56,15 +56,13 @@ object RelationModel {
 
   val log = LogManager.getLogger(classOf[RelationModel])
 
-  val NUM_EPOCHS = 1
-
   def splitToTestTrain(data: RDD[DataSet], testPercentage: Double = 0.1): (RDD[DataSet], RDD[DataSet]) = {
     log.info(s"Splitting data into ${1 - testPercentage}:$testPercentage")
     val splits = data.randomSplit(Array(1 - testPercentage, testPercentage))
     (splits(0), splits(1))
   }
 
-  def apply(rawData: RDD[DataSet], numClasses: Int, path: String)(implicit sqlContext: SQLContext): RelationModel = {
+  def apply(rawData: RDD[DataSet], numClasses: Int, path: String, epochs: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
     val (trainData, testData) = splitToTestTrain(rawData, 0.05)
 
@@ -107,8 +105,8 @@ object RelationModel {
     val sparkNetwork = new SparkDl4jMultiLayer(sqlContext.sparkContext, networkConfig, trainingMaster)
 
     var evaluation: Evaluation = null
-    for(i <- (1 to NUM_EPOCHS)){
-      log.info(s"Epoch: $i/$NUM_EPOCHS")
+    for(i <- (1 to epochs)){
+      log.info(s"Epoch: $i/$epochs")
       val start = System.currentTimeMillis
       sparkNetwork.fit(trainData)
       log.info(s"Epoch finished in ${(System.currentTimeMillis() - start) / 1000}s")
