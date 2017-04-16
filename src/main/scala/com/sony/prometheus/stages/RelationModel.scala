@@ -56,7 +56,7 @@ object RelationModel {
 
   val log = LogManager.getLogger(classOf[RelationModel])
 
-  val NUM_EPOCHS = 5
+  val NUM_EPOCHS = 1
 
   def splitToTestTrain(data: RDD[DataSet], testPercentage: Double = 0.1): (RDD[DataSet], RDD[DataSet]) = {
     log.info(s"Splitting data into ${1 - testPercentage}:$testPercentage")
@@ -87,9 +87,10 @@ object RelationModel {
       .iterations(1) // Not the same as epoch. Should probably only ever be 1.
       .activation(Activation.RELU)
       .weightInit(WeightInit.XAVIER)
-      .learningRate(0.005)
-      .updater(Updater.NESTEROVS)
-      .momentum(0.9)
+      .updater(Updater.ADADELTA)
+      //.learningRate(0.005)
+      //.momentum(0.9)
+      //.epsilon(1.0E-8)
       .dropOut(0.5)
       .useDropConnect(true)
       .list()
@@ -124,7 +125,7 @@ object RelationModel {
 
     val relModel = new RelationModel(sparkNetwork.getNetwork)
     if(path != "")
-      save(relModel, sqlContext.sparkContext, evaluation, path)
+      save(relModel, sqlContext.sparkContext, evaluation, path, numClasses)
 
     relModel
   }
@@ -136,7 +137,7 @@ object RelationModel {
     new RelationModel(network)
   }
 
-  def save(relModel: RelationModel, context: SparkContext, evaluation: Evaluation, path: String) : Unit = {
+  def save(relModel: RelationModel, context: SparkContext, evaluation: Evaluation, path: String, numClasses: Int) : Unit = {
 
     val model = relModel.model
     // Save model
@@ -152,18 +153,18 @@ object RelationModel {
     os = new BufferedOutputStream(output)
     var pw = new PrintWriter(os)
     val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
-    pw.write(s"Created: ${sdf.format(new Date())}")
-    pw.write("Model Info:")
-    pw.write(s"Score: ${model.score}")
-    pw.write("Summary:")
-    pw.write(model.summary())
-    pw.write("Config:")
-    pw.write(model.conf().toJson)
+    pw.println(s"Created: ${sdf.format(new Date())}")
+    pw.println("Model Info:")
+    pw.println(s"Score: ${model.score}")
+    pw.println("Summary:")
+    pw.println(model.summary())
+    pw.println("Config:")
+    pw.println(model.conf().toJson)
 
-    for(i <- (0 until model.getLabels.length))
-      pw.write(s"$i\tRecall: ${evaluation.recall(i)}\t Precision: ${evaluation.precision(i)}\t F1: ${evaluation.f1(i)}")
-    pw.write(s"T\tRecall: ${evaluation.recall}\t Precision: ${evaluation.precision}\t F1: ${evaluation.f1}\t Acc: ${evaluation.accuracy()}")
-    pw.write(s"\n${evaluation.confusionToString()}")
+    for(i <- (0 until numClasses))
+      pw.println(s"$i\tRecall: ${evaluation.recall(i)}\t Precision: ${evaluation.precision(i)}\t F1: ${evaluation.f1(i)}")
+    pw.println(s"T\tRecall: ${evaluation.recall}\t Precision: ${evaluation.precision}\t F1: ${evaluation.f1}\t Acc: ${evaluation.accuracy()}")
+    pw.println(s"\n${evaluation.confusionToString()}")
 
     pw.close()
     os.close()

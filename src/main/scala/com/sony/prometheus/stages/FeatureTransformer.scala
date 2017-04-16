@@ -34,7 +34,9 @@ class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncode
     val featureTransformer = sqlContext.sparkContext.broadcast(
       FeatureTransformer(word2VecData.getData(), posEncoderStage.getData()))
     balancedData.map(d => {
-      val vector = featureTransformer.value.toFeatureVector(d.wordFeatures, d.posFeatures).toArray.map(_.toFloat)
+      val vector = featureTransformer.value.toFeatureVector(
+        d.wordFeatures, d.posFeatures, d.ent1PosTags, d.ent2PosTags
+      ).toArray.map(_.toFloat)
       val features = Nd4j.create(vector)
       val label = Nd4j.create(featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray)
       val dataset = new DataSet(features, label)
@@ -80,7 +82,7 @@ object FeatureTransformer {
     val classCount = rawData.map(d => d.relationClass).countByValue()
     val realClasses = classCount.filter(_._1 != 0)
     val sampleTo = if (underSample) realClasses.map(_._2).min else realClasses.map(_._2).max
-    classCount.foreach(pair => log.info(s" Class ${pair._1}: ${pair._2} => ${sampleTo}"))
+    classCount.foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2} => ${sampleTo}"))
 
     val balancedDataset = classCount.map{
       case (key:Long, count: Long) =>
@@ -94,14 +96,10 @@ object FeatureTransformer {
 
 }
 
-/** Transforms tokens with a [[stages.TokenEncoder]]
+/**
  */
 class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: StringIndexer) extends Serializable {
 
-  /** Returns a transformed Seq of tokens as a Seq of Ints with [[stages.TokenEncoder]]
-    *
-    * @param tokens - the Seq of Strings to transform
-   */
   def transformWords(tokens: Seq[String]): Seq[Vector] = {
     tokens.map(wordEncoder.index)
   }
@@ -115,12 +113,27 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
     Vectors.sparse(vocabSize, f)
   }
 
-  /** Creates a unified vector with
+  /** Creates a unified vector with all the features
+    * @param  wordFeatures  the word features, a Seq of words
+    * @param  posFeatures   the part-of-speech tags for the word features
+    * @param  ent1TokensPos the part-of-speech tags for entity1's tokens
+    * @param  ent2TokensPos the part-of-speech tags for entity2's tokens
+    * @return a unified feature vector
     */
-  def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String]): Vector = {
+  def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String], ent1TokensPos: Seq[String], ent2TokensPos: Seq[String]): Vector = {
     val wordVectors = wordFeatures.map(wordEncoder.index).map(_.toArray).flatten.toArray
     val posVectors = posFeatures.map(posEncoder.index).map(Seq(_)).map(oneHotEncode(_, posEncoder.vocabSize()).toArray).flatten.toArray
-    Vectors.dense(wordVectors ++ posVectors)
-  }
 
+    val ent1Pos = oneHotEncode(    // eg Seq(ADJ, PROPER_NOUN, PROPER_NOUN) repr. (Venerable Barack Obama)
+      ent1TokensPos.map(posEncoder.index),  // eg Seq(0, 2, 2) (index of the POS tags)
+      posEncoder.vocabSize()
+    ).toArray // one-hot encoded, eg Array(1, 0, 1, 0, 0, ... 0) with length posEncoder.vocabSize()
+
+    val ent2Pos = oneHotEncode(
+      ent2TokensPos.map(posEncoder.index),
+      posEncoder.vocabSize()
+    ).toArray
+
+    Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos)
+  }
 }

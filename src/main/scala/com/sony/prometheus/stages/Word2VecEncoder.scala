@@ -144,7 +144,7 @@ class Word2VecDict(vocabFile : File, vecsFile : File, unknownWord : String="__UN
 
     System.out.println("Start reading...")
 
-    //Map 1M vectors at a time
+    // Map 1M vectors at a time
     val sz : Long = (vocabsize / (1024 * 1024)) + 1
     var i : Long = 0
     while (i < sz) {

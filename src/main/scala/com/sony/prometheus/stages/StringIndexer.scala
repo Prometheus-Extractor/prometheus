@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 import com.sony.prometheus.utils.Utils.pathExists
 
 class PosEncoderStage(path: String,
-                      corpusData: Data)
+                      corpusData: CorpusData)
                      (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data{
 
   override def getData(): String = {

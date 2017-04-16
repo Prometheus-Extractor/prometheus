@@ -2,23 +2,18 @@ package com.sony.prometheus
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
+import com.sony.prometheus.evaluation._
+import com.sony.prometheus.interfaces._
 import com.sony.prometheus.stages._
-
-import scala.collection.JavaConverters._
-import com.sony.prometheus.utils.Utils.pathExists
+import com.sony.prometheus.utils.Utils.Colours._
 import org.apache.log4j.{Level, LogManager, Logger}
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.{SparkConf, SparkContext}
+import org.http4s.server.blaze._
 import org.rogach.scallop._
 import org.rogach.scallop.exceptions._
-import utils.Utils.Colours._
-import interfaces._
-import org.http4s.server.blaze._
 
-import scala.util.Properties.{envOrNone, propOrNone}
-import evaluation._
-import se.lth.cs.docforia.graph.text.Sentence
+import scala.util.Properties.envOrNone
 
 /** Main class, sets up and runs the pipeline
  */
@@ -31,14 +26,22 @@ object Prometheus {
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel [--language={sv|en}] [--sample-size=0.f] [--evaluationFiles=file1,file2,...] corpus-path entities-path temp-data-path --word2vecPath
+    banner("""Usage: RelationModel [options] corpus-path entities-path temp-data-path --word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
-    val corpusPath = trailArg[String](descr = "path to the corpus to train on")
-    val entitiesPath = trailArg[String](descr = "path to a parquet file containing the entities/relations to train for")
-    val tempDataPath= trailArg[String](descr= "path to a directory that will contain intermediate results")
-    val word2vecPath = trailArg[String](descr = "path to a word2vec model in the C binary format")
+    val corpusPath = trailArg[String](
+      descr = "path to the corpus to train on",
+      validate = pathPrefixValidation)
+    val entitiesPath = trailArg[String](
+      descr = "path to a parquet file containing the entities/relations to train for",
+      validate = pathPrefixValidation)
+    val tempDataPath= trailArg[String](
+      descr= "path to a directory that will contain intermediate results",
+      validate = pathPrefixValidation)
+    val word2vecPath = trailArg[String](
+      descr = "path to a word2vec model in the C binary format",
+      validate = pathPrefixValidation)
     val sampleSize = opt[Double](
       descr = "use this to sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
@@ -61,7 +64,33 @@ object Prometheus {
         sys.exit(1)
       case ex => super.onError(ex)
     }
+
+    def pathPrefixValidation(path: String): Boolean = {
+      path.split(":") match {
+        case Array("hdfs", _) => true
+        case Array("file", _) => true
+        case _ => {
+          System.err.println(s"""$path must be prefixed with either "hdfs:" or "file:"""")
+          false
+        }
+      }
+    }
+
   }
+
+  def printEnvironment(conf: Conf): Unit = {
+    val str =
+      s"""corpusPath:\t${conf.corpusPath()}
+         |entitiesPath:\t${conf.entitiesPath()}
+         |tempDataPath:\t${conf.tempDataPath() + "/" + conf.language()}
+         |word2vecPath:\t${conf.word2vecPath()}
+         |sampleSize:\t${conf.sampleSize()}
+         |evaluationFiles:\t${conf.evaluationFiles}
+         |language:\t${conf.language()}
+       """.stripMargin
+    println(str)
+  }
+
   def main(args: Array[String]): Unit = {
     val conf = new Conf(args)
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -74,6 +103,7 @@ object Prometheus {
     implicit val sqlContext = new SQLContext(sc)
 
     val tempDataPath = conf.tempDataPath() + "/" + conf.language()
+    printEnvironment(conf)
 
     try {
       val corpusData = new CorpusData(conf.corpusPath())

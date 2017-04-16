@@ -1,10 +1,10 @@
 REMOTE_HOST="exjobb8"
 WORK_PATH="~/projects"
-DRIVER_MEMORY="10g"
+DRIVER_MEMORY="15g"
 EXECUTOR_HEAP="0g"
 CPP_MAXPHY_BYTES="55g"
 CPP_MAX_BYTES="40g"
 JVMOPTS="-Dorg.bytedeco.javacpp.maxbytes=$CPP_MAX_BYTES -Dorg.bytedeco.javacpp.maxphysicalbytes=$CPP_MAXPHY_BYTES -Dorg.bytedeco.javacpp.maxretries=100"
-EXTRA_SPARK_OPTIONS="--conf spark.driver.memory=$DRIVER_MEMORY --conf spark.executor.memory=$EXECUTOR_HEAP --master local[1] --conf spark.worker.cleanup.enabled=true"
+EXTRA_SPARK_OPTIONS="--conf spark.driver.memory=$DRIVER_MEMORY --conf spark.executor.memory=$EXECUTOR_HEAP --master local[*] --conf spark.worker.cleanup.enabled=true"
 SPARK_SUBMIT="~/projects/spark-1.6.3-bin-hadoop2.6/bin/spark-submit"
 EXTRA_ENVS='HDFS_ADDRESS="hdfs://semantica004.cs.lth.se:8020"'
