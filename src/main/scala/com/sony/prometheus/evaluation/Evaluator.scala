@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream
 import java.nio.file.{Files, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import scala.collection.JavaConverters._
 
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.LogManager
@@ -15,6 +16,8 @@ import org.apache.spark.rdd.RDD
 import com.sony.prometheus.annotaters.VildeAnnotater
 import org.apache.hadoop.fs.{FileSystem, Path}
 import se.lth.cs.docforia.Document
+import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
+import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
 
@@ -97,13 +100,23 @@ object Evaluator {
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor, debugOutFile: Option[String] = None)
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
-    val nbrDataPoints: Double = evalDataPoints
+    val nbrEvalDataPoints = evalDataPoints.count()
+
+    val herdEnts = evalDataPoints.zip(annotatedEvidence).filter{case (dP, evidence) => {
+      val ents = evidence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq.map(_.getIdentifier.split(":").last)
+      ents.contains(dP.wd_obj) && ents.contains(dP.wd_sub)
+    }}.count().toDouble
+
+    val herdRecall = herdEnts / nbrEvalDataPoints
+    log.info(s"HERD recall is $herdRecall")
+
+    val nbrTrueDataPoints: Double = evalDataPoints
       .filter(dP => dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0)
       .count()
-    log.info(s"There are ${nbrDataPoints.toInt} positive examples in the evaluation data")
+    log.info(s"There are ${nbrTrueDataPoints.toInt} positive examples in the evaluation data")
+    log.info(s"There are ${nbrEvalDataPoints - nbrTrueDataPoints} negative examples in the evaluation data")
 
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
-
     predictedRelations.cache()
 
     val nbrPredictedRelations: Double = predictedRelations
@@ -127,7 +140,7 @@ object Evaluator {
       }
       .count()
 
-    // Save debug information to CSV if debugOutFile supplied
+    // Save debug information to TSV if debugOutFile supplied
     debugOutFile.foreach(f => {
       val fs = FileSystem.get(sc.hadoopConfiguration)
       val output = fs.create(new Path(f))
@@ -146,7 +159,7 @@ object Evaluator {
 
     log.info(s"truePositives: ${nbrTruePositives}")
 
-    val recall: Double = nbrTruePositives / nbrDataPoints
+    val recall: Double = nbrTruePositives / nbrTrueDataPoints
     val precision: Double = nbrTruePositives / nbrPredictedRelations
 
     log.info(s"~precision is $precision")
@@ -155,11 +168,12 @@ object Evaluator {
     val f1 = computeF1(recall, precision)
     val evaluation: EvaluationResult = EvaluationResult(
       evalDataPoints.first().wd_pred,
-      nbrDataPoints.toInt,
+      nbrTrueDataPoints.toInt,
       nbrTruePositives.toInt,
       recall,
       precision,
-      f1)
+      f1,
+      herdRecall)
     log.info(s"EvaluationResult: $evaluation")
 
     evaluation
@@ -189,13 +203,13 @@ object Evaluator {
     truePositives: Int,
     recall: Double,
     precision: Double,
-    f1: Double) {
+    f1: Double,
+    herdRecall: Double) {
 
     override def toString: String = {
-      s"""relation\tnbr data points\ttrue positives\trecall\tprecision\tf1
-         |$relation\t$nbrDataPoints\t$truePositives\t$recall\t$precision\t$f1
+      s"""relation\tnbr data points\ttrue positives\trecall\tprecision\tf1\tHERD recall
+         |$relation\t$nbrDataPoints\t$truePositives\t$recall\t$precision\t$f1\t$herdRecall
       """.stripMargin
     }
   }
 }
-

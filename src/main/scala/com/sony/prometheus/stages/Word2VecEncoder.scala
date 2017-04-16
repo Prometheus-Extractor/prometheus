@@ -11,6 +11,7 @@ import org.apache.spark.{SparkContext, SparkFiles}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.sql.SQLContext
 
 class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
 
@@ -29,9 +30,9 @@ class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
   */
 object Word2VecEncoder {
 
-  def apply(modelPath: String): Word2VecEncoder = {
-    val models = Word2VecDict(modelPath + "/model.opt.vocab", modelPath + "/model.opt.vecs")
-    val word2vec = new Word2VecEncoder(models)
+  def apply(modelPath: String)(implicit sQLContext: SQLContext): Word2VecEncoder = {
+    val models = Word2VecDict(modelPath + "/model.opt.vocab", modelPath + "/model.opt.vecs")(sQLContext.sparkContext)
+    new Word2VecEncoder(models)
   }
 }
 
@@ -142,7 +143,7 @@ object Word2VecDict {
 
     System.out.println("Start reading...")
 
-    //Map 1M vectors at a time
+    // Map 1M vectors at a time
     val sz : Long = (vocabsize / (1024 * 1024)) + 1
     var i : Long = 0
     while (i < sz) {

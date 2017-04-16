@@ -21,8 +21,8 @@ import scala.collection.mutable.ListBuffer
  */
 class TrainingDataExtractorStage(
   path: String,
-  corpusData: Data,
-  relationsData: Data)
+  corpusData: CorpusData,
+  relationsData: RelationsData)
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -101,13 +101,13 @@ object TrainingDataExtractor {
                   val foundPairs = ListBuffer[EntityPair]()
                   if(mapping.getOrDefault(pair(0), mutable.Set.empty).contains(pair(1))){
                     foundPairs += EntityPair(pair(0), pair(1))
-                  }else if(mapping.getOrDefault(pair(1), mutable.Set.empty).contains(pair(0))){
+                  } else if(mapping.getOrDefault(pair(1), mutable.Set.empty).contains(pair(0))){
                     foundPairs += EntityPair(pair(1), pair(0))
                   }
                   foundPairs
                 })
 
-                if(pairs.length > 0)
+                if (pairs.length > 0)
                   Seq(TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, pairs.toList))
                 else
                   Seq()
@@ -135,16 +135,30 @@ object TrainingDataExtractor {
   }
 
   def save(data: RDD[TrainingSentence], path: String)(implicit sqlContext: SQLContext): Unit = {
-
+    println(s"Saving training data to $path")
     import sqlContext.implicits._
     val serializable = data.map(ts => {
-      SerializedTrainingSentence(ts.relationId, ts.relationName, ts.relationClass,
-                                 ts.sentenceDoc.toBytes(), ts.entityPair)
+      SerializedTrainingSentence(
+        ts.relationId,
+        ts.relationName,
+        ts.relationClass,
+        ts.sentenceDoc.toBytes(),
+        ts.entityPair)
     }).toDF()
     serializable.write.parquet(path)
   }
-
 }
 
-case class TrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Document, entityPair: Seq[EntityPair])
-private case class SerializedTrainingSentence(relationId: String, relationName: String, relationClass: Int, sentenceDoc: Array[Byte], entityPair: Seq[EntityPair])
+case class TrainingSentence(
+  relationId: String,
+  relationName: String,
+  relationClass: Int,
+  sentenceDoc: Document,
+  entityPair: Seq[EntityPair])
+
+private case class SerializedTrainingSentence(
+  relationId: String,
+  relationName: String,
+  relationClass: Int,
+  sentenceDoc: Array[Byte],
+  entityPair: Seq[EntityPair])
