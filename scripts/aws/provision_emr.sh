@@ -5,4 +5,4 @@ aws emr create-cluster \
   --use-default-roles \
   --ec2-attributes KeyName="prometheus-keypair",SubnetId=subnet-a5be57c2 \
   --configurations https://s3-eu-west-1.amazonaws.com/sony-prometheus-data/emrconfig.json \
-  --instance-groups InstanceGroupType=MASTER,InstanceCount=1,InstanceType=r4.2xlarge InstanceGroupType=CORE,InstanceCount=4,InstanceType=r4.2xlarge
+  --instance-fleets InstanceFleetType=MASTER,TargetOnDemandCapacity=1,InstanceTypeConfigs=['{InstanceType=r4.2xlarge}'] InstanceFleetType=CORE,TargetSpotCapacity=4,InstanceTypeConfigs=['{InstanceType=r4.2xlarge,BidPrice=0.5,WeightedCapacity=3}'],LaunchSpecifications={SpotSpecification='{TimeoutDurationMinutes=5,TimeoutAction=SWITCH_TO_ON_DEMAND}'}
