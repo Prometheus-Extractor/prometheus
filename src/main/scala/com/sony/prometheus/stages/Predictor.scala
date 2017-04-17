@@ -44,7 +44,8 @@ object Predictor {
     val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData())
     val model = RelationModel.load(modelStage.getData(), sqlContext.sparkContext)
     val relations = RelationsReader.readRelations(relationData.getData())
-    new Predictor(model, featureTransformer, relations)
+    val ft = sqlContext.sparkContext.broadcast(featureTransformer)
+    new Predictor(model, ft, relations)
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[ExtractedRelation] = {
@@ -59,7 +60,7 @@ object Predictor {
 
 }
 
-class Predictor(model: RelationModel, transformer: FeatureTransformer, relations: RDD[Relation]) extends Serializable {
+class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: RDD[Relation]) extends Serializable {
 
   val UNKNOWN_CLASS = "<unknown_class>"
 
@@ -75,7 +76,7 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
-        .map(p => transformer.toFeatureVector(p.wordFeatures, p.posFeatures, p.ent1PosFeatures, p.ent2PosFeatures))
+        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.ent1PosFeatures, p.ent2PosFeatures))
         .map(model.predict)
 
       classes.zip(points).map{

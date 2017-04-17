@@ -112,7 +112,7 @@ object Evaluator {
     val herdRecall = herdPoints.count() / nbrEvalDataPoints.toDouble
     log.info(s"Herd successfully found ${herdPoints.count()} target entity pairs, and recall is about: $herdRecall")
 
-    log.info("Testing predictor in test set")
+    log.info("Testing predictor on test set")
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
       // Filter out the UNKNOWN_CLASS. Keep the empty lists.
       .map(r => r.filter(p => !p.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
@@ -147,9 +147,7 @@ object Evaluator {
     log.info(s"Recall is $recall")
     log.info(s"F1 is $f1")
 
-    val meanProbTP = truePositives.map(_.probability).reduce(_+_) / nbrTruePositives.toDouble
-    val meanProbFP = falsePositives.map(_.probability).reduce(_+_) / nbrFalsePositives.toDouble
-    log.info(s"Predictor mean probabilities for TP: $meanProbTP, FP: $meanProbFP")
+    suggestThreshold(truePositives, falsePositives, nbrTrueDataPoints)
 
     writeDebug(evalDataPoints, annotatedEvidence, predictedRelations, debugOutFile)
 
@@ -193,6 +191,29 @@ object Evaluator {
       os.write(data.getBytes("UTF-8"))
       os.close()
     })
+  }
+
+  private def suggestThreshold(truePositives: RDD[ExtractedRelation], falsePositives: RDD[ExtractedRelation],
+                               nbrTrueDataPoints: Double): Unit = {
+
+    val tpCount = truePositives.count().toDouble
+    val fpCount = falsePositives.count().toDouble
+    val trueProb = truePositives.map(_.probability).collect()
+    val falseProb = falsePositives.map(_.probability).collect()
+    val meanProbTP = trueProb.reduce(_+_) / tpCount
+    val meanProbFP = falseProb.reduce(_+_) / fpCount
+    log.info(s"Predictor mean probabilities for TP: $meanProbTP, FP: $meanProbFP")
+
+    for(cutoff <- (meanProbFP to meanProbTP + 0.1 by (meanProbTP - meanProbFP) / 10)) {
+      val newTP = trueProb.filter(_ >= cutoff).length
+      val newFP = falseProb.filter(_ >= cutoff).length
+
+      val recall = newTP / nbrTrueDataPoints
+      val precision = newTP / (newTP + newFP).toDouble
+      val f1 = computeF1(recall, precision)
+      log.info(s"\tWith probability cutoff $cutoff => recall: $recall, precision: $precision, f1: $f1")
+    }
+
   }
 
   def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {
