@@ -207,7 +207,7 @@ object Evaluator {
     val meanProbFP = falseProb.reduce(_+_) / fpCount
     log.info(s"Predictor mean probabilities for TP: $meanProbTP, FP: $meanProbFP")
 
-    for(cutoff <- (meanProbFP to meanProbTP + 0.1 by (meanProbTP - meanProbFP) / 10)) {
+    for(cutoff <- (meanProbFP to 1.0 by (meanProbTP - meanProbFP) / 20)) {
       val newTP = trueProb.filter(_ >= cutoff).length
       val newFP = falseProb.filter(_ >= cutoff).length
 
