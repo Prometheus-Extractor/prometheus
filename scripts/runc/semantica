@@ -1,6 +1,6 @@
 REMOTE_HOST="sem4"
 WORK_PATH="~/projects/prometheus-relation-model"
-HEAP_SIZE="6g"
+HEAP_SIZE="8g"            # 8g for training models. About 10-15 gb when loading word2vec model.
 OFF_HEAP_SIZE="0g"
 CPP_MAXPHY_BYTES="22g"
 CPP_MAX_BYTES="6g"

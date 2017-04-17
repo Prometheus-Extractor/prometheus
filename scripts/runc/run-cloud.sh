@@ -72,6 +72,6 @@ REMOTE_COMMAND="cd $WORK_PATH; "\
 "$EXTRA_SPARK_OPTIONS "\
 "$JAR_NAME $args"
 SESSION_NAME="prometheus-"$(date +%R)
-execute ssh -t $REMOTE_HOST "screen -S $SESSION_NAME  bash -c '$REMOTE_COMMAND'"
+execute ssh -t $REMOTE_HOST "screen -h 10000 -S $SESSION_NAME  bash -c '$REMOTE_COMMAND'"
 printf "$GREEN == Done == $RES\n"
 
