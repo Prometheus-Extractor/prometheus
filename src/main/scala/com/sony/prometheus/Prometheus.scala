@@ -25,8 +25,8 @@ object Prometheus {
   /** Provides arugment parsing
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
-    version("Prometheus Model Trainer 0.0.1-SNAPSHOT")
-    banner("""Usage: RelationModel [options] corpus-path entities-path temp-data-path --word2vecPath
+    version("Prometheus Model Trainer")
+    banner("""Usage: RelationModel [options] corpus-path entities-path temp-data-path word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
@@ -49,6 +49,10 @@ object Prometheus {
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
+    val epochs = opt[Int](
+      descr = "number of epochs for neural network",
+      validate = x => (x > 0),
+      default = Option(10))
     val language = opt[String](
       required = true,
       default = Some("sv"),
@@ -69,8 +73,9 @@ object Prometheus {
       path.split(":") match {
         case Array("hdfs", _) => true
         case Array("file", _) => true
+        case Array("s3", _) => true
         case _ => {
-          System.err.println(s"""$path must be prefixed with either "hdfs:" or "file:"""")
+          System.err.println(s"""$path must be prefixed with either "hdfs:" or "file: or s3:"""")
           false
         }
       }
@@ -123,11 +128,20 @@ object Prometheus {
         tempDataPath + "/features",
         trainingTask)
 
+      val featureTransfomerStage = new FeatureTransfomerStage(
+        tempDataPath + "/vector_features",
+        word2VecData,
+        posEncoderStage,
+        featureExtractionTask
+      )
+
+      featureTransfomerStage.getData()
+
       val modelTrainingTask = new RelationModelStage(
         tempDataPath + "/models",
-        featureExtractionTask,
-        word2VecData,
-        posEncoderStage)
+        featureTransfomerStage,
+        conf.epochs()
+      )
 
       val path = modelTrainingTask.getData()
       log.info(s"Saved model to $path")

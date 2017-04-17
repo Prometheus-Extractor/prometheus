@@ -1,0 +1,19 @@
+# This config is intended to spin up 30gb containers using 7 cores each.
+# It will try to allocate as many 30gb containers as possible. Caching large RDDS might crash and require fine tuning of the memory.
+REMOTE_HOST="prometheus-master"
+WORK_PATH="~/"
+HEAP_SIZE="8g"
+OFF_HEAP_SIZE="13000"
+CPP_MAXPHY_BYTES="18g"
+CPP_MAX_BYTES="6g"
+EXECUTOR_CORES=4
+
+DRIVER_MEM="30g"
+JVMOPTS="-Dorg.bytedeco.javacpp.maxbytes=$CPP_MAX_BYTES -Dorg.bytedeco.javacpp.maxphysicalbytes=$CPP_MAXPHY_BYTES -Dorg.bytedeco.javacpp.maxretries=100"
+EXTRA_SPARK_OPTIONS="--deploy-mode client --master yarn --driver-memory=$DRIVER_MEM --executor-cores=$EXECUTOR_CORES --conf spark.yarn.executor.memoryOverhead=$OFF_HEAP_SIZE  --conf spark.executor.memory=$HEAP_SIZE --conf spark.locality.wait=0"
+
+
+# NOT USED.
+# NUM_EXECUTORS=9
+# --conf spark.dynamicAllocation.minExecutors=$NUM_EXECUTORS --conf spark.worker.cleanup.enabled=true --conf yarn.nodemanager.resource.memory-mb=$EXECUTOR_MEM_MB --conf yarn.nodemanager.resource.cpu-vcore=$EXECUTOR_CORES
+#EXECUTOR_MEM_MB="30000"

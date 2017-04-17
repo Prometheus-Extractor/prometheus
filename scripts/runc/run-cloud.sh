@@ -24,7 +24,7 @@ SPARK_SUBMIT="${SPARK_SUBMIT:-spark-submit}"
 SPARK_MAX_RESULTSIZE="${SPARK_MAX_RESULTSIZE:-8192m}"
 
 # This is not the fastest GC, but works well under heavy GC load.
-JVMOPTS="-XX:+AggressiveOpts -XX:+PrintFlagsFinal -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35"
+JVMOPTS=$JVMOPTS" -XX:+AggressiveOpts -XX:+PrintFlagsFinal -XX:+UseG1GC -XX:+UnlockDiagnosticVMOptions -XX:+G1SummarizeConcMark -XX:InitiatingHeapOccupancyPercent=35"
 
 # Pretty colours
 L_RED="\e[91m"
@@ -38,6 +38,7 @@ printf "$CYAN%-25s %s $RES\n" "WORK_PATH:" "$WORK_PATH"
 printf "$CYAN%-25s %s $RES\n" "EXTRA_SPARK_OPTIONS:" "$EXTRA_SPARK_OPTIONS"
 printf "$CYAN%-25s %s $RES\n" "args:" "$args"
 printf "$CYAN%-25s %s $RES\n" "EXTRA_ENVS:" "$EXTRA_ENVS"
+printf "$CYAN%-25s %s $RES\n" "EXTRA_JVM:" "$JVMOPTS"
 
 
 function execute {

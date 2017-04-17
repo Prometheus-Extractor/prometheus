@@ -39,8 +39,17 @@ object Utils {
         println(s"Local file $suffix $exists")
         exists
       }
+      case Array("s3", suffix) => {
+        val conf = sc.hadoopConfiguration
+        conf.set("fs.s3.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        conf.set("fs.default.name", "s3://sony-prometheus-data")
+        val fs = org.apache.hadoop.fs.FileSystem.get(conf)
+        val exists = fs.exists(new Path(suffix))
+        println(s"S3 file $suffix $exists")
+        exists
+      }
       case _ => {
-        System.err.println(s"Illegal pattern for $path, specify path prefix (hdfs: or file:)")
+        System.err.println(s"Illegal pattern for $path, specify path prefix (hdfs:, file:, or s3:)")
         true
       }
     }
