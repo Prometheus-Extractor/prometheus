@@ -100,6 +100,9 @@ object Evaluator {
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor, debugOutFile: Option[String] = None)
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
+    evalDataPoints.cache()
+    annotatedEvidence.cache()
+
     val herdPoints = evalDataPoints.zip(annotatedEvidence).filter(herdSucceded)
 
     val nbrEvalDataPoints = evalDataPoints.count()
@@ -115,7 +118,7 @@ object Evaluator {
     log.info("Testing predictor on test set")
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
       // Filter out the UNKNOWN_CLASS. Keep the empty lists.
-      .map(r => r.filter(p => !p.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
+      .map(r => r.filter(p => !p.predictedPredicate.contains(predictor.UNKNOWN_CLASS))).cache()
 
     val nbrPredictedRelations = predictedRelations.map(_.length).reduce(_ + _)
     log.info(s"Extracted ${nbrPredictedRelations} relations from evaluation data")
@@ -126,14 +129,14 @@ object Evaluator {
         predRelations.filter(r => {
           datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate
         })
-    }
+    }.cache()
 
     val falsePositives: RDD[ExtractedRelation] = evalDataPoints.zip(predictedRelations).flatMap{
       case (datapoint, predRelations) =>
         predRelations.filter(r => {
           !(datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate)
         })
-    }
+    }.cache()
 
     val nbrTruePositives = truePositives.count()
     val nbrFalsePositives = falsePositives.count()
