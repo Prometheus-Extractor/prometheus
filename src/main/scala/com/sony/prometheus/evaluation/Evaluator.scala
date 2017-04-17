@@ -129,7 +129,7 @@ object Evaluator {
     log.info(s"Extracted ${nbrPredictedRelations.toInt} relations from evaluation data")
 
     // Evaluate positive examples
-    val nbrTruePositives = evalDataPoints.zip(predictedRelations)
+    val truePositives = evalDataPoints.zip(predictedRelations)
       .filter{ case (dP, _) =>
         dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0} // majority said yes
       .filter{case (dP, rels) =>
@@ -138,7 +138,7 @@ object Evaluator {
         dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
         })
       }
-      .count()
+    val nbrTruePositives = truePositives.count()
 
     // Save debug information to TSV if debugOutFile supplied
     debugOutFile.foreach(f => {
@@ -179,21 +179,15 @@ object Evaluator {
     evaluation
   }
 
-  private def computeF1(recall: Double, precision: Double): Double =
+  private def computeF1(recall: Double, precision: Double): Double = {
     2 * (precision * recall) / (precision + recall)
+  }
 
   def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {
-    // Hadoop Config is accessible from SparkContext
     val fs = FileSystem.get(sc.hadoopConfiguration)
-
-    // Output file can be created from file system.
     val output = fs.create(new Path(path + ".tsv"))
-
-    // But BufferedOutputStream must be used to output an actual text file.
     val os = new BufferedOutputStream(output)
-
     os.write(data.toString.getBytes("UTF-8"))
-
     os.close()
   }
 

@@ -19,7 +19,7 @@ object REST {
       val doc = VildeAnnotater.annotate(input, lang = lang, conf = "herd")
       val results = predictor
         .extractRelations(sc.parallelize(List(doc)))
-        .map(rels => rels.filter(_.predictedPredicate != "<unknown_class: 0.0>"))
+        .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
       val res = Json.toJson(results.collect()).toString
       Ok(res).putHeaders(`Content-Type`(`application/json`))
     case GET -> Root =>

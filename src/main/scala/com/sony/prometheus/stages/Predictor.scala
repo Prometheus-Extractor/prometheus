@@ -79,9 +79,9 @@ class Predictor(model: RelationModel, transformer: FeatureTransformer, relations
         .map(model.predict)
 
       classes.zip(points).map{
-        case (result: Double, point: TestDataPoint) =>
-          val predicate = classIdxToId.getOrElse(result.round.toInt, s"$UNKNOWN_CLASS: $result>")
-          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), -1.0)
+        case (result: Prediction, point: TestDataPoint) =>
+          val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
+          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), result.probability)
       }.toList
     })
   }

@@ -173,7 +173,12 @@ object RelationModel {
 }
 
 class RelationModel(val model: MultiLayerNetwork) extends Serializable {
-  def predict(vector: Vector): Double = {
-    model.predict(Nd4j.create(vector.toArray))(0).toDouble
+  def predict(vector: Vector): Prediction = {
+    val vec = Nd4j.create(vector.toArray)
+    val cls = model.predict(vec)(0)
+    val prob = model.output(vec, false).getDouble(cls)
+    Prediction(cls, prob)
   }
 }
+
+case class Prediction(clsIdx: Int, probability: Double)
