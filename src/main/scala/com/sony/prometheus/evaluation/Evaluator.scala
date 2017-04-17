@@ -100,72 +100,59 @@ object Evaluator {
   def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor, debugOutFile: Option[String] = None)
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
+    val herdPoints = evalDataPoints.zip(annotatedEvidence).filter(herdSucceded)
+
     val nbrEvalDataPoints = evalDataPoints.count()
+    val nbrTrueDataPoints = evalDataPoints.filter(_.positive()).count()
+    val nbrNegDataPoints = nbrEvalDataPoints - nbrTrueDataPoints
 
-    val herdEnts = evalDataPoints.zip(annotatedEvidence).filter{case (dP, evidence) => {
-      val ents = evidence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq.map(_.getIdentifier.split(":").last)
-      ents.contains(dP.wd_obj) && ents.contains(dP.wd_sub)
-    }}.count().toDouble
-
-    val herdRecall = herdEnts / nbrEvalDataPoints
-    log.info(s"HERD recall is $herdRecall")
-
-    val nbrTrueDataPoints: Double = evalDataPoints
-      .filter(dP => dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0)
-      .count()
     log.info(s"There are ${nbrTrueDataPoints.toInt} positive examples in the evaluation data")
-    log.info(s"There are ${nbrEvalDataPoints - nbrTrueDataPoints} negative examples in the evaluation data")
+    log.info(s"There are ${nbrNegDataPoints} negative examples in the evaluation data")
 
+    val herdRecall = herdPoints.count() / nbrEvalDataPoints.toDouble
+    log.info(s"Herd successfully found ${herdPoints.count()} target entity pairs, and recall is about: $herdRecall")
+
+    log.info("Testing predictor in test set")
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
-    predictedRelations.cache()
+      // Filter out the UNKNOWN_CLASS. Keep the empty lists.
+      .map(r => r.filter(p => !p.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
 
-    val nbrPredictedRelations: Double = predictedRelations
-      .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
-      .flatMap(rels => rels)
-        .map(rel => {
-          rel
-        })
-      .count()
-    log.info(s"Extracted ${nbrPredictedRelations.toInt} relations from evaluation data")
+    val nbrPredictedRelations = predictedRelations.map(_.length).reduce(_ + _)
+    log.info(s"Extracted ${nbrPredictedRelations} relations from evaluation data")
 
-    // Evaluate positive examples
-    val truePositives = evalDataPoints.zip(predictedRelations)
-      .filter{ case (dP, _) =>
-        dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0} // majority said yes
-      .filter{case (dP, rels) =>
-      rels.exists(rel => {
-        log.info(s"Our prediction: $rel <==> $dP")
-        dP.wd_obj == rel.obj && dP.wd_sub == rel.subject && dP.wd_pred == rel.predictedPredicate
+    log.info("Evaluating the predicted relations")
+    val truePositives: RDD[ExtractedRelation] = evalDataPoints.zip(predictedRelations).flatMap{
+      case (datapoint, predRelations) =>
+        predRelations.filter(r => {
+          datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate
         })
-      }
+    }
+
+    val falsePositives: RDD[ExtractedRelation] = evalDataPoints.zip(predictedRelations).flatMap{
+      case (datapoint, predRelations) =>
+        predRelations.filter(r => {
+          !(datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate)
+        })
+    }
+
     val nbrTruePositives = truePositives.count()
+    val nbrFalsePositives = falsePositives.count()
+    log.info(s"True Positives: $nbrTruePositives")
+    log.info(s"False Positives: $nbrFalsePositives")
 
-    // Save debug information to TSV if debugOutFile supplied
-    debugOutFile.foreach(f => {
-      val fs = FileSystem.get(sc.hadoopConfiguration)
-      val output = fs.create(new Path(f))
-      val os = new BufferedOutputStream(output)
-      log.info(s"Saving debug information to $f...")
-      val data = evalDataPoints.zip(predictedRelations)
-        .filter{ case (dP, _) =>
-          dP.judgments.filter(_.judgment == "yes").length > dP.judgments.length / 2.0}
-        .flatMap{case (dP, rels) => rels.map(rel => s"$rel\t$dP")
-      }.collect().mkString("\n")
+    val recall: Double = nbrTruePositives / nbrTrueDataPoints.toDouble
+    val precision: Double = nbrTruePositives / nbrPredictedRelations.toDouble
+    val f1: Double = computeF1(recall, precision)
+    log.info(s"Precision is $precision")
+    log.info(s"Recall is $recall")
+    log.info(s"F1 is $f1")
 
-      os.write("predicted relation\tevaluation data point".getBytes("UTF-8"))
-      os.write(data.getBytes("UTF-8"))
-      os.close()
-    })
+    val meanProbTP = truePositives.map(_.probability).reduce(_+_) / nbrTruePositives.toDouble
+    val meanProbFP = falsePositives.map(_.probability).reduce(_+_) / nbrFalsePositives.toDouble
+    log.info(s"Predictor mean probabilities for TP: $meanProbTP, FP: $meanProbFP")
 
-    log.info(s"truePositives: ${nbrTruePositives}")
+    writeDebug(evalDataPoints, annotatedEvidence, predictedRelations, debugOutFile)
 
-    val recall: Double = nbrTruePositives / nbrTrueDataPoints
-    val precision: Double = nbrTruePositives / nbrPredictedRelations
-
-    log.info(s"~precision is $precision")
-    log.info(s"recall is $recall")
-
-    val f1 = computeF1(recall, precision)
     val evaluation: EvaluationResult = EvaluationResult(
       evalDataPoints.first().wd_pred,
       nbrTrueDataPoints.toInt,
@@ -175,12 +162,37 @@ object Evaluator {
       f1,
       herdRecall)
     log.info(s"EvaluationResult: $evaluation")
-
     evaluation
   }
 
-  private def computeF1(recall: Double, precision: Double): Double = {
-    2 * (precision * recall) / (precision + recall)
+  private def herdSucceded(zippedPoint: (EvaluationDataPoint, Document)): Boolean = {
+    val dataPoint = zippedPoint._1
+    val evidence = zippedPoint._2
+    val ents = evidence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq.map(_.getIdentifier.split(":").last)
+    ents.contains(dataPoint.wd_obj) && ents.contains(dataPoint.wd_sub)
+  }
+
+  private def computeF1(recall: Double, precision: Double): Double = 2 * (precision * recall) / (precision + recall)
+
+  private def writeDebug(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document],
+                         predictedRelations: RDD[Seq[ExtractedRelation]], debugOutFile: Option[String])
+                        (implicit sc: SparkContext): Unit = {
+
+    // Save debug information to TSV if debugOutFile supplied
+    debugOutFile.foreach(f => {
+      val fs = FileSystem.get(sc.hadoopConfiguration)
+      val output = fs.create(new Path(f))
+      val os = new BufferedOutputStream(output)
+      log.info(s"Saving debug information to $f...")
+
+      val data = evalDataPoints.zip(predictedRelations)
+        .filter(_._1.positive()).flatMap{case (dP, rels) => rels.map(rel => s"$rel\t$dP")
+        }.collect().mkString("\n")
+
+      os.write("predicted relation\tevaluation data point".getBytes("UTF-8"))
+      os.write(data.getBytes("UTF-8"))
+      os.close()
+    })
   }
 
   def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {

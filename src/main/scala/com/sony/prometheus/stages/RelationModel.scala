@@ -173,11 +173,18 @@ object RelationModel {
 }
 
 class RelationModel(val model: MultiLayerNetwork) extends Serializable {
+
+  val THRESHOLD = 0.0
+
   def predict(vector: Vector): Prediction = {
     val vec = Nd4j.create(vector.toArray)
     val cls = model.predict(vec)(0)
     val prob = model.output(vec, false).getDouble(cls)
-    Prediction(cls, prob)
+    if(prob >= THRESHOLD){
+      Prediction(cls, prob)
+    } else {
+      Prediction(0, prob)
+    }
   }
 }
 

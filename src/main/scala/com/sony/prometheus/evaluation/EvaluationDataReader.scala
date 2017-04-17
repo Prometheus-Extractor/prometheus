@@ -45,7 +45,9 @@ case class EvaluationDataPoint(
   evidences: Seq[Evidence],
   wd_obj: String,
   obj: String,
-  wd_pred: String)
+  wd_pred: String) {
+  def positive(): Boolean = {judgments.filter(_.judgment == "yes").length > judgments.length / 2.0}
+}
 
 object EvaluationDataPoint {
   implicit val format = Json.format[EvaluationDataPoint]
