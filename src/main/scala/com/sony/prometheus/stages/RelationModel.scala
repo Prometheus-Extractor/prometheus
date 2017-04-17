@@ -69,12 +69,12 @@ object RelationModel {
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(2048) // 2048 is possible on AWS and boosts performance. 256 works on semantica.
+      .batchSizePerWorker(256) // Up to 2048 is possible on AWS and boosts performance. 256 works on semantica.
       .averagingFrequency(10)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
-      .storageLevel(StorageLevel.DISK_ONLY) // DISK_ONLY or NONE. We have little memory left for caching.
-      .repartionData(Repartition.Never) // Should work with never. Default is always
+      .storageLevel(StorageLevel.NONE) // DISK_ONLY or NONE. We have little memory left for caching.
+      .repartionData(Repartition.Never) // Should work with never because we repartioned the dataset before storing. Default is always
       .build()
 
     val input_size = trainData.take(1)(0).getFeatures.length

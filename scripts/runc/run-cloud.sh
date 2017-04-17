@@ -63,15 +63,16 @@ printf "$GREEN == Synchronizing dependencies and executables == $RES\n"
 execute rsync -av --delete -e ssh --progress target/pack/lib/ $REMOTE_HOST:$WORK_PATH/lib/
 execute scp target/scala-2.10/$JAR_NAME $REMOTE_HOST:$WORK_PATH/$JAR_NAME
 
-printf "$GREEN == Running $JAR_NAME on $REMOTE_HOST == $RES\n"
-execute ssh $REMOTE_HOST 'bash -s' << EOF
-  cd $WORK_PATH
-  $EXTRA_ENVS $SPARK_SUBMIT \
-    --conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE \
-    --conf spark.executor.extraJavaOptions="$JVMOPTS" \
-    --jars $LIBS \
-    $EXTRA_SPARK_OPTIONS \
-    $JAR_NAME $args
-EOF
+SESSION_NAME="prometheus-"$(date +%R:%S)
+printf "$GREEN == Running $JAR_NAME in Screen Session: \"$SESSION_NAME\" on $REMOTE_HOST == $RES\n"
+printf "$GREEN >> Screen Session: $RED\"$SESSION_NAME\"$RES\n"
+REMOTE_COMMAND="cd $WORK_PATH; "\
+"$EXTRA_ENVS $SPARK_SUBMIT "\
+"--conf spark.driver.maxResultSize=$SPARK_MAX_RESULTSIZE "\
+"--conf spark.executor.extraJavaOptions=\"$JVMOPTS\" "\
+"--jars $LIBS "\
+"$EXTRA_SPARK_OPTIONS "\
+"$JAR_NAME $args"
+execute ssh -t $REMOTE_HOST "screen -h 1000 -L -S $SESSION_NAME  bash -c '$REMOTE_COMMAND; bash'"
 printf "$GREEN == Done == $RES\n"
 
