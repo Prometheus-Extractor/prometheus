@@ -29,5 +29,11 @@
       "Classification": "spark-defaults",
       "Properties": {
       }
+    },
+    {
+      "Classification": "spark",
+      "Properties": {
+        "maximizeResourceAllocation": "true"
+      }
     }
 ]

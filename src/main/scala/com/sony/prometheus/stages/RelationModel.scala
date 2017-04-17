@@ -69,9 +69,9 @@ object RelationModel {
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(256)
+      .batchSizePerWorker(2048)
       .averagingFrequency(10)
-      .workerPrefetchNumBatches(2)
+      .workerPrefetchNumBatches(3)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
       .storageLevel(StorageLevel.NONE)
       .build()
