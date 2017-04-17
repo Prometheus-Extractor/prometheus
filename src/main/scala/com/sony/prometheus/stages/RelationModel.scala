@@ -16,7 +16,7 @@ import org.deeplearning4j.nn.conf.NeuralNetConfiguration
 import org.deeplearning4j.nn.conf.layers.{DenseLayer, OutputLayer}
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
-import org.deeplearning4j.spark.api.RDDTrainingApproach
+import org.deeplearning4j.spark.api.{RDDTrainingApproach, Repartition}
 import org.deeplearning4j.spark.impl.multilayer.SparkDl4jMultiLayer
 import org.deeplearning4j.spark.impl.paramavg.ParameterAveragingTrainingMaster
 import org.deeplearning4j.util.ModelSerializer
@@ -69,11 +69,12 @@ object RelationModel {
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(2048)
+      .batchSizePerWorker(2048) // 2048 is possible on AWS and boosts performance. 256 works on semantica.
       .averagingFrequency(10)
-      .workerPrefetchNumBatches(3)
+      .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
-      .storageLevel(StorageLevel.NONE)
+      .storageLevel(StorageLevel.DISK_ONLY) // DISK_ONLY or NONE. We have little memory left for caching.
+      .repartionData(Repartition.Never) // Should work with never. Default is always
       .build()
 
     val input_size = trainData.take(1)(0).getFeatures.length

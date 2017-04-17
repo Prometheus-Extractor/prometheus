@@ -21,3 +21,9 @@ Also note that you CANNOT persist off-heap memory with the `_SER`-flag.
 
 ## Network Optimization
 - More advanced updaters such as ADADELTA seem to outperform NESTROV.
+
+## AWS
+When running on AWS EMR. Yarn requires some non-trivial configuration to work optimally.
+In general make sure to disable 
+
+- http://blog.cloudera.com/blog/2015/03/how-to-tune-your-apache-spark-jobs-part-2/
