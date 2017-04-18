@@ -73,6 +73,6 @@ REMOTE_COMMAND="cd $WORK_PATH; "\
 "--jars $LIBS "\
 "$EXTRA_SPARK_OPTIONS "\
 "$JAR_NAME $args"
-execute ssh -t $REMOTE_HOST "screen -h 1000 -L -S $SESSION_NAME  bash -c '$REMOTE_COMMAND; bash'"
+execute ssh -t $REMOTE_HOST "screen -h 10000 -L -S $SESSION_NAME  bash -c '$REMOTE_COMMAND; echo "Sleeping for 10m"; sleep 600'"
 printf "$GREEN == Done == $RES\n"
 

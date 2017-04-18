@@ -21,6 +21,7 @@ Also note that you CANNOT persist off-heap memory with the `_SER`-flag.
 
 ## Network Optimization
 - More advanced updaters such as ADADELTA seem to outperform NESTROV.
+- Running without partitioning between iterations speeds up but might cause huge results.
 
 ## AWS
 When running on AWS EMR. Yarn requires some non-trivial configuration to work optimally.

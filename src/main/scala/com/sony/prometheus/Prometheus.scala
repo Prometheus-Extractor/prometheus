@@ -52,7 +52,7 @@ object Prometheus {
     val epochs = opt[Int](
       descr = "number of epochs for neural network",
       validate = x => (x > 0),
-      default = Option(10))
+      default = Option(25))
     val language = opt[String](
       required = true,
       default = Some("sv"),

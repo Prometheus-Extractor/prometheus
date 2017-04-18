@@ -74,7 +74,7 @@ object RelationModel {
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
       .storageLevel(StorageLevel.NONE) // DISK_ONLY or NONE. We have little memory left for caching.
-      .repartionData(Repartition.Never) // Should work with never because we repartioned the dataset before storing. Default is always
+      .repartionData(Repartition.Always) // Should work with never because we repartitioned the dataset before storing. Default is always
       .build()
 
     val input_size = trainData.take(1)(0).getFeatures.length
@@ -89,14 +89,14 @@ object RelationModel {
       .updater(Updater.ADADELTA)
       //.learningRate(0.005)
       //.momentum(0.9)
-      //.epsilon(1.0E-8)
+      .epsilon(1.0E-8)
       .dropOut(0.5)
-      .useDropConnect(true)
       .list()
-      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(256).build())
-      .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
+      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(2048).build())
+      .layer(1, new DenseLayer.Builder().nIn(2048).nOut(256).build())
+      .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
         .activation(Activation.SOFTMAX).nIn(256).nOut(output_size).build())
-      .pretrain(true).backprop(true)
+      .pretrain(false).backprop(true)
       .build()
 
     log.info(s"Training Network, in: $input_size out: $output_size")
