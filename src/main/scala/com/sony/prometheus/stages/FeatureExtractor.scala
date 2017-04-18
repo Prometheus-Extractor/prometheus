@@ -119,16 +119,20 @@ object FeatureExtractor {
         Find the positions of the entities
          */
         val grp1 :: grp2 :: _ = set.toList
-        val ent1TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
+
         val start1 = grp1.value(0, T).getTag("idx"): Int
         val end1 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
 
-        val ent2TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
         val start2 = grp2.value(0, T).getTag("idx"): Int
         val end2 = grp2.value(grp2.size() - 1, T).getTag("idx"): Int
 
+        /* Windows of words and POS */
         val words = tokenWindow(sentence, start1, end1, start2, end2, t => t.text)
         val pos = tokenWindow(sentence, start1, end1, start2, end2, t => t.getPartOfSpeech)
+
+        /* Entity POS */
+        val ent1TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
+        val ent2TokensPos = grp2.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
 
         FeatureArray(
           sentence,
