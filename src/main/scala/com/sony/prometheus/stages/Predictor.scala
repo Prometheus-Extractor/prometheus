@@ -16,6 +16,7 @@ class PredictorStage(
   modelStage: RelationModelStage,
   posEncoder: PosEncoderStage,
   word2VecData: Word2VecData,
+  neTypeEncoderStage: NeTypeEncoderStage,
   relationsData: RelationsData,
   docs: RDD[Document])
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
@@ -28,7 +29,7 @@ class PredictorStage(
 
   override def run(): Unit = {
 
-    val predictor = Predictor(modelStage, posEncoder, word2VecData: Word2VecData, relationsData)
+    val predictor = Predictor(modelStage, posEncoder, word2VecData: Word2VecData, neTypeEncoderStage, relationsData)
     val data = predictor.extractRelations(docs)
     Predictor.save(data, path)
   }
@@ -39,9 +40,11 @@ class PredictorStage(
   */
 object Predictor {
 
-  def apply(modelStage: RelationModelStage, posEncoder: PosEncoderStage, word2VecData: Word2VecData, relationData: RelationsData)
+  def apply(modelStage: RelationModelStage, posEncoder: PosEncoderStage, word2VecData: Word2VecData,
+            neTypeEncoder: NeTypeEncoderStage, relationData: RelationsData)
            (implicit sqlContext: SQLContext): Predictor = {
-    val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData())
+
+    val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData(), neTypeEncoder.getData())
     val model = RelationModel.load(modelStage.getData(), sqlContext.sparkContext)
     val relations = RelationsReader.readRelations(relationData.getData())
     val ft = sqlContext.sparkContext.broadcast(featureTransformer)
@@ -76,7 +79,8 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
-        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.ent1PosFeatures, p.ent2PosFeatures))
+        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.ent1PosFeatures, p.ent2PosFeatures,
+          p.ent1Type, p.ent2Type))
         .map(model.predict)
 
       classes.zip(points).map{

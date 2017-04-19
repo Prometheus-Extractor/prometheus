@@ -2,7 +2,7 @@ name := """prometheus-relation-model"""
 
 packAutoSettings
 
-version := "0.5.0"
+version := "0.6.0"
 
 organization := "sonymobile"
 

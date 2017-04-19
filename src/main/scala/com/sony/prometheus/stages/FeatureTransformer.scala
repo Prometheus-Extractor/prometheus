@@ -18,7 +18,7 @@ import org.nd4j.linalg.dataset.DataSet
 import scala.collection.mutable.ListBuffer
 
 class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
-                             featureExtractorStage: FeatureExtractorStage)
+                             neTypeEncoder: NeTypeEncoderStage, featureExtractorStage: FeatureExtractorStage)
                             (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
   /**
     * Runs the task, saving results to disk
@@ -32,10 +32,10 @@ class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncode
     val balancedData = FeatureTransformer.balanceData(data, false)
 
     val featureTransformer = sqlContext.sparkContext.broadcast(
-      FeatureTransformer(word2VecData.getData(), posEncoderStage.getData()))
+      FeatureTransformer(word2VecData.getData(), posEncoderStage.getData(), neTypeEncoder.getData()))
     balancedData.map(d => {
       val vector = featureTransformer.value.toFeatureVector(
-        d.wordFeatures, d.posFeatures, d.ent1PosTags, d.ent2PosTags
+        d.wordFeatures, d.posFeatures, d.ent1PosTags, d.ent2PosTags, d.ent1Type, d.ent2Type
       ).toArray.map(_.toFloat)
       val features = Nd4j.create(vector)
       val label = Nd4j.create(featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray)
@@ -62,10 +62,12 @@ object FeatureTransformer {
 
   val log = LogManager.getLogger(classOf[FeatureTransformer])
 
-  def apply(pathToWord2Vec: String, pathToPosEncoder: String)(implicit sqlContext: SQLContext): FeatureTransformer = {
+  def apply(pathToWord2Vec: String, pathToPosEncoder: String, pathToNeType: String)
+           (implicit sqlContext: SQLContext): FeatureTransformer = {
     val posEncoder = StringIndexer.load(pathToPosEncoder, sqlContext.sparkContext)
     val word2vec = Word2VecEncoder.apply(pathToWord2Vec)
-    new FeatureTransformer(word2vec, posEncoder)
+    val neType = StringIndexer.load(pathToNeType, sqlContext.sparkContext)
+    new FeatureTransformer(word2vec, posEncoder, neType)
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[DataSet] = {
@@ -98,7 +100,8 @@ object FeatureTransformer {
 
 /**
  */
-class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: StringIndexer) extends Serializable {
+class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: StringIndexer,
+                         val neTypeEncoder: StringIndexer) extends Serializable {
 
   def transformWords(tokens: Seq[String]): Seq[Vector] = {
     tokens.map(wordEncoder.index)
@@ -120,9 +123,11 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
     * @param  ent2TokensPos the part-of-speech tags for entity2's tokens
     * @return a unified feature vector
     */
-  def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String], ent1TokensPos: Seq[String], ent2TokensPos: Seq[String]): Vector = {
+  def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String], ent1TokensPos: Seq[String],
+                      ent2TokensPos: Seq[String], ent1Type: String, ent2Type: String): Vector = {
     val wordVectors = wordFeatures.map(wordEncoder.index).map(_.toArray).flatten.toArray
-    val posVectors = posFeatures.map(posEncoder.index).map(Seq(_)).map(oneHotEncode(_, posEncoder.vocabSize()).toArray).flatten.toArray
+    val posVectors = posFeatures.map(posEncoder.index).map(Seq(_))
+      .map(oneHotEncode(_, posEncoder.vocabSize()).toArray).flatten.toArray
 
     val ent1Pos = oneHotEncode(    // eg Seq(ADJ, PROPER_NOUN, PROPER_NOUN) repr. (Venerable Barack Obama)
       ent1TokensPos.map(posEncoder.index),  // eg Seq(0, 2, 2) (index of the POS tags)
@@ -134,6 +139,9 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
       posEncoder.vocabSize()
     ).toArray
 
-    Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos)
+    val neType1 = oneHotEncode(Seq(neTypeEncoder.index(ent1Type)), neTypeEncoder.vocabSize()).toArray
+    val neType2 = oneHotEncode(Seq(neTypeEncoder.index(ent1Type)), neTypeEncoder.vocabSize()).toArray
+
+    Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos ++ neType1 ++ neType2)
   }
 }

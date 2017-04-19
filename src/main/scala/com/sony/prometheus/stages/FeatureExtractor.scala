@@ -6,7 +6,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
-import se.lth.cs.docforia.graph.text.Token
+import se.lth.cs.docforia.graph.text.{NamedEntity, Token}
 import se.lth.cs.docforia.query.QueryCollectors
 import com.sony.prometheus.utils.Utils.pathExists
 
@@ -64,9 +64,12 @@ object FeatureExtractor {
               f.wordFeatures,
               f.posFeatures,
               f.ent1PosFeatures,
-              f.ent2PosFeatures))
+              f.ent2PosFeatures,
+              f.ent1Type,
+              f.ent2Type))
           }else {
-            Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures))
+            Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
+              f.ent1Type, f.ent2Type))
           }
         }else{
           Seq()
@@ -88,7 +91,8 @@ object FeatureExtractor {
 
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
-        TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures)
+        TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
+          f.ent1Type, f.ent2Type)
       })
     })
 
@@ -98,6 +102,7 @@ object FeatureExtractor {
   private def featureArray(sentence: Document): Seq[FeatureArray] = {
 
     val NED = NamedEntityDisambiguation.`var`()
+    val NE = NamedEntity.`var`()
     val T = Token.`var`()
 
     sentence.nodes(classOf[Token])
@@ -106,11 +111,13 @@ object FeatureExtractor {
       .zipWithIndex
       .foreach(t => t._1.putTag("idx", t._2))
 
-    val features = sentence.select(NED, T)
+    val features = sentence.select(NED, T, NE)
       .where(T)
       .coveredBy(NED)
+      .where(T)
+      .coveredBy(NE)
       .stream()
-      .collect(QueryCollectors.groupBy(sentence, NED).values(T).collector())
+      .collect(QueryCollectors.groupBy(sentence, NED, NE).values(T).collector())
       .asScala
       .toSet
       .subsets(2)
@@ -134,6 +141,10 @@ object FeatureExtractor {
         val ent1TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
         val ent2TokensPos = grp2.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
 
+        /* Entity Mention Type */
+        val ent1Type = if (grp1.key(NE).hasLabel) grp1.key(NE).getLabel else "<missing label>"
+        val ent2Type = if (grp2.key(NE).hasLabel) grp2.key(NE).getLabel else "<missing label>"
+
         FeatureArray(
           sentence,
           grp1.key(NED).getIdentifier.split(":").last,
@@ -141,7 +152,9 @@ object FeatureExtractor {
           words,
           pos,
           ent1TokensPos,
-          ent2TokensPos)
+          ent2TokensPos,
+          ent1Type,
+          ent2Type)
       }).toSeq
 
     features
@@ -199,7 +212,9 @@ case class TrainingDataPoint(
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
   ent1PosTags: Seq[String],
-  ent2PosTags: Seq[String])
+  ent2PosTags: Seq[String],
+  ent1Type: String,
+  ent2Type: String)
 
 case class TestDataPoint(
   sentence: Document,
@@ -208,7 +223,9 @@ case class TestDataPoint(
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
   ent1PosFeatures: Seq[String],
-  ent2PosFeatures: Seq[String])
+  ent2PosFeatures: Seq[String],
+  ent1Type: String,
+  ent2Type: String)
 
 case class FeatureArray(
   sentence: Document,
@@ -217,4 +234,6 @@ case class FeatureArray(
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
   ent1PosFeatures: Seq[String],
-  ent2PosFeatures: Seq[String])
+  ent2PosFeatures: Seq[String],
+  ent1Type: String,
+  ent2Type: String)
