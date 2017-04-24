@@ -6,7 +6,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
-import se.lth.cs.docforia.graph.text.{NamedEntity, Token}
+import se.lth.cs.docforia.graph.text.{DependencyRelation, NamedEntity, Token}
 import se.lth.cs.docforia.query.QueryCollectors
 import com.sony.prometheus.utils.Utils.pathExists
 
@@ -66,10 +66,11 @@ object FeatureExtractor {
               f.ent1PosFeatures,
               f.ent2PosFeatures,
               f.ent1Type,
-              f.ent2Type))
+              f.ent2Type,
+              f.dependencyPath))
           }else {
             Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
-              f.ent1Type, f.ent2Type))
+              f.ent1Type, f.ent2Type, f.dependencyPath))
           }
         }else{
           Seq()
@@ -92,7 +93,7 @@ object FeatureExtractor {
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
         TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
-          f.ent1Type, f.ent2Type)
+          f.ent1Type, f.ent2Type, f.dependencyPath)
       })
     })
 
@@ -145,6 +146,13 @@ object FeatureExtractor {
         val ent1Type = if (grp1.key(NE).hasLabel) grp1.key(NE).getLabel else "<missing label>"
         val ent2Type = if (grp2.key(NE).hasLabel) grp2.key(NE).getLabel else "<missing label>"
 
+        /* Dependecy Path */
+        val lastTokenFirstEntity = grp1.value(grp1.size() - 1, T)
+        val firstTokenLastEntity =  grp2.value(0, T)
+        val dependencyPath = findDependencyPath(lastTokenFirstEntity, Set(), Seq(), firstTokenLastEntity).map(d => {
+          DependencyPath(d.getRelation, d.getHead[Token].text, d.getHead[Token].getStart < d.getTail[Token].getStart)
+        })
+
         FeatureArray(
           sentence,
           grp1.key(NED).getIdentifier.split(":").last,
@@ -154,7 +162,8 @@ object FeatureExtractor {
           ent1TokensPos,
           ent2TokensPos,
           ent1Type,
-          ent2Type)
+          ent2Type,
+          dependencyPath.slice(1, dependencyPath.size - 1))
       }).toSeq
 
     features
@@ -188,6 +197,23 @@ object FeatureExtractor {
     features
   }
 
+  /** Find the Dependency Path between two tokens using DFS.
+    */
+  def findDependencyPath(current: Token, visited: Set[Token], chain: Seq[DependencyRelation], target: Token): Seq[DependencyRelation] = {
+    if(current == target) {
+      chain
+    }else if(visited.contains(current)){
+      Seq()
+    }else{
+      val deps = current.connectedEdges(classOf[DependencyRelation]).toList.asScala
+      val newVisited = visited + current
+      deps.flatMap(d => {
+        findDependencyPath(d.getHead[Token], newVisited, chain :+ d, target) ++
+          findDependencyPath(d.getTail[Token], newVisited, chain :+ d, target)
+      })
+    }
+  }
+
   /** Saves the training data to the path
    */
   def save(data: RDD[TrainingDataPoint], path: String)(implicit sqlContext: SQLContext): Unit = {
@@ -204,6 +230,10 @@ object FeatureExtractor {
 
 }
 
+/**
+  * Contains a single dependency. Uses java.lang.Boolean for serializing
+  */
+case class DependencyPath(dependency: String, word: String, direction: java.lang.Boolean)
 
 case class TrainingDataPoint(
   relationId: String,
@@ -214,7 +244,8 @@ case class TrainingDataPoint(
   ent1PosTags: Seq[String],
   ent2PosTags: Seq[String],
   ent1Type: String,
-  ent2Type: String)
+  ent2Type: String,
+  dependencyPath: Seq[DependencyPath])
 
 case class TestDataPoint(
   sentence: Document,
@@ -225,7 +256,8 @@ case class TestDataPoint(
   ent1PosFeatures: Seq[String],
   ent2PosFeatures: Seq[String],
   ent1Type: String,
-  ent2Type: String)
+  ent2Type: String,
+  dependencyPath: Seq[DependencyPath])
 
 case class FeatureArray(
   sentence: Document,
@@ -236,4 +268,5 @@ case class FeatureArray(
   ent1PosFeatures: Seq[String],
   ent2PosFeatures: Seq[String],
   ent1Type: String,
-  ent2Type: String)
+  ent2Type: String,
+  dependencyPath: Seq[DependencyPath])

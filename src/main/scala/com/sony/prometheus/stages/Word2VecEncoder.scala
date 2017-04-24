@@ -93,10 +93,14 @@ class Word2VecEncoder extends Externalizable{
     setup()
     val idx = model.vectorIdx(token)
     if(idx == -1){
-      Vectors.zeros(model.dim)
+      emptyVector
     }else{
       Vectors.dense(model.vector(idx).map(_.toDouble))
     }
+  }
+
+  def emptyVector(): Vector = {
+    Vectors.zeros(model.dim)
   }
 
   def vectorSize(): Int = {setup(); model.dim}

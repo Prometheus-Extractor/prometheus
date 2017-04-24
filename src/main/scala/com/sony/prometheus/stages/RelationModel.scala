@@ -64,7 +64,7 @@ object RelationModel {
 
   def apply(rawData: RDD[DataSet], numClasses: Int, path: String, epochs: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
-    val (trainData, testData) = splitToTestTrain(rawData, 0.05)
+    val (trainData, testData) = splitToTestTrain(rawData, 0.10)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
