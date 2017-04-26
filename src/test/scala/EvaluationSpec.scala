@@ -1,7 +1,7 @@
 import java.io.File
 
 import com.holdenkarau.spark.testing.SharedSparkContext
-import com.sony.prometheus._
+import com.sony.prometheus.stages.FeatureTransfomerStage
 import com.sony.prometheus.evaluation._
 import com.sony.prometheus.stages._
 import org.apache.spark.rdd.RDD
@@ -47,15 +47,17 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
   }
 
   "Evaluator" should "evaluate" in {
-    val relationModelPath = new File("../data/0.1.0-32-g4d0b685/relation_model/en")
-    val entitiesFile = new File("../data/0.1.0-32-g4d0b685/entities")
+    val relationModelPath = new File("../data/wip/relation_model/en")
+    val entitiesFile = new File("../data/wip/entities")
     val corpusPath = new File("../data/wikipedia-corpus-herd/en")
+    val word2VecPath = new File("../data/word2vec/en")
     val evalFile = new File("../data/eval_files/place_of_birth.json")
 
     // First check that the required files are present, otherwise the test will take a long time
     relationModelPath should exist
     entitiesFile should exist
     corpusPath should exist
+    word2VecPath should exist
     evalFile should exist
 
     // Run the pipeline
@@ -66,23 +68,39 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
       relationModelPath.getPath() + "/training_sentences",
       corpusData,
       relationsData)(sqlContext, sc)
-    val featureTransformerTask = new FeatureTransformerStage(
-      relationModelPath.getPath() + "/feature_model",
+    val word2VecData = new Word2VecData(word2VecPath.getPath())(sc)
+    val posEncoderStage = new PosEncoderStage(
+      relationModelPath.getPath() + "/pos_encoder",
       corpusData)(sqlContext, sc)
+    val neTypeEncoderStage = new NeTypeEncoderStage(
+      relationModelPath.getPath() + "/netype_encoder",
+      corpusData)(sqlContext, sc)
+
     val featureExtractionTask = new FeatureExtractorStage(
       relationModelPath.getPath() + "/features",
-      featureTransformerTask,
       trainingTask)(sqlContext, sc)
+
+    val featureTransfomerStage = new FeatureTransfomerStage(
+      relationModelPath.getPath() + "/vector_features",
+      word2VecData,
+      posEncoderStage,
+      neTypeEncoderStage,
+      featureExtractionTask
+    )(sqlContext, sc)
+
+    featureTransfomerStage.getData()
+
     val modelTrainingTask = new RelationModelStage(
-      relationModelPath.getPath() + "/model",
-      featureExtractionTask,
-      featureTransformerTask,
-      relationsData)(sqlContext, sc)
+      relationModelPath.getPath() + "/models",
+      featureTransfomerStage,
+      1
+    )(sqlContext, sc)
+
 
     val modelPath = new File(modelTrainingTask.getData())
     modelPath should exist
 
-    val predictor = Predictor(modelTrainingTask, featureTransformerTask, relationsData)
+    val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage, relationsData)
 
     // Just read two lines from evalFile and test those
     val evalDataPoints: RDD[EvaluationDataPoint] = sc.parallelize(
@@ -92,9 +110,8 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
         .map(l => Json.parse(l).as[EvaluationDataPoint])
         .toList)
 
-    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, "/tmp")(sqlContext, sc)
+    val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, "/tmp", "en")(sqlContext, sc)
     val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor)(sqlContext, sc)
-
   }
 }
 

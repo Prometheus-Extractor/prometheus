@@ -68,7 +68,7 @@ object FeatureExtractor {
               f.ent2PosFeatures,
               f.ent1Type,
               f.ent2Type))
-          }else {
+          } else {
             Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
               f.ent1Type, f.ent2Type))
           }

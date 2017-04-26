@@ -9,6 +9,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.log4j.{Level, Logger}
 import com.holdenkarau.spark.testing.SharedSparkContext
 import com.sony.prometheus.stages.StringIndexer
+import com.sony.prometheus.stages.StringIndexer
 import com.sony.prometheus.utils.Filters
 
 class StringIndexerSpec extends FlatSpec with BeforeAndAfter with Matchers with SharedSparkContext {
@@ -32,7 +33,7 @@ class StringIndexerSpec extends FlatSpec with BeforeAndAfter with Matchers with 
   }
 
   "A TokenEncoder" should "uniquely encode strings" in new TestDocument {
-    val te = TokenEncoder.createWordEncoder(docs)
+    val te = StringIndexer.createWordEncoder(docs)
     val nbrUniqWords = words.filter(Filters.wordFilter).toSet.size
     te.vocabSize() should equal (nbrUniqWords)
     val indices = words.filter(Filters.wordFilter).map(te.index)
