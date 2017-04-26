@@ -92,6 +92,7 @@ object EntityPairExtractor {
 
     }).groupByKey().map(kv => kv._1 -> kv._2.flatten)
 
+    targetRelations.destroy()
   }
 
   def clean(str : String): String = str.trim.replaceAll("[\1\\|\\t\\n\\r\\p{Z}]"," ")
