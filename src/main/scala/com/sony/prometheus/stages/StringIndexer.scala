@@ -24,7 +24,7 @@ class PosEncoderStage(path: String,
   }
 
   override def run(): Unit = {
-    val docs = CorpusReader.readCorpus(corpusData.getData())
+    val docs = CorpusReader.readCorpus(corpusData.getData(), corpusData.sampleSize)
     val encoder = StringIndexer.createPosEncoder(docs)
     encoder.save(path, sqlContext)
   }
@@ -43,7 +43,7 @@ class NeTypeEncoderStage(path: String,
   }
 
   override def run(): Unit = {
-    val docs = CorpusReader.readCorpus(corpusData.getData())
+    val docs = CorpusReader.readCorpus(corpusData.getData(), corpusData.sampleSize)
     val encoder = StringIndexer.createTypeEncoder(docs)
     encoder.save(path, sqlContext)
   }

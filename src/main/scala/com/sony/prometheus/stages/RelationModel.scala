@@ -42,11 +42,9 @@ class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomer
   }
 
   override def run(): Unit = {
-
     val data = FeatureTransformer.load(featureTransfomerStage.getData())
     val numClasses = data.take(1)(0).getLabels.length
     val model = RelationModel(data, numClasses, path, epochs)
-
   }
 }
 

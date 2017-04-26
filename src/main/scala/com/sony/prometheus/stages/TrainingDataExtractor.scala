@@ -34,7 +34,7 @@ class TrainingDataExtractorStage(
 
   override def run(): Unit = {
     val relations = RelationsReader.readRelations(relationsData.getData())
-    val docs = CorpusReader.readCorpus(corpusData.getData())
+    val docs = CorpusReader.readCorpus(corpusData.getData(), corpusData.sampleSize)
     val sentences = TrainingDataExtractor.extract(docs, relations)
     TrainingDataExtractor.save(sentences, path)
     TrainingDataExtractor.printInfo(docs, relations, sentences)

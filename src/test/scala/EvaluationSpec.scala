@@ -50,7 +50,7 @@ class EvaluationSpec extends FlatSpec with BeforeAndAfter with Matchers with Sha
     val relationModelPath = new File("../data/wip/relation_model/en")
     val entitiesFile = new File("../data/wip/entities")
     val corpusPath = new File("../data/wikipedia-corpus-herd/en")
-    val word2VecPath = new File("../data/word2vec/en")
+    val word2VecPath = new File("../data/")
     val evalFile = new File("../data/eval_files/place_of_birth.json")
 
     // First check that the required files are present, otherwise the test will take a long time

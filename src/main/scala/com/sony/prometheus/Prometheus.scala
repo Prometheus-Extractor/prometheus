@@ -111,7 +111,7 @@ object Prometheus {
     printEnvironment(conf)
 
     try {
-      val corpusData = new CorpusData(conf.corpusPath())
+      val corpusData = new CorpusData(conf.corpusPath(), conf.sampleSize())
       val relationsData = new RelationsData(conf.entitiesPath())
       val word2VecData = new Word2VecData(conf.word2vecPath())
 

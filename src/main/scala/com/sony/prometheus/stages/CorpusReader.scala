@@ -11,8 +11,10 @@ import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import com.sony.prometheus.utils.Utils.pathExists
 
 /** Represents the corpus data used to train on
+  * @param path       - the path to the corpus
+  * @param sampleSize - sample this fraction of the corpus
  */
-class CorpusData(path: String)(implicit sc: SparkContext) extends Data {
+class CorpusData(path: String, val sampleSize: Double)(implicit sc: SparkContext) extends Data {
   override def getData(): String = {
     if (pathExists(path)) {
       path
@@ -42,13 +44,14 @@ object CorpusReader {
 
     val ioErrors: Accumulator[Int] = sc.accumulator(0, "IO_ERRORS")
 
-    // we might need to filter for only articles here but that wouldn't be a generelized solution.
+    // we might need to filter for only articles here but that wouldn't be a generalized solution
+    val rowDocIdx = 5
     val docs = (if(sampleSize == 1.0) df else df.sample(false, sampleSize)).flatMap{row =>
       try {
-        val doc: Document = MemoryDocumentIO.getInstance().fromBytes(row.getAs(5): Array[Byte])
+        val doc: Document = MemoryDocumentIO.getInstance().fromBytes(row.getAs(rowDocIdx): Array[Byte])
         List(doc)
       } catch {
-        case e:IOError =>
+        case _: IOError =>
           ioErrors.add(1)
           List()
       }
