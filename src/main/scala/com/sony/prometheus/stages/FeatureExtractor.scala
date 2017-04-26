@@ -241,14 +241,15 @@ object FeatureExtractor {
    */
   def save(data: RDD[TrainingDataPoint], path: String)(implicit sqlContext: SQLContext): Unit = {
     import sqlContext.implicits._
-    data.toDF().write.json(path)
+    data.toDF().write.json(path + "_json")
+    data.toDF().write.parquet(path)
   }
 
   /** Loads the data from path
    */
   def load(path: String)(implicit sqlContext: SQLContext): RDD[TrainingDataPoint]  = {
     import sqlContext.implicits._
-    sqlContext.read.json(path).as[TrainingDataPoint].rdd
+    sqlContext.read.parquet(path).as[TrainingDataPoint].rdd
   }
 
 }

@@ -17,13 +17,13 @@ import com.sony.prometheus.utils.Utils.pathExists
 object Predictor {
 
   def apply(modelStage: RelationModelStage, posEncoder: PosEncoderStage, word2VecData: Word2VecData,
-            neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage, relationData: RelationsData)
+            neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage, entityPairs: EntityPairExtractorStage)
            (implicit sqlContext: SQLContext): Predictor = {
 
     val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData(), neTypeEncoder.getData(),
                                                 dependencyEncoderStage.getData())
     val model = RelationModel.load(modelStage.getData(), sqlContext.sparkContext)
-    val relations = RelationsReader.readRelations(relationData.getData())
+    val relations = EntityPairExtractor.load(entityPairs.getData())
     val ft = sqlContext.sparkContext.broadcast(featureTransformer)
     new Predictor(model, ft, relations)
   }
