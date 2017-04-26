@@ -53,10 +53,11 @@ object FeatureExtractor {
   def trainingData(trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
     val trainingPoints = trainingSentences.flatMap(t => {
-      val neds = new mutable.HashSet() ++ t.entityPair.flatMap(p => Seq(p.source, p.dest))
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
-        if(f.wordFeatures.length >= MIN_FEATURE_LENGTH) {
-          if(neds.contains(f.subj) && neds.contains(f.obj)) {
+          val positiveExample = t.entityPair.exists(p => {
+            p.dest == f.subj && p.source == f.obj || p.source == f.subj && p.dest == f.obj
+          })
+          if(positiveExample) {
             Seq(TrainingDataPoint(
               t.relationId,
               t.relationName,
@@ -71,9 +72,6 @@ object FeatureExtractor {
             Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
               f.ent1Type, f.ent2Type))
           }
-        }else{
-          Seq()
-        }
       })
       featureArrays
     })
