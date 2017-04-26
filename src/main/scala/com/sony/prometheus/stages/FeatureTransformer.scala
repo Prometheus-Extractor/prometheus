@@ -18,7 +18,8 @@ import org.nd4j.linalg.dataset.DataSet
 import scala.collection.mutable.ListBuffer
 
 class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
-                             neTypeEncoder: NeTypeEncoderStage, featureExtractorStage: FeatureExtractorStage)
+                             neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
+                             featureExtractorStage: FeatureExtractorStage)
                             (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
   /**
     * Runs the task, saving results to disk
@@ -32,10 +33,11 @@ class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncode
     val balancedData = FeatureTransformer.balanceData(data, false)
 
     val featureTransformer = sqlContext.sparkContext.broadcast(
-      FeatureTransformer(word2VecData.getData(), posEncoderStage.getData(), neTypeEncoder.getData()))
+      FeatureTransformer(word2VecData.getData(), posEncoderStage.getData(), neTypeEncoder.getData(),
+                         dependencyEncoderStage.getData()))
     balancedData.map(d => {
       val vector = featureTransformer.value.toFeatureVector(
-        d.wordFeatures, d.posFeatures, d.ent1PosTags, d.ent2PosTags, d.ent1Type, d.ent2Type
+        d.wordFeatures, d.posFeatures, d.ent1PosTags, d.ent2PosTags, d.ent1Type, d.ent2Type, d.dependencyPath
       ).toArray.map(_.toFloat)
       val features = Nd4j.create(vector)
       val label = Nd4j.create(featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray)
@@ -62,12 +64,13 @@ object FeatureTransformer {
 
   val log = LogManager.getLogger(classOf[FeatureTransformer])
 
-  def apply(pathToWord2Vec: String, pathToPosEncoder: String, pathToNeType: String)
+  def apply(pathToWord2Vec: String, pathToPosEncoder: String, pathToNeType: String, pathToDepEncoder: String)
            (implicit sqlContext: SQLContext): FeatureTransformer = {
     val posEncoder = StringIndexer.load(pathToPosEncoder, sqlContext.sparkContext)
     val word2vec = Word2VecEncoder.apply(pathToWord2Vec)
     val neType = StringIndexer.load(pathToNeType, sqlContext.sparkContext)
-    new FeatureTransformer(word2vec, posEncoder, neType)
+    val depEncoder = StringIndexer.load(pathToDepEncoder, sqlContext.sparkContext)
+    new FeatureTransformer(word2vec, posEncoder, neType, depEncoder)
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[DataSet] = {
@@ -100,16 +103,14 @@ object FeatureTransformer {
 
 /**
  */
-class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: StringIndexer,
-                         val neTypeEncoder: StringIndexer) extends Serializable {
+class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer,
+                         neTypeEncoder: StringIndexer, dependencyEncoder: StringIndexer) extends Serializable {
 
-  def transformWords(tokens: Seq[String]): Seq[Vector] = {
-    tokens.map(wordEncoder.index)
-  }
+  val DEPENDENCY_FEATURE_SIZE = 8
 
-  def transformPos(pos: Seq[String]): Seq[Int] = {
-    pos.map(posEncoder.index)
-  }
+  lazy val emptyDepedencyVector = oneHotEncode(Seq(0), dependencyEncoder.vocabSize()).toArray ++
+                                  wordEncoder.emptyVector.toArray ++
+                                  Array(0.0)
 
   def oneHotEncode(features: Seq[Int], vocabSize: Int): Vector = {
     val f = features.distinct.map(idx => (idx, 1.0))
@@ -124,7 +125,8 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
     * @return a unified feature vector
     */
   def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String], ent1TokensPos: Seq[String],
-                      ent2TokensPos: Seq[String], ent1Type: String, ent2Type: String): Vector = {
+                      ent2TokensPos: Seq[String], ent1Type: String, ent2Type: String,
+                      dependencyPath: Seq[DependencyPath]): Vector = {
     val wordVectors = wordFeatures.map(wordEncoder.index).map(_.toArray).flatten.toArray
     val posVectors = posFeatures.map(posEncoder.index).map(Seq(_))
       .map(oneHotEncode(_, posEncoder.vocabSize()).toArray).flatten.toArray
@@ -142,6 +144,15 @@ class FeatureTransformer(val wordEncoder: Word2VecEncoder, val posEncoder: Strin
     val neType1 = oneHotEncode(Seq(neTypeEncoder.index(ent1Type)), neTypeEncoder.vocabSize()).toArray
     val neType2 = oneHotEncode(Seq(neTypeEncoder.index(ent1Type)), neTypeEncoder.vocabSize()).toArray
 
-    Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos ++ neType1 ++ neType2)
+    val depPath = dependencyPath.map(d => {
+      oneHotEncode(Seq(dependencyEncoder.index(d.dependency)), dependencyEncoder.vocabSize()).toArray ++
+        wordEncoder.index(d.word).toArray ++
+        (if (d.direction) Array(1.0) else Array(0.0))
+    })
+
+    val paddedDepPath = (depPath.slice(0, DEPENDENCY_FEATURE_SIZE) ++
+      Seq.fill(DEPENDENCY_FEATURE_SIZE - depPath.size)(emptyDepedencyVector)).flatten
+
+    Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos ++ neType1 ++ neType2 ++ paddedDepPath)
   }
 }

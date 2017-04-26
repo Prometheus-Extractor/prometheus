@@ -7,7 +7,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
-import se.lth.cs.docforia.graph.text.{NamedEntity, Token}
+import se.lth.cs.docforia.graph.text.{DependencyRelation, NamedEntity, Token}
 
 import scala.collection.JavaConverters._
 import com.sony.prometheus.utils.Utils.pathExists
@@ -50,6 +50,26 @@ class NeTypeEncoderStage(path: String,
 
 }
 
+class DependencyEncoderStage(path: String,
+                         corpusData: CorpusData)
+                        (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data{
+
+  override def getData(): String = {
+    if (!pathExists(path)) {
+      run()
+    }
+    path
+  }
+
+  override def run(): Unit = {
+    val docs = CorpusReader.readCorpus(corpusData.getData())
+    val encoder = StringIndexer.createDependencyEncoder(docs)
+    encoder.save(path, sqlContext)
+  }
+
+}
+
+
 
 
 /** Provides String indexer
@@ -89,6 +109,13 @@ object StringIndexer {
   def createTypeEncoder(docs: RDD[Document]): StringIndexer = {
     val pos = docs.flatMap(doc => {
       doc.nodes(classOf[NamedEntity]).asScala.toSeq.filter(_.hasLabel).map(_.getLabel)
+    }).map(normalize).distinct.zipWithIndex.map(p => (p._1, p._2.toInt + 1))
+    createIndexEncoder(pos)
+  }
+
+  def createDependencyEncoder(docs: RDD[Document]): StringIndexer = {
+    val pos = docs.flatMap(doc => {
+      doc.edges(classOf[DependencyRelation]).asScala.toSeq.map(_.getRelation).filter(_.nonEmpty)
     }).map(normalize).distinct.zipWithIndex.map(p => (p._1, p._2.toInt + 1))
     createIndexEncoder(pos)
   }
