@@ -32,11 +32,11 @@ class StringIndexerSpec extends FlatSpec with BeforeAndAfter with Matchers with 
     val docs = sc.parallelize(Seq(mDoc))
   }
 
-  "A TokenEncoder" should "uniquely encode strings" in new TestDocument {
-    val te = StringIndexer.createWordEncoder(docs)
+  "A WordEncoder" should "uniquely encode strings" in new TestDocument {
+    val we = StringIndexer.createWordEncoder(docs)
     val nbrUniqWords = words.filter(Filters.wordFilter).toSet.size
-    te.vocabSize() should equal (nbrUniqWords)
-    val indices = words.filter(Filters.wordFilter).map(te.index)
+    we.vocabSize() should equal (words.toSet.size)
+    val indices = words.filter(Filters.wordFilter).map(we.index)
     indices.length should equal (words.filter(Filters.wordFilter).length)
     indices.toSet.size should equal (nbrUniqWords)
   }
