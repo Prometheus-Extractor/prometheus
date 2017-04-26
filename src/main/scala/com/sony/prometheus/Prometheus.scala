@@ -147,20 +147,19 @@ object Prometheus {
         tempDataPath + "/features",
         trainingTask)
 
-      val featureTransfomerStage = new FeatureTransfomerStage(
+      val featureTransformerStage = new FeatureTransfomerStage(
         tempDataPath + "/vector_features",
         word2VecData,
         posEncoderStage,
         neTypeEncoderStage,
         depEncoder,
-        featureExtractionTask
-      )
+        featureExtractionTask)
 
-      featureTransfomerStage.getData()
+      featureTransformerStage.getData()
 
       val modelTrainingTask = new RelationModelStage(
         tempDataPath + "/models",
-        featureTransfomerStage,
+        featureTransformerStage,
         conf.epochs()
       )
 
@@ -168,25 +167,11 @@ object Prometheus {
       log.info(s"Saved model to $path")
 
       // Evaluate
-      conf.evaluationFiles.foreach(evaluate => {
+      conf.evaluationFiles.foreach(evalFiles => {
         log.info("Performing evaluation")
-        val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
-        val t = LocalDateTime.now()
         val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage,
-                                  depEncoder, entityPairs)
-        evaluate.foreach(evalFile => {
-          log.info(s"Evaluating $evalFile")
-          val evaluationData = new EvaluationData(evalFile)
-          val evalSavePath = tempDataPath +
-            s"/evaluation/${t.format(f)}-${evalFile.split("/").last.split(".json")(0)}"
-          val evaluationTask = new EvaluatorStage(
-            evalSavePath,
-            evaluationData,
-            conf.language(),
-            predictor)
-          val _ = evaluationTask.getData()
-          log.info(s"Saved evaluation to $evalSavePath")
-        })
+          depEncoder, entityPairs)
+        performEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
       })
 
       // Serve HTTP API
@@ -210,6 +195,32 @@ object Prometheus {
     } finally {
       sc.stop()
     }
+  }
+
+  private def performEvaluation(
+    evalFiles: List[String],
+    predictor: Predictor,
+    lang: String,
+    log: Logger,
+    tempDataPath: String)
+    (implicit sqlContext: SQLContext, sc: SparkContext): Unit = {
+
+    val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
+    val t = LocalDateTime.now()
+
+    evalFiles.foreach(evalFile => {
+      log.info(s"Evaluating $evalFile")
+      val evaluationData = new EvaluationData(evalFile)
+      val evalSavePath = tempDataPath +
+        s"/evaluation/${t.format(f)}-${evalFile.split("/").last.split(".json")(0)}"
+      val evaluationTask = new EvaluatorStage(
+        evalSavePath,
+        evaluationData,
+        lang,
+        predictor)
+      val _ = evaluationTask.getData()
+      log.info(s"Saved evaluation to $evalSavePath")
+    })
   }
 }
 
