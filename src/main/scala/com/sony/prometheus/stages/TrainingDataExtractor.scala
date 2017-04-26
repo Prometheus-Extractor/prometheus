@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 class TrainingDataExtractorStage(
   path: String,
   corpusData: CorpusData,
-  relationsData: RelationsData)
+  entityPairs: EntityPairExtractorStage)
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -33,7 +33,7 @@ class TrainingDataExtractorStage(
   }
 
   override def run(): Unit = {
-    val relations = RelationsReader.readRelations(relationsData.getData())
+    val relations = EntityPairExtractor.load(entityPairs.getData())
     val docs = CorpusReader.readCorpus(corpusData.getData())
     val sentences = TrainingDataExtractor.extract(docs, relations)
     TrainingDataExtractor.save(sentences, path)

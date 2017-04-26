@@ -33,8 +33,11 @@ object Prometheus {
     val corpusPath = trailArg[String](
       descr = "path to the corpus to train on",
       validate = pathPrefixValidation)
-    val entitiesPath = trailArg[String](
-      descr = "path to a parquet file containing the entities/relations to train for",
+    val relationConfig = trailArg[String](
+      descr = "path to a TSV listing the desired relations to train for",
+      validate = pathPrefixValidation)
+    val wikiData = trailArg[String](
+      descr = "path to the wikidata dump in parquet",
       validate = pathPrefixValidation)
     val tempDataPath= trailArg[String](
       descr= "path to a directory that will contain intermediate results",
@@ -86,7 +89,8 @@ object Prometheus {
   def printEnvironment(conf: Conf): Unit = {
     val str =
       s"""corpusPath:\t${conf.corpusPath()}
-         |entitiesPath:\t${conf.entitiesPath()}
+         |relationConfigPath:\t${conf.relationConfig()}
+         |wikidataPath:\t${conf.wikiData()}
          |tempDataPath:\t${conf.tempDataPath() + "/" + conf.language()}
          |word2vecPath:\t${conf.word2vecPath()}
          |sampleSize:\t${conf.sampleSize()}
@@ -112,13 +116,20 @@ object Prometheus {
 
     try {
       val corpusData = new CorpusData(conf.corpusPath())
-      val relationsData = new RelationsData(conf.entitiesPath())
       val word2VecData = new Word2VecData(conf.word2vecPath())
+      val configData = new RelationConfigData(conf.relationConfig())
+      val wikidata = new WikidataData(conf.wikiData())
+
+      val entityPairs = new EntityPairExtractorStage(
+        tempDataPath + "/relation_entity_pairs",
+        configData,
+        wikidata
+      )
 
       val trainingTask = new TrainingDataExtractorStage(
         tempDataPath + "/training_sentences",
         corpusData,
-        relationsData)
+        entityPairs)
 
       val posEncoderStage = new PosEncoderStage(
         tempDataPath + "/pos_encoder",
@@ -162,7 +173,7 @@ object Prometheus {
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
         val t = LocalDateTime.now()
         val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage,
-                                  depEncoder, relationsData)
+                                  depEncoder, entityPairs)
         evaluate.foreach(evalFile => {
           log.info(s"Evaluating $evalFile")
           val evaluationData = new EvaluationData(evalFile)
@@ -180,7 +191,7 @@ object Prometheus {
 
       // Serve HTTP API
       if (conf.demoServer()) {
-        val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, relationsData)
+        val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, entityPairs)
         try {
           val task = BlazeBuilder
             .bindHttp(PORT, "localhost")
