@@ -103,6 +103,8 @@ object FeatureExtractor {
     val NE = NamedEntity.`var`()
     val T = Token.`var`()
 
+    chunkEntities(sentence)
+
     sentence.nodes(classOf[Token])
       .asScala
       .toSeq
@@ -157,6 +159,29 @@ object FeatureExtractor {
 
     features
 
+  }
+
+  private def chunkEntities(doc: Document): Document = {
+    val NED = NamedEntityDisambiguation.`var`()
+    val T = Token.`var`()
+    val nedGroups = doc.select(NED, T).where(T).coveredBy(NED)
+      .stream()
+      .collect(QueryCollectors.groupBy(doc, NED).values(T).collector())
+      .asScala
+      .toList
+
+    nedGroups.map(pg => {
+      pg.key(NED).getIdentifier
+      pg.value(0, T).text
+      val values = pg.nodes(T).asScala
+      if(values.size > 1){
+        val head = values.head
+        val last = values.last
+        head.setRange(head.getStart, last.getEnd)
+        values.tail.foreach(doc.remove)
+      }
+    })
+    doc
   }
 
   /** Extract string features from a Token window around two entities.
