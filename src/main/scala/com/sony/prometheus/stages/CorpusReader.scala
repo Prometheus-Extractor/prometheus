@@ -33,7 +33,7 @@ object CorpusReader {
    */
   def readCorpus(
     file: String,
-    sampleSize: Double = 0.1)
+    sampleSize: Double = 1.0)
     (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
 
     val log = LogManager.getLogger(CorpusReader.getClass)
