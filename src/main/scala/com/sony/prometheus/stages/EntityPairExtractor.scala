@@ -84,7 +84,7 @@ object EntityPairExtractor {
     val wd = sqlContext.read.parquet(filePath)
     val wdTyped: RDD[WdEntity] = wd.map(convert(_, lang))
 
-    wdTyped.flatMap(entity => {
+    val entities = wdTyped.flatMap(entity => {
 
       entity.properties.filter(p => targetRelations.value.contains(p.key)).map{prop: WdProperty =>
         (prop.key -> (entity.id -> prop.value))
@@ -93,6 +93,7 @@ object EntityPairExtractor {
     }).groupByKey().map(kv => kv._1 -> kv._2.flatten)
 
     targetRelations.destroy()
+    entities
   }
 
   def clean(str : String): String = str.trim.replaceAll("[\1\\|\\t\\n\\r\\p{Z}]"," ")
