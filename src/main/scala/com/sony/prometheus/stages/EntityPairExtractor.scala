@@ -40,12 +40,7 @@ class EntityPairExtractorStage(path: String, configData: RelationConfigData, wik
 
   override def run(): Unit = {
 
-    val relationList = sqlContext.read.text(configData.getData()).rdd.zipWithIndex().map{
-      case (row, index) =>
-        val cols = row.getString(0).split("\t")
-        Relation(cols(0), cols(1), index.toInt + 1)
-    }.collect()
-
+    val relationList = RelationConfigReader.load(configData.getData())
     // Each relation yields about 100kb parquet data
     val data = EntityPairExtractor.getEntities(wikidata.getData(), relationList, "en", sqlContext, sparkContext).repartition(1)
 
@@ -56,12 +51,28 @@ class EntityPairExtractorStage(path: String, configData: RelationConfigData, wik
         EntityPair(entTuple._1, entTuple._2)
       }).toSeq
 
-      val r = relationList.find(_.id == relation._1).getOrElse(Relation("<invalid name>", relation._1, 0))
+      val r = relationList.find(_.id == relation._1).get
       r.copy(entities = entities)
     }).toDF()
 
     df.write.parquet(path)
 
+  }
+
+}
+
+object RelationConfigReader {
+
+  def load(path: String)(implicit sqlContext: SQLContext): Seq[Relation] = {
+    sqlContext.read.text(path).rdd.zipWithIndex().map{
+      case (row, index) =>
+        val cols = row.getString(0).split("\t")
+        val types = for {
+          type1 <- cols.lift(2)
+          type2 <- cols.lift(3)
+        } yield (type1, type2)
+        Relation(cols(0), cols(1), index.toInt + 1, types)
+    }.collect()
   }
 
 }
@@ -152,5 +163,5 @@ object EntityPairExtractor {
 case class WdProperty(key : String, value : String, datatype : String, var children : Array[WdProperty])
 case class WdEntity(id : String, description : String, alias : Array[String], label : String, sitelink : String, properties : Array[WdProperty])
 
-case class Relation(name: String, id: String, classIdx: Int, entities: Seq[EntityPair] = Seq())
+case class Relation(name: String, id: String, classIdx: Int, types:Option[(String, String)], entities: Seq[EntityPair] = Seq())
 case class EntityPair(source: String, dest: String)

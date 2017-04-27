@@ -35,8 +35,8 @@ object Prometheus {
         |train implies preprocess
         |full implies train
         |""".stripMargin,
-      validate = s => s == "preprocess" || s == "train",
-      default = "full")
+      validate = s => s == "preprocess" || s == "train" || s == "full",
+      default = Some("full"))
 
     val corpusPath = trailArg[String](
       descr = "path to the corpus to train on",
@@ -153,7 +153,8 @@ object Prometheus {
 
       val featureExtractionTask = new FeatureExtractorStage(
         tempDataPath + "/features",
-        trainingTask)
+        trainingTask,
+        configData)
 
       val featureTransformerStage = new FeatureTransfomerStage(
         tempDataPath + "/vector_features",

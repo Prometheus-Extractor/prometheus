@@ -9,6 +9,7 @@ import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.{DependencyRelation, NamedEntity, Token}
 import se.lth.cs.docforia.query.QueryCollectors
 import com.sony.prometheus.utils.Utils.pathExists
+import org.apache.log4j.LogManager
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -18,7 +19,8 @@ import scala.collection.mutable
  */
 class FeatureExtractorStage(
    path: String,
-   trainingDataExtractor: TrainingDataExtractorStage)
+   trainingDataExtractor: TrainingDataExtractorStage,
+   relationConfigData: RelationConfigData)
    (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -30,7 +32,7 @@ class FeatureExtractorStage(
 
   override def run(): Unit = {
     val trainingSentences = TrainingDataExtractor.load(trainingDataExtractor.getData())
-    val data = FeatureExtractor.trainingData(trainingSentences)
+    val data = FeatureExtractor.trainingData(trainingSentences, relationConfigData.getData())
     FeatureExtractor.save(data, path)
   }
 }
@@ -42,7 +44,9 @@ object FeatureExtractor {
   val EMPTY_TOKEN = "<empty>"
   val NBR_WORDS_BEFORE = 3
   val NBR_WORDS_AFTER = 3
-  val MIN_FEATURE_LENGTH = 2
+  val MIN_FEATURE_LENGTH = 4
+  val NEGATIVE_CLASS_NAME = "neg"
+  val log = LogManager.getLogger(FeatureExtractor.getClass)
 
   /** Returns an RDD of [[TrainingDataPoint]]
     *
@@ -50,7 +54,8 @@ object FeatureExtractor {
     *
     * @param trainingSentences  - an RDD of [[TrainingSentence]]
     */
-  def trainingData(trainingSentences: RDD[TrainingSentence])(implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
+  def trainingData(trainingSentences: RDD[TrainingSentence], relationConfigPath: String)
+                  (implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
     val trainingPoints = trainingSentences.flatMap(t => {
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
@@ -70,14 +75,14 @@ object FeatureExtractor {
               f.ent2Type,
               f.dependencyPath))
           }else {
-            Seq(TrainingDataPoint("neg", "neg", 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
+            Seq(TrainingDataPoint(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
               f.ent1Type, f.ent2Type, f.dependencyPath))
           }
       })
       featureArrays
     })
 
-    trainingPoints.repartition(Prometheus.DATA_PARTITIONS)
+    pruneTrainingData(trainingPoints, relationConfigPath).repartition(Prometheus.DATA_PARTITIONS)
   }
 
   /** Returns an RDD of [[TestDataPoint]]
@@ -103,8 +108,6 @@ object FeatureExtractor {
     val NED = NamedEntityDisambiguation.`var`()
     val NE = NamedEntity.`var`()
     val T = Token.`var`()
-
-    chunkEntities(sentence)
 
     sentence.nodes(classOf[Token])
       .asScala
@@ -170,6 +173,44 @@ object FeatureExtractor {
 
   }
 
+  private def pruneTrainingData(data: RDD[TrainingDataPoint], relationConfig: String)
+                               (implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
+
+    log.info(s"Training Data Pruner - Initial size: ${data.count}")
+    var prunedData = data.filter(d => {
+      /* Filter out short feature arrays */
+      d.wordFeatures.filter(_ != EMPTY_TOKEN).length >= MIN_FEATURE_LENGTH
+    })
+
+    log.info(s"Training Data Pruner - Feature length: ${prunedData.count}")
+
+    prunedData = prunedData.filter(d => {
+      /* Filter out points without any depedency paths */
+      d.dependencyPath.length > 0
+    })
+    log.info(s"Training Data Pruner - Empty dependency paths: ${prunedData.count}")
+
+    val allowedTypes = RelationConfigReader.load(relationConfig).filter(_.types.isDefined).map(r => (r.id -> (r.types.get))).toMap
+    prunedData = prunedData.filter(d => {
+      /* Filter points without correct entity types.
+       * Allows all negative points and points without type information, also doesn't care about ordering. */
+      if(d.relationId == NEGATIVE_CLASS_NAME) {
+        true
+      } else {
+        allowedTypes.get(d.relationId).forall(t => {
+          d.ent1Type == t._1 && d.ent2Type == t._2 || d.ent1Type == t._2 && d.ent2Type == t._1
+        })
+      }
+    })
+    log.info(s"Training Data Pruner - Correct NE types: ${prunedData.count}")
+
+    prunedData
+  }
+
+  /**
+    * This methods chunking causes problem with the dependency path feature.
+    * Do not use before fixing those issues.
+    */
   private def chunkEntities(doc: Document): Document = {
     val NED = NamedEntityDisambiguation.`var`()
     val T = Token.`var`()
