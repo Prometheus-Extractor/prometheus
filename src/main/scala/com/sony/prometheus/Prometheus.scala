@@ -104,6 +104,7 @@ object Prometheus {
          |sampleSize:\t${conf.sampleSize()}
          |evaluationFiles:\t${conf.evaluationFiles}
          |language:\t${conf.language()}
+         |epochs:\t${conf.epochs()}
        """.stripMargin
     println(str)
   }
