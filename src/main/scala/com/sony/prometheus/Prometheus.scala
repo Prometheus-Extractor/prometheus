@@ -26,10 +26,18 @@ object Prometheus {
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer")
-    banner("""Usage: RelationModel [options] corpus-path entities-path temp-data-path word2vecPath
+    banner("""Usage: RelationModel [options] stage corpus-path entities-path temp-data-path word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
+    val stage = trailArg[String](
+      descr = """how far to run the program, [preprocess|train|full]
+        |train implies preprocess
+        |full implies train
+        |""".stripMargin,
+      validate = s => s == "preprocess" || s == "train",
+      default = "full")
+
     val corpusPath = trailArg[String](
       descr = "path to the corpus to train on",
       validate = pathPrefixValidation)
@@ -72,7 +80,7 @@ object Prometheus {
       case ex => super.onError(ex)
     }
 
-    def pathPrefixValidation(path: String): Boolean = {
+    private def pathPrefixValidation(path: String): Boolean = {
       path.split(":") match {
         case Array("hdfs", _) => true
         case Array("file", _) => true
@@ -155,40 +163,47 @@ object Prometheus {
         depEncoder,
         featureExtractionTask)
 
-      featureTransformerStage.getData()
+      val featuresPath = featureTransformerStage.getData()
 
-      val modelTrainingTask = new RelationModelStage(
-        tempDataPath + "/models",
-        featureTransformerStage,
-        conf.epochs()
-      )
+      if (conf.stage() == "preprocess") {
+        log.info(s"Entity pairs saved to ${featuresPath}")
+      } else {
+        val modelTrainingTask = new RelationModelStage(
+          tempDataPath + "/models",
+          featureTransformerStage,
+          conf.epochs()
+        )
 
-      val path = modelTrainingTask.getData()
-      log.info(s"Saved model to $path")
+        val path = modelTrainingTask.getData()
 
-      // Evaluate
-      conf.evaluationFiles.foreach(evalFiles => {
-        log.info("Performing evaluation")
-        val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage,
-          depEncoder, entityPairs)
-        performEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
-      })
+        if (conf.stage() == "train") {
+          log.info(s"Saved model to $path")
+        } else {
+          // Evaluate
+          conf.evaluationFiles.foreach(evalFiles => {
+            log.info("Performing evaluation")
+            val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage,
+              depEncoder, entityPairs)
+            performEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
+          })
 
-      // Serve HTTP API
-      if (conf.demoServer()) {
-        val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, entityPairs)
-        try {
-          val task = BlazeBuilder
-            .bindHttp(PORT, "localhost")
-            .mountService(REST.api(predictor), "/")
-            .run
-          println(s"${GREEN}REST interface ready to accept connections on $PORT ${RESET}")
-          task.awaitShutdown()
-        } catch  {
-          case e: java.net.BindException => {
-            println(s"${BOLD}${RED}Error:${RESET} ${e.getMessage}")
-            sc.stop()
-            sys.exit(1)
+          // Serve HTTP API
+          if (conf.demoServer()) {
+            val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, entityPairs)
+            try {
+              val task = BlazeBuilder
+                .bindHttp(PORT, "localhost")
+                .mountService(REST.api(predictor), "/")
+                .run
+                println(s"${GREEN}REST interface ready to accept connections on $PORT ${RESET}")
+                task.awaitShutdown()
+              } catch  {
+                case e: java.net.BindException => {
+                  println(s"${BOLD}${RED}Error:${RESET} ${e.getMessage}")
+                  sc.stop()
+                  sys.exit(1)
+                }
+              }
           }
         }
       }
