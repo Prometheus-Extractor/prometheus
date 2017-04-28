@@ -62,7 +62,7 @@ object FeatureExtractor {
           val positiveExample = t.entityPair.exists(p => {
             p.dest == f.subj && p.source == f.obj || p.source == f.subj && p.dest == f.obj
           })
-          if(positiveExample) {
+          if (positiveExample) {
             Seq(TrainingDataPoint(
               t.relationId,
               t.relationName,
@@ -74,7 +74,7 @@ object FeatureExtractor {
               f.ent1Type,
               f.ent2Type,
               f.dependencyPath))
-          }else {
+          } else {
             Seq(TrainingDataPoint(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
               f.ent1Type, f.ent2Type, f.dependencyPath))
           }
@@ -125,6 +125,11 @@ object FeatureExtractor {
       .asScala
       .toSet
       .subsets(2)
+      .filter(set => {
+        /* Filter out relations on same person */
+        val grp1 :: grp2 :: _ = set.toList
+        grp1.key(NED).getIdentifier != grp2.key(NED).getIdentifier
+      })
       .map(set => {
         /*
         Find the positions of the entities
@@ -149,7 +154,7 @@ object FeatureExtractor {
         val ent1Type = if (grp1.key(NE).hasLabel) grp1.key(NE).getLabel else "<missing label>"
         val ent2Type = if (grp2.key(NE).hasLabel) grp2.key(NE).getLabel else "<missing label>"
 
-        /* Dependecy Path */
+        /* Dependency Path */
         val lastTokenFirstEntity = grp1.value(grp1.size() - 1, T)
         val firstTokenLastEntity =  grp2.value(0, T)
         val dependencyPath = findDependencyPath(lastTokenFirstEntity, Set(), Seq(), firstTokenLastEntity).map(d => {
@@ -184,8 +189,8 @@ object FeatureExtractor {
 
     log.info(s"Training Data Pruner - Feature length: ${prunedData.count}")
 
+    /* Filter out points without any dependency paths */
     prunedData = prunedData.filter(d => {
-      /* Filter out points without any depedency paths */
       d.dependencyPath.length > 0
     })
     log.info(s"Training Data Pruner - Empty dependency paths: ${prunedData.count}")
