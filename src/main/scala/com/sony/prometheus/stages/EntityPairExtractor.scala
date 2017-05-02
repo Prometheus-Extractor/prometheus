@@ -103,7 +103,6 @@ object EntityPairExtractor {
 
     }).groupByKey().map(kv => kv._1 -> kv._2.flatten)
 
-    targetRelations.destroy()
     entities
   }
 
