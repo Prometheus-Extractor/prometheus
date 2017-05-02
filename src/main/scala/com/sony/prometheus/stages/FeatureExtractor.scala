@@ -196,7 +196,7 @@ object FeatureExtractor {
     })
     log.info(s"Training Data Pruner - Empty dependency paths: ${prunedData.count}")
 
-    val allowedTypes = RelationConfigReader.load(relationConfig).filter(_.types.isDefined).map(r => (r.id -> (r.types.get))).toMap
+    val allowedTypes = RelationConfigReader.load(relationConfig).filter(_.types.length == 2).map(r => (r.id -> ((r.types(0), r.types(1))))).toMap
     prunedData = prunedData.filter(d => {
       /* Filter points without correct entity types.
        * Allows all negative points and points without type information, also doesn't care about ordering. */

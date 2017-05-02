@@ -67,11 +67,7 @@ object RelationConfigReader {
     sqlContext.read.text(path).rdd.zipWithIndex().map{
       case (row, index) =>
         val cols = row.getString(0).split("\t")
-        val types = for {
-          type1 <- cols.lift(2)
-          type2 <- cols.lift(3)
-        } yield (type1, type2)
-        Relation(cols(0), cols(1), index.toInt + 1, types)
+        Relation(cols(0), cols(1), index.toInt + 1,  cols.slice(2, 4))
     }.collect()
   }
 
@@ -162,5 +158,5 @@ object EntityPairExtractor {
 case class WdProperty(key : String, value : String, datatype : String, var children : Array[WdProperty])
 case class WdEntity(id : String, description : String, alias : Array[String], label : String, sitelink : String, properties : Array[WdProperty])
 
-case class Relation(name: String, id: String, classIdx: Int, types:Option[(String, String)], entities: Seq[EntityPair] = Seq())
+case class Relation(name: String, id: String, classIdx: Int, types: Seq[String], entities: Seq[EntityPair] = Seq())
 case class EntityPair(source: String, dest: String)
