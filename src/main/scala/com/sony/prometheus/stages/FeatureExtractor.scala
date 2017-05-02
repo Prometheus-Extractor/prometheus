@@ -46,6 +46,7 @@ object FeatureExtractor {
   val NBR_WORDS_AFTER = 3
   val MIN_FEATURE_LENGTH = 4
   val NEGATIVE_CLASS_NAME = "neg"
+  val NEGATIVE_CLASS_NBR = 0
   val log = LogManager.getLogger(FeatureExtractor.getClass)
 
   /** Returns an RDD of [[TrainingDataPoint]]
@@ -75,8 +76,8 @@ object FeatureExtractor {
               f.ent2Type,
               f.dependencyPath))
           } else {
-            Seq(TrainingDataPoint(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, 0, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
-              f.ent1Type, f.ent2Type, f.dependencyPath))
+            Seq(TrainingDataPoint(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NBR, f.wordFeatures,
+              f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures, f.ent1Type, f.ent2Type, f.dependencyPath))
           }
       })
       featureArrays
@@ -184,14 +185,14 @@ object FeatureExtractor {
     log.info(s"Training Data Pruner - Initial size: ${data.count}")
     var prunedData = data.filter(d => {
       /* Filter out short feature arrays */
-      d.wordFeatures.filter(_ != EMPTY_TOKEN).length >= MIN_FEATURE_LENGTH
+      d.wordFeatures.count(_ != EMPTY_TOKEN) >= MIN_FEATURE_LENGTH
     })
 
     log.info(s"Training Data Pruner - Feature length: ${prunedData.count}")
 
     /* Filter out points without any dependency paths */
     prunedData = prunedData.filter(d => {
-      d.dependencyPath.length > 0
+      d.dependencyPath.nonEmpty
     })
     log.info(s"Training Data Pruner - Empty dependency paths: ${prunedData.count}")
 
@@ -229,7 +230,7 @@ object FeatureExtractor {
       pg.key(NED).getIdentifier
       pg.value(0, T).text
       val values = pg.nodes(T).asScala
-      if(values.size > 1){
+      if (values.size > 1){
         val head = values.head
         val last = values.last
         head.setRange(head.getStart, last.getEnd)

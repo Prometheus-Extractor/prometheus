@@ -47,20 +47,9 @@ object TrainingDataExtractor {
 
   val SENTENCE_MAX_LENGTH = 220
   val SENTENCE_MIN_LENGTH = 5
+  val NEGATIVE_CLASS_NAME = "neg"
+  val NEGATIVE_CLASS_NBR = 0
 
-  def printInfo(docs: RDD[Document], relations: RDD[Relation], sentences: RDD[TrainingSentence]): Unit = {
-    val log = LogManager.getLogger(TrainingDataExtractor.getClass)
-    val docsCount = docs.count()
-    val relationsCount = relations.count()
-    val entitiesCount = relations.map(r => (r.id -> r.entities.length)).collect().toMap
-    //val dist = sentences.map(t => (t.relationId, 1)).reduceByKey(_ + _)
-    //  .map(t => s"${t._1}\t-> ${entitiesCount.getOrElse(t._1, 0)} entities\t-> ${t._2}").collect()
-
-    log.info("Extracting Training Sentences")
-    log.info(s"Documents: $docsCount")
-    log.info(s"Relations: $relationsCount")
-    //dist.map(log.info)
-  }
 
   /**
    * Extracts RDD of [[TrainingSentence]]
@@ -79,12 +68,13 @@ object TrainingDataExtractor {
 
     val broadcastRM = sparkContext.broadcast(relMapping.collect())
 
-    val data:RDD[TrainingSentence] = docs.flatMap(doc => {
+
+    val data: RDD[TrainingSentence] = docs.flatMap(doc => {
 
         val S = Sentence.`var`()
         val NED = NamedEntityDisambiguation.`var`()
 
-        val trainingSentences:Seq[TrainingSentence] = doc.select(S, NED)
+        val sentences: Seq[TrainingSentence] = doc.select(S, NED)
           .where(NED)
           .coveredBy(S)
           .stream()
@@ -97,7 +87,9 @@ object TrainingDataExtractor {
 
             val trainingData = broadcastRM.value.flatMap{
               case (relation, mapping) => {
-                val pairs = neds.flatMap(pair => {
+                // Positive examples are those sentences that contain at least one entity pair
+                // known (from "relations") to partake in a specific relation (eg Göran Persson, Anitra Steen)
+                val knownPairs = neds.flatMap(pair => {
                   val foundPairs = ListBuffer[EntityPair]()
                   if (mapping.getOrDefault(pair(0), mutable.Set.empty).contains(pair(1))){
                     foundPairs += EntityPair(pair(0), pair(1))
@@ -107,19 +99,25 @@ object TrainingDataExtractor {
                   foundPairs
                 })
 
-                if (pairs.length > 0)
-                  Seq(TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, pairs.toList))
-                else
+                // Negative examples are random sentences that contain any entity pair
+                val entityPairs = pg.list(NED).asScala.map(_.getIdentifier.split(":").last).toSet.subsets(2).map(_.toSeq).map(p =>
+                  EntityPair(p(0), p(1))
+                ).toSeq
+
+                if (knownPairs.nonEmpty) {
+                  Seq(TrainingSentence(relation.id, relation.name, relation.classIdx, sDoc, knownPairs.toList))
+                } else if (entityPairs.nonEmpty) {
+                  Seq(TrainingSentence(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NBR, sDoc, entityPairs.toList))
+                } else {
                   Seq()
+                }
               }
             }
 
             trainingData
           })
-
-        trainingSentences
+        sentences
       })
-
     data.repartition(Prometheus.DATA_PARTITIONS)
   }
 
@@ -146,6 +144,22 @@ object TrainingDataExtractor {
         ts.entityPair)
     }).toDF()
     serializable.write.parquet(path)
+  }
+
+  def printInfo(docs: RDD[Document], relations: RDD[Relation], sentences: RDD[TrainingSentence]): Unit = {
+    val log = LogManager.getLogger(TrainingDataExtractor.getClass)
+    val docsCount = docs.count()
+    val positiveCount = sentences.filter(_.relationClass == NEGATIVE_CLASS_NBR).count()
+    val relationsCount = relations.count()
+    val entitiesCount = relations.map(r => (r.id -> r.entities.length)).collect().toMap
+    //val dist = sentences.map(t => (t.relationId, 1)).reduceByKey(_ + _)
+    //  .map(t => s"${t._1}\t-> ${entitiesCount.getOrElse(t._1, 0)} entities\t-> ${t._2}").collect()
+
+    log.info("Extracting Training Sentences")
+    log.info(s"Documents: $docsCount")
+    log.info(s"Relations: $relationsCount")
+    log.info(s"Positive sentences: $positiveCount")
+    //dist.map(log.info)
   }
 }
 

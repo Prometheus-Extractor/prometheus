@@ -129,13 +129,15 @@ object Prometheus {
       val configData = new RelationConfigData(conf.relationConfig())
       val wikidata = new WikidataData(conf.wikiData())
 
+      // Extract entity pairs that participate in the given relations
       val entityPairs = new EntityPairExtractorStage(
         tempDataPath + "/relation_entity_pairs",
         configData,
         wikidata
       )
 
-      val trainingTask = new TrainingDataExtractorStage(
+      // Extract training sentences
+      val trainingExtactorTask = new TrainingDataExtractorStage(
         tempDataPath + "/training_sentences",
         corpusData,
         entityPairs)
@@ -152,11 +154,13 @@ object Prometheus {
         tempDataPath + "/dep_encoder",
         corpusData)
 
+      // Extract features from the training data (Strings)
       val featureExtractionTask = new FeatureExtractorStage(
         tempDataPath + "/features",
-        trainingTask,
+        trainingExtactorTask,
         configData)
 
+      // Transform features from Strings into vectors of numbers
       val featureTransformerStage = new FeatureTransfomerStage(
         tempDataPath + "/vector_features",
         word2VecData,
@@ -167,9 +171,13 @@ object Prometheus {
 
       val featuresPath = featureTransformerStage.getData()
 
+      /* Preprocess done */
+
       if (conf.stage() == "preprocess") {
         log.info(s"Entity pairs saved to ${featuresPath}")
       } else {
+
+        // Train classifier
         val modelTrainingTask = new RelationModelStage(
           tempDataPath + "/models",
           featureTransformerStage,
