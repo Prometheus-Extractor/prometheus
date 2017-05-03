@@ -57,7 +57,7 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
         .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.ent1PosFeatures, p.ent2PosFeatures,
-          p.ent1Type, p.ent2Type, p.dependencyPath))
+          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow))
         .map(model.predict)
 
       classes.zip(points).map{

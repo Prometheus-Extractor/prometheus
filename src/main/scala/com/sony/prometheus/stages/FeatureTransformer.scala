@@ -37,7 +37,8 @@ class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncode
                          dependencyEncoderStage.getData()))
     balancedData.map(d => {
       val vector = featureTransformer.value.toFeatureVector(
-        d.wordFeatures, d.posFeatures, d.ent1PosTags, d.ent2PosTags, d.ent1Type, d.ent2Type, d.dependencyPath
+        d.wordFeatures, d.posFeatures, d.ent1PosTags, d.ent2PosTags, d.ent1Type, d.ent2Type, d.dependencyPath,
+        d.ent1DepWindow, d.ent2DepWindow
       ).toArray.map(_.toFloat)
       val features = Nd4j.create(vector)
       val label = Nd4j.create(featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray)
@@ -126,8 +127,13 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
     */
   def toFeatureVector(wordFeatures: Seq[String], posFeatures: Seq[String], ent1TokensPos: Seq[String],
                       ent2TokensPos: Seq[String], ent1Type: String, ent2Type: String,
-                      dependencyPath: Seq[DependencyPath]): Vector = {
+                      dependencyPath: Seq[DependencyPath], ent1DepWindow: Seq[DependencyPath],
+                      ent2DepWindow: Seq[DependencyPath]): Vector = {
+
+    /* Word features */
     val wordVectors = wordFeatures.map(wordEncoder.index).map(_.toArray).flatten.toArray
+
+    /* Part of speech features */
     val posVectors = posFeatures.map(posEncoder.index).map(Seq(_))
       .map(oneHotEncode(_, posEncoder.vocabSize()).toArray).flatten.toArray
 
@@ -141,9 +147,11 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
       posEncoder.vocabSize()
     ).toArray
 
+    /* Named entity types */
     val neType1 = oneHotEncode(Seq(neTypeEncoder.index(ent1Type)), neTypeEncoder.vocabSize()).toArray
     val neType2 = oneHotEncode(Seq(neTypeEncoder.index(ent1Type)), neTypeEncoder.vocabSize()).toArray
 
+    /* Depedency Path */
     val depPath = dependencyPath.map(d => {
       oneHotEncode(Seq(dependencyEncoder.index(d.dependency)), dependencyEncoder.vocabSize()).toArray ++
         wordEncoder.index(d.word).toArray ++
@@ -153,6 +161,20 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
     val paddedDepPath = (depPath.slice(0, DEPENDENCY_FEATURE_SIZE) ++
       Seq.fill(DEPENDENCY_FEATURE_SIZE - depPath.size)(emptyDepedencyVector)).flatten
 
-    Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos ++ neType1 ++ neType2 ++ paddedDepPath)
+    /* Dependency windows */
+    val ent1PaddedDepWindow = (ent1DepWindow.map(d => {
+      oneHotEncode(Seq(dependencyEncoder.index(d.dependency)), dependencyEncoder.vocabSize()).toArray ++
+        wordEncoder.index(d.word).toArray ++
+        (if (d.direction) Array(1.0) else Array(0.0))
+    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent1DepWindow.size)(emptyDepedencyVector)).flatten
+
+    val ent2PaddedDepWindow = (ent2DepWindow.map(d => {
+      oneHotEncode(Seq(dependencyEncoder.index(d.dependency)), dependencyEncoder.vocabSize()).toArray ++
+        wordEncoder.index(d.word).toArray ++
+        (if (d.direction) Array(1.0) else Array(0.0))
+    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent1DepWindow.size)(emptyDepedencyVector)).flatten
+
+    Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos ++ neType1 ++ neType2 ++ paddedDepPath ++
+      ent1PaddedDepWindow  ++ ent2PaddedDepWindow)
   }
 }

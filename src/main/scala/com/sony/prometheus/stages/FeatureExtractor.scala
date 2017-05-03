@@ -13,6 +13,7 @@ import org.apache.log4j.LogManager
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.util.Random
 
 /**
  * Stage to extract features, will not run if output already exists
@@ -45,6 +46,7 @@ object FeatureExtractor {
   val NBR_WORDS_BEFORE = 3
   val NBR_WORDS_AFTER = 3
   val MIN_FEATURE_LENGTH = 4
+  val DEPENDENCY_WINDOW = 1
   val NEGATIVE_CLASS_NAME = "neg"
   val NEGATIVE_CLASS_NBR = 0
   val log = LogManager.getLogger(FeatureExtractor.getClass)
@@ -74,10 +76,12 @@ object FeatureExtractor {
               f.ent2PosFeatures,
               f.ent1Type,
               f.ent2Type,
-              f.dependencyPath))
+              f.dependencyPath,
+              f.ent1DepWindow,
+              f.ent2DepWindow))
           } else {
             Seq(TrainingDataPoint(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NBR, f.wordFeatures,
-              f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures, f.ent1Type, f.ent2Type, f.dependencyPath))
+              f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures, f.ent1Type, f.ent2Type, f.dependencyPath, f.ent1DepWindow, f.ent2DepWindow))
           }
       })
       featureArrays
@@ -97,7 +101,7 @@ object FeatureExtractor {
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
         TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
-          f.ent1Type, f.ent2Type, f.dependencyPath)
+          f.ent1Type, f.ent2Type, f.dependencyPath, f.ent1DepWindow, f.ent2DepWindow)
       })
     })
 
@@ -158,9 +162,12 @@ object FeatureExtractor {
         /* Dependency Path */
         val lastTokenFirstEntity = grp1.value(grp1.size() - 1, T)
         val firstTokenLastEntity =  grp2.value(0, T)
-        val dependencyPath = findDependencyPath(lastTokenFirstEntity, Set(), Seq(), firstTokenLastEntity).map(d => {
-          DependencyPath(d.getRelation, d.getHead[Token].text, d.getHead[Token].getStart < d.getTail[Token].getStart)
-        })
+        val depRels = findDependencyPath(lastTokenFirstEntity, Set(), Seq(), firstTokenLastEntity)
+        val dependencyPath = depRels.map(relationToPath)
+
+        /* Depedency Window */
+        val ent1DepWindow = Random.shuffle(dependencyWindow(lastTokenFirstEntity, depRels).map(relationToPath)).take(DEPENDENCY_WINDOW).toSeq
+        val ent2DepWindow = Random.shuffle(dependencyWindow(firstTokenLastEntity, depRels).map(relationToPath)).take(DEPENDENCY_WINDOW).toSeq
 
         FeatureArray(
           sentence,
@@ -172,7 +179,9 @@ object FeatureExtractor {
           ent2TokensPos,
           ent1Type,
           ent2Type,
-          dependencyPath.slice(1, dependencyPath.size - 1))
+          dependencyPath.slice(1, dependencyPath.size - 1),
+          ent1DepWindow,
+          ent2DepWindow)
       }).toSeq
 
     features
@@ -211,6 +220,20 @@ object FeatureExtractor {
     log.info(s"Training Data Pruner - Correct NE types: ${prunedData.count}")
 
     prunedData
+  }
+
+  /** Finds the depedency window of an entity. I.e. Dependency relations that connected to the entity not
+    * part of the dependency path.
+    */
+  private def dependencyWindow(entity: Token, dependencyPath: Seq[DependencyRelation]): Set[DependencyRelation] = {
+    val excluded: Set[Token] = dependencyPath.flatMap(p => {Seq(p.getHead[Token], p.getTail[Token])}).toSet
+    entity.connectedEdges(classOf[DependencyRelation]).toList.asScala.filter(d => {
+      (!excluded.contains(d.getTail[Token]) || !excluded.contains(d.getHead[Token]))
+    }).toSet
+  }
+
+  private def relationToPath(d: DependencyRelation): DependencyPath = {
+    DependencyPath(d.getRelation, d.getHead[Token].text, d.getHead[Token].getStart < d.getTail[Token].getStart)
   }
 
   /**
@@ -316,7 +339,9 @@ case class TrainingDataPoint(
   ent2PosTags: Seq[String],
   ent1Type: String,
   ent2Type: String,
-  dependencyPath: Seq[DependencyPath])
+  dependencyPath: Seq[DependencyPath],
+  ent1DepWindow: Seq[DependencyPath],
+  ent2DepWindow: Seq[DependencyPath])
 
 case class TestDataPoint(
   sentence: Document,
@@ -328,7 +353,9 @@ case class TestDataPoint(
   ent2PosFeatures: Seq[String],
   ent1Type: String,
   ent2Type: String,
-  dependencyPath: Seq[DependencyPath])
+  dependencyPath: Seq[DependencyPath],
+  ent1DepWindow: Seq[DependencyPath],
+  ent2DepWindow: Seq[DependencyPath])
 
 case class FeatureArray(
   sentence: Document,
@@ -340,4 +367,7 @@ case class FeatureArray(
   ent2PosFeatures: Seq[String],
   ent1Type: String,
   ent2Type: String,
-  dependencyPath: Seq[DependencyPath])
+  dependencyPath: Seq[DependencyPath],
+  ent1DepWindow: Seq[DependencyPath],
+  ent2DepWindow: Seq[DependencyPath])
+
