@@ -68,7 +68,7 @@ object RelationModel {
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
       .batchSizePerWorker(256) // Up to 2048 is possible on AWS and boosts performance. 256 works on semantica.
-      .averagingFrequency(10)
+      .averagingFrequency(5)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
       .storageLevel(StorageLevel.NONE) // DISK_ONLY or NONE. We have little memory left for caching.
@@ -90,8 +90,8 @@ object RelationModel {
       .epsilon(1.0E-8)
       .dropOut(0.5)
       .list()
-      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(256).build())
-      .layer(1, new DenseLayer.Builder().nIn(256).nOut(256).build())
+      .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(512).build())
+      .layer(1, new DenseLayer.Builder().nIn(512).nOut(256).build())
       .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.MCXENT)
         .activation(Activation.SOFTMAX).nIn(256).nOut(output_size).build())
       .pretrain(false).backprop(true)
