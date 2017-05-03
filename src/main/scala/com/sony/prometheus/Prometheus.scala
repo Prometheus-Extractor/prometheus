@@ -217,6 +217,7 @@ object Prometheus {
           }
         }
       }
+      log.info("Successfully completed all requested stages!")
     } finally {
       sc.stop()
     }
