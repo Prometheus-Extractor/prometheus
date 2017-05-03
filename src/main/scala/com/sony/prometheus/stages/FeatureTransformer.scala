@@ -173,7 +173,7 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
       oneHotEncode(Seq(dependencyEncoder.index(d.dependency)), dependencyEncoder.vocabSize()).toArray ++
         wordEncoder.index(d.word).toArray ++
         (if (d.direction) Array(1.0) else Array(0.0))
-    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent1DepWindow.size)(emptyDepedencyVector)).flatten
+    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent2DepWindow.size)(emptyDepedencyVector)).flatten
 
     Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos ++ neType1 ++ neType2 ++ paddedDepPath ++
       ent1PaddedDepWindow  ++ ent2PaddedDepWindow)
