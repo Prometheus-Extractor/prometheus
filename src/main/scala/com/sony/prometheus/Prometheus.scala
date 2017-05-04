@@ -47,7 +47,7 @@ object Prometheus {
     val wikiData = trailArg[String](
       descr = "path to the wikidata dump in parquet",
       validate = pathPrefixValidation)
-    val tempDataPath= trailArg[String](
+    val tempDataPath = trailArg[String](
       descr= "path to a directory that will contain intermediate results",
       validate = pathPrefixValidation)
     val word2vecPath = trailArg[String](
@@ -114,7 +114,8 @@ object Prometheus {
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
     val log = LogManager.getLogger(Prometheus.getClass)
-    val sparkConf = new SparkConf().setAppName("Prometheus Relation Model")
+    val appName = s"Prometheus Relation Model ${conf.language()} ${conf.stage()}"
+    val sparkConf = new SparkConf().setAppName(appName)
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
 
     implicit val sc = new SparkContext(sparkConf)
