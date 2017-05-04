@@ -5,6 +5,7 @@ import java.util
 import com.sony.prometheus.Prometheus
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
+
 import scala.collection.JavaConversions._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
@@ -16,6 +17,7 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.dataset.DataSet
 
 import scala.collection.mutable.ListBuffer
+import scala.util.Random
 
 class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
                              neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
@@ -84,20 +86,29 @@ object FeatureTransformer {
     */
   def balanceData(rawData: RDD[TrainingDataPoint], underSample: Boolean = false): RDD[TrainingDataPoint] = {
 
-    log.info(s"Rebalancing dataset (${if (underSample) "undersample" else "oversample"})")
     val classCount = rawData.map(d => d.relationClass).countByValue()
-    val realClasses = classCount.filter(_._1 != 0)
-    val sampleTo = if (underSample) realClasses.map(_._2).min else realClasses.map(_._2).max
-    classCount.foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2} => ${sampleTo}"))
+    val posClasses = classCount.filter(_._1 != FeatureExtractor.NEGATIVE_CLASS_NBR)
+    val sampleTo = if (underSample) posClasses.map(_._2).min else posClasses.map(_._2).max
+    val nbrClasses = classCount.keys.size
 
+    log.info(s"Rebalancing dataset (${if (underSample) "undersample" else "oversample"})")
+    classCount.foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2}"))
+
+    /* Resample postive classes */
     val balancedDataset = classCount.map{
-      case (key:Long, count: Long) =>
-        val samplePercentage = sampleTo / count.toDouble
+      case (key: Long, count: Long) =>
+        /* Make all positive classes equally big and the negative class a big as their sum */
+        val mod = if (key == FeatureExtractor.NEGATIVE_CLASS_NBR) 1.25 else 1
+
+        val samplePercentage = sampleTo / count.toDouble * mod
         val replacement = sampleTo > count
         rawData.filter(d => d.relationClass == key).sample(replacement, samplePercentage)
-    }.reduce(_.union(_))
+    }.reduce(_++_)
 
+    log.info("Balanced result:")
+    balancedDataset.map(d => d.relationClass).countByValue().foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2}"))
     balancedDataset.repartition(Prometheus.DATA_PARTITIONS)
+    balancedDataset.mapPartitions(Random.shuffle(_))
   }
 
 }
