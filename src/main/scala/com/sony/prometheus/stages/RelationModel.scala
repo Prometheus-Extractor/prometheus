@@ -31,7 +31,7 @@ import org.deeplearning4j.eval.Evaluation
 
 /** Builds the RelationModel
  */
-class RelationModelStage(path: String, featureTransfomerStage: FeatureTransfomerStage, epochs: Int)
+class RelationModelStage(path: String, featureTransfomerStage: FeatureTransformerStage, epochs: Int)
                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {

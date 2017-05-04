@@ -17,10 +17,10 @@ import org.nd4j.linalg.dataset.DataSet
 
 import scala.collection.mutable.ListBuffer
 
-class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
-                             neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
-                             featureExtractorStage: FeatureExtractorStage)
-                            (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
+class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
+                              neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
+                              featureExtractorStage: FeatureExtractorStage)
+                             (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
   /**
     * Runs the task, saving results to disk
     */
@@ -86,6 +86,7 @@ object FeatureTransformer {
 
     log.info(s"Rebalancing dataset (${if (underSample) "undersample" else "oversample"})")
     val classCount = rawData.map(d => d.relationClass).countByValue()
+    log.info(classCount)
     val realClasses = classCount.filter(_._1 != 0)
     val sampleTo = if (underSample) realClasses.map(_._2).min else realClasses.map(_._2).max
     classCount.foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2} => ${sampleTo}"))
