@@ -50,6 +50,10 @@ object TrainingDataExtractor {
   val SENTENCE_MIN_LENGTH = 5
   val NEGATIVE_CLASS_NAME = "neg"
   val NEGATIVE_CLASS_NBR = 0
+<<<<<<< HEAD
+=======
+  val NEGATIVE_SAMPLING_HEURISTIC = 0.05
+>>>>>>> Add true negative examples
 
   /**
    * Extracts RDD of [[TrainingSentence]]
