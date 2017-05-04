@@ -50,7 +50,6 @@ object TrainingDataExtractor {
   val SENTENCE_MIN_LENGTH = 5
   val NEGATIVE_CLASS_NAME = "neg"
   val NEGATIVE_CLASS_NBR = 0
-  val NEGATIVE_SAMPLING_HEURISTIC = 0.05
 
   /**
    * Extracts RDD of [[TrainingSentence]]
@@ -155,7 +154,7 @@ object TrainingDataExtractor {
     log.info(s"positive examples $nbrPositive")
 
     // Extract negative examples over a small part of the corpus (otherwise we will find too many true negative examples)
-    val negativeSampleHeuristic = nbrPositive.toDouble / totalDocs
+    val negativeSampleHeuristic = nbrPositive.toDouble / (totalDocs * 5)
     log.info(s"negative sample heuristic: $negativeSampleHeuristic")
 
     val negativeExamples = extractExamples(corpus.sample(false, negativeSampleHeuristic), negativeExtractor)
