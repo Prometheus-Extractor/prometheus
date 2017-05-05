@@ -1,6 +1,7 @@
 package com.sony.prometheus.stages
 
 import com.sony.prometheus._
+import com.sony.prometheus.stages.DataPointType.DataPointType
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -70,6 +71,7 @@ object FeatureExtractor {
               t.relationId,
               t.relationName,
               t.relationClass,
+              DataPointType.Positive,
               f.wordFeatures,
               f.posFeatures,
               f.ent1PosFeatures,
@@ -80,8 +82,20 @@ object FeatureExtractor {
               f.ent1DepWindow,
               f.ent2DepWindow))
           } else {
-            Seq(TrainingDataPoint(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NBR, f.wordFeatures,
-              f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures, f.ent1Type, f.ent2Type, f.dependencyPath, f.ent1DepWindow, f.ent2DepWindow))
+            Seq(TrainingDataPoint(
+              NEGATIVE_CLASS_NAME,
+              NEGATIVE_CLASS_NAME,
+              NEGATIVE_CLASS_NBR,
+              if(t.positive) DataPointType.NearPositive else DataPointType.Negative,
+              f.wordFeatures,
+              f.posFeatures,
+              f.ent1PosFeatures,
+              f.ent2PosFeatures,
+              f.ent1Type,
+              f.ent2Type,
+              f.dependencyPath,
+              f.ent1DepWindow,
+              f.ent2DepWindow))
           }
       })
       featureArrays
@@ -324,6 +338,15 @@ object FeatureExtractor {
 
 }
 
+object DataPointType extends Enumeration {
+  type DataPointType = Value
+
+  val
+    Positive,         // The point is a positive example
+    NearPositive,     // The point is a negative example taken from a positive sentence
+    Negative = Value  // The point is a negative example from a negative sentence
+}
+
 /**
   * Contains a single dependency. Uses java.lang.Boolean for serializing
   */
@@ -333,6 +356,7 @@ case class TrainingDataPoint(
   relationId: String,
   relationName: String,
   relationClass: Long,
+  pointType: DataPointType,
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
   ent1PosTags: Seq[String],
