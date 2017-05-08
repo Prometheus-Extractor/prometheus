@@ -1,0 +1,229 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+        <head>
+          <title>evaluation - com.sony.prometheus.evaluation</title>
+          <meta name="description" content="evaluation - com.sony.prometheus.evaluation" />
+          <meta name="keywords" content="evaluation com.sony.prometheus.evaluation" />
+          <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+          
+      <link href="../../../../lib/template.css" media="screen" type="text/css" rel="stylesheet" />
+      <link href="../../../../lib/diagrams.css" media="screen" type="text/css" rel="stylesheet" id="diagrams-css" />
+      <script type="text/javascript">
+         if(top === self) {
+            var url = '../../../../index.html';
+            var hash = 'com.sony.prometheus.evaluation.package';
+            var anchor = window.location.hash;
+            var anchor_opt = '';
+            if (anchor.length >= 1)
+              anchor_opt = '@' + anchor.substring(1);
+            window.location.href = url + '#' + hash + anchor_opt;
+         }
+   	  </script>
+    
+        </head>
+        <body class="value">
+      <div id="definition">
+        <img src="../../../../lib/package_big.png" />
+        <p id="owner"><a href="../../../package.html" class="extype" name="com">com</a>.<a href="../../package.html" class="extype" name="com.sony">sony</a>.<a href="../package.html" class="extype" name="com.sony.prometheus">prometheus</a></p>
+        <h1>evaluation</h1>
+      </div>
+
+      <h4 id="signature" class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">package</span>
+      </span>
+      <span class="symbol">
+        <span class="name">evaluation</span>
+      </span>
+      </h4>
+      
+          <div id="comment" class="fullcommenttop"></div>
+        
+
+      <div id="mbrsel">
+        <div id="textfilter"><span class="pre"></span><span class="input"><input id="mbrsel-input" type="text" accesskey="/" /></span><span class="post"></span></div>
+        
+        
+        <div id="visbl">
+            <span class="filtertype">Visibility</span>
+            <ol><li class="public in"><span>Public</span></li><li class="all out"><span>All</span></li></ol>
+          </div>
+      </div>
+
+      <div id="template">
+        <div id="allMembers">
+        
+
+        <div id="types" class="types members">
+              <h3>Type Members</h3>
+              <ol><li name="com.sony.prometheus.evaluation.EvaluationData" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EvaluationDataextendsData"></a>
+      <a id="EvaluationData:EvaluationData"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="EvaluationData.html"><span class="name">EvaluationData</span></a><span class="result"> extends <a href="../stages/Data.html" class="extype" name="com.sony.prometheus.stages.Data">Data</a></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.evaluation.EvaluationDataPoint" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EvaluationDataPointextendsProductwithSerializable"></a>
+      <a id="EvaluationDataPoint:EvaluationDataPoint"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="EvaluationDataPoint.html"><span class="name">EvaluationDataPoint</span></a><span class="params">(<span name="wd_sub">wd_sub: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="sub">sub: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="judgments">judgments: <span class="extype" name="scala.Seq">Seq</span>[<a href="Judgment.html" class="extype" name="com.sony.prometheus.evaluation.Judgment">Judgment</a>]</span>, <span name="pred">pred: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="evidences">evidences: <span class="extype" name="scala.Seq">Seq</span>[<a href="Evidence.html" class="extype" name="com.sony.prometheus.evaluation.Evidence">Evidence</a>]</span>, <span name="wd_obj">wd_obj: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="obj">obj: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="wd_pred">wd_pred: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Data structure for both true and false examples of extracted relations and
+their sources in the form of text snippets
+</p>
+    </li><li name="com.sony.prometheus.evaluation.EvaluatorStage" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EvaluatorStageextendsTaskwithData"></a>
+      <a id="EvaluatorStage:EvaluatorStage"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">class</span>
+      </span>
+      <span class="symbol">
+        <a href="EvaluatorStage.html"><span class="name">EvaluatorStage</span></a><span class="result"> extends <a href="../stages/Task.html" class="extype" name="com.sony.prometheus.stages.Task">Task</a> with <a href="../stages/Data.html" class="extype" name="com.sony.prometheus.stages.Data">Data</a></span>
+      </span>
+      </h4>
+      <p class="comment cmt">Pipeline stage to run evaluation
+</p>
+    </li><li name="com.sony.prometheus.evaluation.Evidence" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EvidenceextendsProductwithSerializable"></a>
+      <a id="Evidence:Evidence"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Evidence.html"><span class="name">Evidence</span></a><span class="params">(<span name="snippet">snippet: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="url">url: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.evaluation.Judgment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="JudgmentextendsProductwithSerializable"></a>
+      <a id="Judgment:Judgment"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="Judgment.html"><span class="name">Judgment</span></a><span class="params">(<span name="judgment">judgment: <span class="extype" name="scala.Predef.String">String</span></span>, <span name="rater">rater: <span class="extype" name="scala.Predef.String">String</span></span>)</span><span class="result"> extends <span class="extype" name="scala.Product">Product</span> with <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        <div id="values" class="values members">
+              <h3>Value Members</h3>
+              <ol><li name="com.sony.prometheus.evaluation.EvaluationDataPoint" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EvaluationDataPoint"></a>
+      <a id="EvaluationDataPoint:EvaluationDataPoint"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="EvaluationDataPoint$.html"><span class="name">EvaluationDataPoint</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.evaluation.EvaluationDataReader" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="EvaluationDataReader"></a>
+      <a id="EvaluationDataReader:EvaluationDataReader"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="EvaluationDataReader$.html"><span class="name">EvaluationDataReader</span></a>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.evaluation.Evaluator" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Evaluator"></a>
+      <a id="Evaluator:Evaluator"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Evaluator$.html"><span class="name">Evaluator</span></a>
+      </span>
+      </h4>
+      <p class="comment cmt">Performs evaluation of <a href="EvaluationDataPoint.html" class="extype" name="com.sony.prometheus.evaluation.EvaluationDataPoint">EvaluationDataPoint</a>:s
+</p>
+    </li><li name="com.sony.prometheus.evaluation.Evidence" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Evidence"></a>
+      <a id="Evidence:Evidence"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Evidence$.html"><span class="name">Evidence</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li><li name="com.sony.prometheus.evaluation.Judgment" visbl="pub" data-isabs="false" fullComment="no" group="Ungrouped">
+      <a id="Judgment"></a>
+      <a id="Judgment:Judgment"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="Judgment$.html"><span class="name">Judgment</span></a><span class="result"> extends <span class="extype" name="scala.Serializable">Serializable</span></span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
+
+        
+
+        
+        </div>
+
+        <div id="inheritedMembers">
+        
+        
+        </div>
+
+        <div id="groupedMembers">
+        <div class="group" name="Ungrouped">
+              <h3>Ungrouped</h3>
+              
+            </div>
+        </div>
+
+      </div>
+
+      <div id="tooltip"></div>
+
+      <div id="footer">  </div>
+      <script defer="defer" type="text/javascript" id="jquery-js" src="../../../../lib/jquery.js"></script><script defer="defer" type="text/javascript" id="jquery-ui-js" src="../../../../lib/jquery-ui.js"></script><script defer="defer" type="text/javascript" id="tools-tooltip-js" src="../../../../lib/tools.tooltip.js"></script><script defer="defer" type="text/javascript" id="template-js" src="../../../../lib/template.js"></script>
+    </body>
+      </html>
