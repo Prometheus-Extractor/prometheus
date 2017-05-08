@@ -158,7 +158,14 @@ object TrainingDataExtractor {
     log.info(s"positive examples $nbrPositive")
 
     // Extract negative examples over a small part of the corpus (otherwise we will find too many true negative examples)
-    val negativeSampleHeuristic = nbrPositive.toDouble / (totalDocs * 5)
+    // estimate the nbr of true negatives per doc
+    val negativeFreq = extractExamples(corpus.sample(false, 0.001), negativeExtractor).count() / (0.001 * totalDocs)
+
+    // how many negative to find?
+    // negativeFreq * docs = positiveExamples
+    // docs = positiveExamples / negativeFreq
+    // sampling = docs / totalDocs
+    val negativeSampleHeuristic = (nbrPositive.toDouble / negativeFreq) / totalDocs
     log.info(s"negative sample heuristic: $negativeSampleHeuristic")
 
     val negativeExamples = extractExamples(corpus.sample(false, negativeSampleHeuristic), negativeExtractor)
