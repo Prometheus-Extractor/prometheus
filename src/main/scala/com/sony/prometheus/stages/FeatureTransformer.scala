@@ -96,15 +96,15 @@ object FeatureTransformer {
 
     /* Resample postive classes */
     val balancedDataset = classCount.map{
-      case (FeatureExtractor.NEGATIVE_CLASS_NBR, count: Long) =>
+/*      case (FeatureExtractor.NEGATIVE_CLASS_NBR, count: Long) =>
         val samplePercentage = sampleTo / count.toDouble * 0.625
         val replacement = sampleTo > count
-        val neg = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == DataPointType.Negative)
+        val neg = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == FeatureExtractor.DATA_TYPE_NEG)
           .sample(replacement, samplePercentage)
-        val nearPos = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == DataPointType.NearPositive)
+        val nearPos = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == FeatureExtractor.DATA_TYPE_NEARPOS)
             .sample(replacement, samplePercentage)
         neg ++ nearPos
-
+*/
       case (key: Long, count: Long) =>
         /* Make all positive classes equally big and our two negative types ,*/
         val samplePercentage = sampleTo / count.toDouble

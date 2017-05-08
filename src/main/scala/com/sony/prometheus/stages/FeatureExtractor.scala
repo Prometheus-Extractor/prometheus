@@ -1,7 +1,6 @@
 package com.sony.prometheus.stages
 
 import com.sony.prometheus._
-import com.sony.prometheus.stages.DataPointType.DataPointType
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -50,6 +49,10 @@ object FeatureExtractor {
   val DEPENDENCY_WINDOW = 1
   val NEGATIVE_CLASS_NAME = "neg"
   val NEGATIVE_CLASS_NBR = 0
+
+  val DATA_TYPE_POS = "pos"
+  val DATA_TYPE_NEG = "neg"
+  val DATA_TYPE_NEARPOS = "nearpos"
   val log = LogManager.getLogger(FeatureExtractor.getClass)
 
   /** Returns an RDD of [[TrainingDataPoint]]
@@ -66,12 +69,12 @@ object FeatureExtractor {
           val positiveExample = t.entityPair.exists(p => {
             p.dest == f.subj && p.source == f.obj || p.source == f.subj && p.dest == f.obj
           })
-          if (positiveExample) {
+          if (positiveExample && t.relationClass != NEGATIVE_CLASS_NBR) {
             Seq(TrainingDataPoint(
               t.relationId,
               t.relationName,
               t.relationClass,
-              DataPointType.Positive,
+              DATA_TYPE_POS,
               f.wordFeatures,
               f.posFeatures,
               f.ent1PosFeatures,
@@ -86,7 +89,7 @@ object FeatureExtractor {
               NEGATIVE_CLASS_NAME,
               NEGATIVE_CLASS_NAME,
               NEGATIVE_CLASS_NBR,
-              if(t.positive) DataPointType.NearPositive else DataPointType.Negative,
+              if(t.positive) DATA_TYPE_NEARPOS else DATA_TYPE_NEG,
               f.wordFeatures,
               f.posFeatures,
               f.ent1PosFeatures,
@@ -338,14 +341,6 @@ object FeatureExtractor {
 
 }
 
-object DataPointType extends Enumeration {
-  type DataPointType = Value
-
-  val Positive = Value("Pos")         // The point is a positive example
-  val NearPositive = Value("NearPos") // The point is a negative example taken from a positive sentence
-  val Negative = Value("Neg")         // The point is a negative example from a negative sentence
-}
-
 /**
   * Contains a single dependency. Uses java.lang.Boolean for serializing
   */
@@ -355,7 +350,7 @@ case class TrainingDataPoint(
   relationId: String,
   relationName: String,
   relationClass: Long,
-  pointType: DataPointType,
+  pointType: String,
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
   ent1PosTags: Seq[String],
