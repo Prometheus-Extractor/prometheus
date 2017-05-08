@@ -338,13 +338,12 @@ object FeatureExtractor {
 
 }
 
-object DataPointType extends Enumeration("Positive", "NearPositive", "Negative") {
+object DataPointType extends Enumeration {
   type DataPointType = Value
 
-  val
-    Positive,         // The point is a positive example
-    NearPositive,     // The point is a negative example taken from a positive sentence
-    Negative = Value  // The point is a negative example from a negative sentence
+  val Positive = Value("Pos")         // The point is a positive example
+  val NearPositive = Value("NearPos") // The point is a negative example taken from a positive sentence
+  val Negative = Value("Neg")         // The point is a negative example from a negative sentence
 }
 
 /**
