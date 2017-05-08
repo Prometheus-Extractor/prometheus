@@ -19,10 +19,10 @@ import org.nd4j.linalg.dataset.DataSet
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
-class FeatureTransfomerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
-                             neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
-                             featureExtractorStage: FeatureExtractorStage)
-                            (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
+class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
+                              neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
+                              featureExtractorStage: FeatureExtractorStage)
+                             (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
   /**
     * Runs the task, saving results to disk
     */
@@ -96,17 +96,25 @@ object FeatureTransformer {
 
     /* Resample postive classes */
     val balancedDataset = classCount.map{
+/*      case (FeatureExtractor.NEGATIVE_CLASS_NBR, count: Long) =>
+        val samplePercentage = sampleTo / count.toDouble * 0.625
+        val replacement = sampleTo > count
+        val neg = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == FeatureExtractor.DATA_TYPE_NEG)
+          .sample(replacement, samplePercentage)
+        val nearPos = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == FeatureExtractor.DATA_TYPE_NEARPOS)
+            .sample(replacement, samplePercentage)
+        neg ++ nearPos
+*/
       case (key: Long, count: Long) =>
-        /* Make all positive classes equally big and the negative class a big as their sum */
-        val mod = if (key == FeatureExtractor.NEGATIVE_CLASS_NBR) 1.25 else 1
-
-        val samplePercentage = sampleTo / count.toDouble * mod
+        /* Make all positive classes equally big and our two negative types ,*/
+        val samplePercentage = sampleTo / count.toDouble
         val replacement = sampleTo > count
         rawData.filter(d => d.relationClass == key).sample(replacement, samplePercentage)
+
     }.reduce(_++_)
 
     log.info("Balanced result:")
-    balancedDataset.map(d => d.relationClass).countByValue().foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2}"))
+    balancedDataset.map(d => d.relationClass + d.pointType.toString).countByValue().foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2}"))
     balancedDataset.repartition(Prometheus.DATA_PARTITIONS)
     balancedDataset.mapPartitions(Random.shuffle(_))
   }

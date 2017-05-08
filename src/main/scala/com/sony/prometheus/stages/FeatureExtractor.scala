@@ -49,6 +49,10 @@ object FeatureExtractor {
   val DEPENDENCY_WINDOW = 1
   val NEGATIVE_CLASS_NAME = "neg"
   val NEGATIVE_CLASS_NBR = 0
+
+  val DATA_TYPE_POS = "pos"
+  val DATA_TYPE_NEG = "neg"
+  val DATA_TYPE_NEARPOS = "nearpos"
   val log = LogManager.getLogger(FeatureExtractor.getClass)
 
   /** Returns an RDD of [[TrainingDataPoint]]
@@ -65,11 +69,12 @@ object FeatureExtractor {
           val positiveExample = t.entityPair.exists(p => {
             p.dest == f.subj && p.source == f.obj || p.source == f.subj && p.dest == f.obj
           })
-          if (positiveExample) {
+          if (positiveExample && t.relationClass != NEGATIVE_CLASS_NBR) {
             Seq(TrainingDataPoint(
               t.relationId,
               t.relationName,
               t.relationClass,
+              DATA_TYPE_POS,
               f.wordFeatures,
               f.posFeatures,
               f.ent1PosFeatures,
@@ -80,8 +85,20 @@ object FeatureExtractor {
               f.ent1DepWindow,
               f.ent2DepWindow))
           } else {
-            Seq(TrainingDataPoint(NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NAME, NEGATIVE_CLASS_NBR, f.wordFeatures,
-              f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures, f.ent1Type, f.ent2Type, f.dependencyPath, f.ent1DepWindow, f.ent2DepWindow))
+            Seq(TrainingDataPoint(
+              NEGATIVE_CLASS_NAME,
+              NEGATIVE_CLASS_NAME,
+              NEGATIVE_CLASS_NBR,
+              if(t.positive) DATA_TYPE_NEARPOS else DATA_TYPE_NEG,
+              f.wordFeatures,
+              f.posFeatures,
+              f.ent1PosFeatures,
+              f.ent2PosFeatures,
+              f.ent1Type,
+              f.ent2Type,
+              f.dependencyPath,
+              f.ent1DepWindow,
+              f.ent2DepWindow))
           }
       })
       featureArrays
@@ -333,6 +350,7 @@ case class TrainingDataPoint(
   relationId: String,
   relationName: String,
   relationClass: Long,
+  pointType: String,
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
   ent1PosTags: Seq[String],

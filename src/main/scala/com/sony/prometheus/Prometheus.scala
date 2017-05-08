@@ -162,7 +162,7 @@ object Prometheus {
         configData)
 
       // Transform features from Strings into vectors of numbers
-      val featureTransformerStage = new FeatureTransfomerStage(
+      val featureTransformerStage = new FeatureTransformerStage(
         tempDataPath + "/vector_features",
         word2VecData,
         posEncoderStage,
