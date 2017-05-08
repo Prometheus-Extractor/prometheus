@@ -28,7 +28,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.deeplearning4j.eval.Evaluation
-import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS, SVMWithSGD}
 import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.nd4j.linalg.api.ndarray.INDArray
