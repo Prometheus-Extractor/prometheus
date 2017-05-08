@@ -338,7 +338,7 @@ object FeatureExtractor {
 
 }
 
-object DataPointType extends Enumeration {
+object DataPointType extends Enumeration("Positive", "NearPositive", "Negative") {
   type DataPointType = Value
 
   val
