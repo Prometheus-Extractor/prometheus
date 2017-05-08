@@ -29,6 +29,7 @@ import java.util.Date
 
 import org.deeplearning4j.eval.Evaluation
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.nd4j.linalg.api.ndarray.INDArray
 
@@ -80,7 +81,47 @@ object RelationModel {
       .optimizer.setNumIterations(10)
     val model = classifier.run(trainData)
 
-    new RelationModel(model)
+    val predictionWithLabel = model.predict(testData.map(_.features)).zip(testData.map(_.label))
+    val metrics = new MulticlassMetrics(predictionWithLabel)
+
+    // Confusion matrix
+    println("Confusion matrix:")
+    println(metrics.confusionMatrix)
+
+    // Overall Statistics
+    println("Summary Statistics")
+
+    // Precision by label
+    val labels = metrics.labels
+    labels.foreach { l =>
+      println(s"Precision($l) = " + metrics.precision(l))
+    }
+
+    // Recall by label
+    labels.foreach { l =>
+      println(s"Recall($l) = " + metrics.recall(l))
+    }
+
+    // False positive rate by label
+    labels.foreach { l =>
+      println(s"FPR($l) = " + metrics.falsePositiveRate(l))
+    }
+
+    // F-measure by label
+    labels.foreach { l =>
+      println(s"F1-Score($l) = " + metrics.fMeasure(l))
+    }
+
+    // Weighted stats
+    println(s"Weighted precision: ${metrics.weightedPrecision}")
+    println(s"Weighted recall: ${metrics.weightedRecall}")
+    println(s"Weighted F1 score: ${metrics.weightedFMeasure}")
+    println(s"Weighted false positive rate: ${metrics.weightedFalsePositiveRate}")
+
+
+    val relModel = new RelationModel(model)
+    save(relModel, sqlContext.sparkContext, null, path, numClasses)
+    relModel
   }
 
   def load(path: String, context: SparkContext): RelationModel = {
