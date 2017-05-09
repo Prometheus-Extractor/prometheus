@@ -207,16 +207,17 @@ object Evaluator {
     val meanProbFP = falseProb.reduce(_+_) / fpCount
     log.info(s"Predictor mean probabilities for TP: $meanProbTP, FP: $meanProbFP")
 
-    for(cutoff <- (meanProbFP to 1.0 by (meanProbTP - meanProbFP) / 20)) {
-      val newTP = trueProb.filter(_ >= cutoff).length
-      val newFP = falseProb.filter(_ >= cutoff).length
+    if(meanProbFP < meanProbTP){
+      for(cutoff <- (meanProbFP to 1.0 by (meanProbTP - meanProbFP) / 20)) {
+        val newTP = trueProb.filter(_ >= cutoff).length
+        val newFP = falseProb.filter(_ >= cutoff).length
 
-      val recall = newTP / nbrTrueDataPoints
-      val precision = newTP / (newTP + newFP).toDouble
-      val f1 = computeF1(recall, precision)
-      log.info(s"\tWith probability cutoff $cutoff => recall: $recall, precision: $precision, f1: $f1")
+        val recall = newTP / nbrTrueDataPoints
+        val precision = newTP / (newTP + newFP).toDouble
+        val f1 = computeF1(recall, precision)
+        log.info(s"\tWith probability cutoff $cutoff => recall: $recall, precision: $precision, f1: $f1")
+      }
     }
-
   }
 
   def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {
