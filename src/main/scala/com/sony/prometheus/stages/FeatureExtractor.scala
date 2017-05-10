@@ -182,7 +182,7 @@ object FeatureExtractor {
         val depRels = findDependencyPath(lastTokenFirstEntity, Set(), Seq(), firstTokenLastEntity)
         val dependencyPath = depRels.map(relationToPath)
 
-        /* Depedency Window */
+        /* Dependency Window */
         val ent1DepWindow = Random.shuffle(dependencyWindow(lastTokenFirstEntity, depRels).map(relationToPath)).take(DEPENDENCY_WINDOW).toSeq
         val ent2DepWindow = Random.shuffle(dependencyWindow(firstTokenLastEntity, depRels).map(relationToPath)).take(DEPENDENCY_WINDOW).toSeq
 

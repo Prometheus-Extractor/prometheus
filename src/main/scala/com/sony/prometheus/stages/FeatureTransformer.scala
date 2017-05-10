@@ -94,7 +94,7 @@ object FeatureTransformer {
     log.info(s"Rebalancing dataset (${if (underSample) "undersample" else "oversample"})")
     classCount.foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2}"))
 
-    /* Resample postive classes */
+    /* Resample positive classes */
     val balancedDataset = classCount.map{
 /*      case (FeatureExtractor.NEGATIVE_CLASS_NBR, count: Long) =>
         val samplePercentage = sampleTo / count.toDouble * 0.625
@@ -128,7 +128,7 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
 
   val DEPENDENCY_FEATURE_SIZE = 8
 
-  lazy val emptyDepedencyVector = oneHotEncode(Seq(0), dependencyEncoder.vocabSize()).toArray ++
+  lazy val emptyDependencyVector = oneHotEncode(Seq(0), dependencyEncoder.vocabSize()).toArray ++
                                   wordEncoder.emptyVector.toArray ++
                                   Array(0.0)
 
@@ -178,20 +178,20 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
     })
 
     val paddedDepPath = (depPath.slice(0, DEPENDENCY_FEATURE_SIZE) ++
-      Seq.fill(DEPENDENCY_FEATURE_SIZE - depPath.size)(emptyDepedencyVector)).flatten
+      Seq.fill(DEPENDENCY_FEATURE_SIZE - depPath.size)(emptyDependencyVector)).flatten
 
     /* Dependency windows */
     val ent1PaddedDepWindow = (ent1DepWindow.map(d => {
       oneHotEncode(Seq(dependencyEncoder.index(d.dependency)), dependencyEncoder.vocabSize()).toArray ++
         wordEncoder.index(d.word).toArray ++
         (if (d.direction) Array(1.0) else Array(0.0))
-    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent1DepWindow.size)(emptyDepedencyVector)).flatten
+    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent1DepWindow.size)(emptyDependencyVector)).flatten
 
     val ent2PaddedDepWindow = (ent2DepWindow.map(d => {
       oneHotEncode(Seq(dependencyEncoder.index(d.dependency)), dependencyEncoder.vocabSize()).toArray ++
         wordEncoder.index(d.word).toArray ++
         (if (d.direction) Array(1.0) else Array(0.0))
-    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent2DepWindow.size)(emptyDepedencyVector)).flatten
+    }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent2DepWindow.size)(emptyDependencyVector)).flatten
 
     Vectors.dense(wordVectors ++ posVectors ++ ent1Pos ++ ent2Pos ++ neType1 ++ neType2 ++ paddedDepPath ++
       ent1PaddedDepWindow  ++ ent2PaddedDepWindow)
