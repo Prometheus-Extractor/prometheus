@@ -77,6 +77,8 @@ object FeatureExtractor {
               DATA_TYPE_POS,
               f.wordFeatures,
               f.posFeatures,
+              f.wordsBetween,
+              f.posBetween,
               f.ent1PosFeatures,
               f.ent2PosFeatures,
               f.ent1Type,
@@ -92,6 +94,8 @@ object FeatureExtractor {
               if(t.positive) DATA_TYPE_NEARPOS else DATA_TYPE_NEG,
               f.wordFeatures,
               f.posFeatures,
+              f.wordsBetween,
+              f.posBetween,
               f.ent1PosFeatures,
               f.ent2PosFeatures,
               f.ent1Type,
@@ -117,8 +121,21 @@ object FeatureExtractor {
 
     val testPoints = sentences.flatMap(sentence => {
       featureArray(sentence).map(f => {
-        TestDataPoint(sentence, f.subj, f.obj, f.wordFeatures, f.posFeatures, f.ent1PosFeatures, f.ent2PosFeatures,
-          f.ent1Type, f.ent2Type, f.dependencyPath, f.ent1DepWindow, f.ent2DepWindow)
+        TestDataPoint(
+          sentence,
+          f.subj,
+          f.obj,
+          f.wordFeatures,
+          f.posFeatures,
+          f.wordsBetween,
+          f.posBetween,
+          f.ent1PosFeatures,
+          f.ent2PosFeatures,
+          f.ent1Type,
+          f.ent2Type,
+          f.dependencyPath,
+          f.ent1DepWindow,
+          f.ent2DepWindow)
       })
     })
 
@@ -168,6 +185,10 @@ object FeatureExtractor {
         val words = tokenWindow(sentence, start1, end1, start2, end2, t => t.text)
         val pos = tokenWindow(sentence, start1, end1, start2, end2, t => t.getPartOfSpeech)
 
+        /* Sequence of words between the entities */
+        val wordsBetween = wordSequenceBetween(sentence, end1, start2, t => t.text)
+        val posBetween = wordSequenceBetween(sentence, end1, start2, t => t.getPartOfSpeech)
+
         /* Entity POS */
         val ent1TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
         val ent2TokensPos = grp2.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
@@ -192,6 +213,8 @@ object FeatureExtractor {
           grp2.key(NED).getIdentifier.split(":").last,
           words,
           pos,
+          wordsBetween,
+          posBetween,
           ent1TokensPos,
           ent2TokensPos,
           ent1Type,
@@ -266,7 +289,7 @@ object FeatureExtractor {
       .asScala
       .toList
 
-    nedGroups.map(pg => {
+    nedGroups.foreach(pg => {
       pg.key(NED).getIdentifier
       pg.value(0, T).text
       val values = pg.nodes(T).asScala
@@ -278,6 +301,15 @@ object FeatureExtractor {
       }
     })
     doc
+  }
+
+  /** Extract the sequence of words between the two entities, f is the transformation of the tokens into String
+    * (e.g. POS or the actual word)
+    */
+  private def wordSequenceBetween(sentence: Document, end1: Int, start2: Int, f: Token => String): Seq[String] = {
+    sentence
+      .nodes(classOf[Token]).asScala.toSeq.slice(end1 + 1, start2)
+      .map(f)
   }
 
   /** Extract string features from a Token window around two entities.
@@ -353,6 +385,8 @@ case class TrainingDataPoint(
   pointType: String,
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
+  wordsBetween: Seq[String],
+  posBetween: Seq[String],
   ent1PosTags: Seq[String],
   ent2PosTags: Seq[String],
   ent1Type: String,
@@ -367,6 +401,8 @@ case class TestDataPoint(
   qidDest: String,
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
+  wordsBetween: Seq[String],
+  posBetween: Seq[String],
   ent1PosFeatures: Seq[String],
   ent2PosFeatures: Seq[String],
   ent1Type: String,
@@ -381,6 +417,8 @@ case class FeatureArray(
   obj: String,
   wordFeatures: Seq[String],
   posFeatures: Seq[String],
+  wordsBetween: Seq[String],
+  posBetween: Seq[String],
   ent1PosFeatures: Seq[String],
   ent2PosFeatures: Seq[String],
   ent1Type: String,
