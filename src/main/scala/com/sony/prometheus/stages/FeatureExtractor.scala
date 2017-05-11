@@ -186,8 +186,8 @@ object FeatureExtractor {
         val pos = tokenWindow(sentence, start1, end1, start2, end2, t => t.getPartOfSpeech)
 
         /* Sequence of words between the entities */
-        val wordsBetween = wordSequenceBetween(sentence, end1, start2, t => t.text)
-        val posBetween = wordSequenceBetween(sentence, end1, start2, t => t.getPartOfSpeech)
+        val wordsBetween = wordSequenceBetween(sentence, end1, start2, t => t.text).toList
+        val posBetween = wordSequenceBetween(sentence, end1, start2, t => t.getPartOfSpeech).toList
 
         /* Entity POS */
         val ent1TokensPos = grp1.nodes[Token](T).asScala.toSeq.map(t => t.getPartOfSpeech).toArray
