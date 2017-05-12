@@ -91,8 +91,8 @@ object RelationModel {
 
   def apply(rawData: RDD[DataSet], numClasses: Int, path: String, epochs: Int)(implicit sqlContext: SQLContext): RelationModel = {
 
-    val filterNet = trainFilterNetwork(rawData, epochs)
     val classificationNet = trainClassificationNetwork(rawData, numClasses, epochs)
+    val filterNet = trainFilterNetwork(rawData, epochs)
     val relModel = new RelationModel(filterNet, classificationNet)
     if(path != "")
       save(relModel, sqlContext.sparkContext, path, numClasses)
@@ -155,7 +155,8 @@ object RelationModel {
     println(s"Weighted F1 score: ${metrics.weightedFMeasure}")
     println(s"Weighted false positive rate: ${metrics.weightedFalsePositiveRate}")
 
-    trainData.unpersist()
+    testData.unpersist(true)
+    trainData.unpersist(true)
     model
 
   }
@@ -225,7 +226,7 @@ object RelationModel {
     log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
     log.info(sparkNetwork.getNetwork.summary())
 
-    trainData.unpersist(false)
+    trainData.unpersist(true)
     sparkNetwork.getNetwork
   }
 

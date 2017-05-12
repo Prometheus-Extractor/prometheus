@@ -32,7 +32,7 @@ class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncod
     val labelNames:util.List[String] = ListBuffer(
       data.map(d => (d.relationClass, d.relationId)).distinct().collect().sortBy(_._1).map(_._2).toList: _*)
     val numClasses = data.map(d => d.relationClass).distinct().count().toInt
-    val balancedData = FeatureTransformer.balanceNegatives(data)
+    val balancedData = data //FeatureTransformer.balanceNegatives(data)
 
     val featureTransformer = sqlContext.sparkContext.broadcast(
       FeatureTransformer(word2VecData.getData(), posEncoderStage.getData(), neTypeEncoder.getData(),
