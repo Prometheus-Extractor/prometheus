@@ -63,7 +63,6 @@ object FeatureExtractor {
     */
   def trainingData(trainingSentences: RDD[TrainingSentence], relationConfigPath: String)
                   (implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
-
     val trainingPoints = trainingSentences.flatMap(t => {
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
           val positiveExample = t.entityPair.exists(p => {
@@ -108,7 +107,12 @@ object FeatureExtractor {
       featureArrays
     })
 
-    pruneTrainingData(trainingPoints, relationConfigPath).repartition(Prometheus.DATA_PARTITIONS)
+    val str2 = trainingPoints.map(t => t.relationClass).distinct().collect().mkString("  ")
+    log.info(s"training points $str2")
+    val data = pruneTrainingData(trainingPoints, relationConfigPath).repartition(Prometheus.DATA_PARTITIONS)
+    val str3 = data.map(t => t.relationClass).distinct().collect().mkString(" $$ ")
+    log.info(s"after pruning $str3")
+    data
   }
 
   /** Returns an RDD of [[TestDataPoint]]
@@ -236,7 +240,6 @@ object FeatureExtractor {
       /* Filter out short feature arrays */
       d.wordFeatures.count(_ != EMPTY_TOKEN) >= MIN_FEATURE_LENGTH
     })
-
     log.info(s"Training Data Pruner - Feature length: ${prunedData.count}")
 
     /* Filter out points without any dependency paths */
@@ -245,15 +248,23 @@ object FeatureExtractor {
     })
     log.info(s"Training Data Pruner - Empty dependency paths: ${prunedData.count}")
 
-    val allowedTypes = RelationConfigReader.load(relationConfig).filter(_.types.length == 2).map(r => (r.id -> ((r.types(0), r.types(1))))).toMap
+
+    val allowedTypes = RelationConfigReader.load(relationConfig)
+      .filter(_.types.length == 2)
+      .map(r => (r.id -> ((r.types(0), r.types(1)))))
+      .toMap
     prunedData = prunedData.filter(d => {
       /* Filter points without correct entity types.
        * Allows all negative points and points without type information, also doesn't care about ordering. */
-      if(d.relationId == NEGATIVE_CLASS_NAME) {
+      if (d.relationId == NEGATIVE_CLASS_NAME) {
         true
       } else {
         allowedTypes.get(d.relationId).forall(t => {
-          d.ent1Type == t._1 && d.ent2Type == t._2 || d.ent1Type == t._2 && d.ent2Type == t._1
+          val ent1Type = d.ent1Type.toLowerCase
+          val ent2Type = d.ent2Type.toLowerCase
+          val expected1 = t._1.toLowerCase
+          val expected2 = t._2.toLowerCase
+          ent1Type == expected1 && ent2Type == expected2 || ent1Type == expected2 && ent2Type == expected1
         })
       }
     })

@@ -29,8 +29,9 @@ class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncod
   override def run(): Unit = {
 
     val data = FeatureExtractor.load(featureExtractorStage.getData())
-    val labelNames:util.List[String] = ListBuffer(
+    val labelNames: util.List[String] = ListBuffer(
       data.map(d => (d.relationClass, d.relationId)).distinct().collect().sortBy(_._1).map(_._2).toList: _*)
+
     val numClasses = data.map(d => d.relationClass).distinct().count().toInt
     val balancedData = FeatureTransformer.balanceData(data, false)
 
