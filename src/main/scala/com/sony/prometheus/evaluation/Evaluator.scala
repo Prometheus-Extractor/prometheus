@@ -20,7 +20,6 @@ import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 
-
 /** Pipeline stage to run evaluation
  *
  * @param path            path to save evaluation results
@@ -31,7 +30,8 @@ class EvaluatorStage(
   path: String,
   evaluationData: Data,
   lang: String,
-  predictor: Predictor)
+  predictor: Predictor,
+  nBest: Int)
   (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -45,7 +45,8 @@ class EvaluatorStage(
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
-    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"))
+    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"), Some(nBest))
+
     Evaluator.save(evaluation, path)
   }
 }
@@ -97,7 +98,8 @@ object Evaluator {
     * @param evalDataPoints   RDD of [[EvaluationDataPoint]]
     * @return                 an [[EvaluationResult]]
    */
-  def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor, debugOutFile: Option[String] = None)
+  def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor,
+               debugOutFile: Option[String], nMostProbable: Option[Int])
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
     evalDataPoints.cache()
@@ -118,20 +120,29 @@ object Evaluator {
     log.info("Testing predictor on test set")
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
       // Filter out the UNKNOWN_CLASS. Keep the empty lists.
-      .map(r => r.filter(p => !p.predictedPredicate.contains(predictor.UNKNOWN_CLASS))).cache()
+      .map(rs => rs.filter(r => !r.predictedPredicate.contains(predictor.UNKNOWN_CLASS))).cache()
+
+    val zippedTestPrediction = evalDataPoints.zip(predictedRelations)
+    nMostProbable.foreach(N => {
+      val ttypen = zippedTestPrediction.sortBy{
+        case (_, predRelations) => {
+          predRelations.map(_.probability).sorted.sorted.headOption.getOrElse(0)
+        }
+      }
+    })
 
     val nbrPredictedRelations = predictedRelations.map(_.length).reduce(_ + _)
     log.info(s"Extracted ${nbrPredictedRelations} relations from evaluation data")
 
     log.info("Evaluating the predicted relations")
-    val truePositives: RDD[ExtractedRelation] = evalDataPoints.zip(predictedRelations).flatMap{
+    val truePositives: RDD[ExtractedRelation] = zippedTestPrediction.flatMap{
       case (datapoint, predRelations) =>
         predRelations.filter(r => {
           datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate
         })
     }.cache()
 
-    val falsePositives: RDD[ExtractedRelation] = evalDataPoints.zip(predictedRelations).flatMap{
+    val falsePositives: RDD[ExtractedRelation] = zippedTestPrediction.flatMap{
       case (datapoint, predRelations) =>
         predRelations.filter(r => {
           !(datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate)
