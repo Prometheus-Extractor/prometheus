@@ -122,14 +122,7 @@ object Evaluator {
       // Filter out the UNKNOWN_CLASS. Keep the empty lists.
       .map(rs => rs.filter(r => !r.predictedPredicate.contains(predictor.UNKNOWN_CLASS))).cache()
 
-    val zippedTestPrediction = evalDataPoints.zip(predictedRelations)
-    nMostProbable.foreach(N => {
-      val ttypen = zippedTestPrediction.sortBy{
-        case (_, predRelations) => {
-          predRelations.map(_.probability).sorted.sorted.headOption.getOrElse(0)
-        }
-      }
-    })
+    val zippedTestPrediction = evalDataPoints.zip(predictedRelations).cache()
 
     val nbrPredictedRelations = predictedRelations.map(_.length).reduce(_ + _)
     log.info(s"Extracted ${nbrPredictedRelations} relations from evaluation data")
@@ -161,6 +154,9 @@ object Evaluator {
     log.info(s"Recall is $recall")
     log.info(s"F1 is $f1")
 
+    nMostProbable.foreach(N =>
+      nMostProbableOutcome(predictedRelations, truePositives, falsePositives, nbrTrueDataPoints, N)
+    )
     suggestThreshold(truePositives, falsePositives, nbrTrueDataPoints)
 
     writeDebug(evalDataPoints, annotatedEvidence, predictedRelations, debugOutFile)
@@ -207,6 +203,25 @@ object Evaluator {
     })
   }
 
+  private def nMostProbableOutcome(predictedRelations: RDD[Seq[ExtractedRelation]],
+                                   truePositives: RDD[ExtractedRelation],
+                                   falsePositives: RDD[ExtractedRelation],
+                                   nbrTrueDataPoints: Double,
+                                   n: Int): Unit = {
+    val cutOff = predictedRelations
+      .flatMap(rs => rs.map(_.probability))
+      .takeOrdered(n)
+    .last
+    val trueProb = truePositives.map(_.probability).collect()
+    val falseProb = falsePositives.map(_.probability).collect()
+    val newTP = trueProb.count(_ >= cutOff)
+    val newFP = falseProb.count(_ > cutOff)
+    val recall = newTP / nbrTrueDataPoints
+    val precision = newTP / (newTP + newFP).toDouble
+    val f1 = computeF1(recall, precision)
+    log.info(s"\tWith $n most probable => recall: $recall, precision: $precision, f1: $f1")
+  }
+
   private def suggestThreshold(truePositives: RDD[ExtractedRelation], falsePositives: RDD[ExtractedRelation],
                                nbrTrueDataPoints: Double): Unit = {
 
@@ -214,13 +229,13 @@ object Evaluator {
     val fpCount = falsePositives.count().toDouble
     val trueProb = truePositives.map(_.probability).collect()
     val falseProb = falsePositives.map(_.probability).collect()
-    val meanProbTP = trueProb.reduce(_+_) / tpCount
-    val meanProbFP = falseProb.reduce(_+_) / fpCount
+    val meanProbTP = trueProb.sum / tpCount
+    val meanProbFP = falseProb.sum / fpCount
     log.info(s"Predictor mean probabilities for TP: $meanProbTP, FP: $meanProbFP")
 
-    for(cutoff <- (meanProbFP to 1.0 by (meanProbTP - meanProbFP) / 20)) {
-      val newTP = trueProb.filter(_ >= cutoff).length
-      val newFP = falseProb.filter(_ >= cutoff).length
+    for(cutoff <- meanProbFP to 1.0 by (meanProbTP - meanProbFP) / 20) {
+      val newTP = trueProb.count(_ >= cutoff)
+      val newFP = falseProb.count(_ >= cutoff)
 
       val recall = newTP / nbrTrueDataPoints
       val precision = newTP / (newTP + newFP).toDouble

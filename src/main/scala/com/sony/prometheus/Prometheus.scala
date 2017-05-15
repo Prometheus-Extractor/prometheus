@@ -232,6 +232,8 @@ object Prometheus {
     tempDataPath: String)
     (implicit sqlContext: SQLContext, sc: SparkContext): Unit = {
 
+    val N_MOST_PROBABLE = 100
+
     val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
     val t = LocalDateTime.now()
 
@@ -244,7 +246,8 @@ object Prometheus {
         evalSavePath,
         evaluationData,
         lang,
-        predictor)
+        predictor,
+        N_MOST_PROBABLE)
       val _ = evaluationTask.getData()
       log.info(s"Saved evaluation to $evalSavePath")
     })
