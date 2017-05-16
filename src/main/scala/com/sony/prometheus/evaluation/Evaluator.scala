@@ -201,10 +201,10 @@ object Evaluator {
       val output = fs.create(new Path(f))
       val os = new BufferedOutputStream(output)
       log.info(s"Saving debug information to $f...")
-      val data = evalDataPoints.zip(predictedRelations).flatMap{
+      val data = evalDataPoints.zip(predictedRelations).map{
         case (evalPoint, relations) =>
-          val relResults = relations.map(r => s"${r.subject}/${r.predictedPredicate}/${r.obj} - ${r.probability}")
-          s"${evalPoint.evidences.map(_.snippet).mkString(" >> NEXT EVIDENCE >> ")}${evalPoint.wd_sub}/${evalPoint.wd_pred}/${evalPoint.wd_obj}\t${evalPoint.positive()}\t$relResults"
+          val relResults = relations.map(r => s"${r.subject}/${r.predictedPredicate}/${r.obj} - ${r.probability}").mkString("\t")
+          s"${evalPoint.evidences.map(_.snippet).mkString(" >> ")}${evalPoint.wd_sub}/${evalPoint.wd_pred}/${evalPoint.wd_obj}\t${evalPoint.positive()}\t$relResults"
       }.collect().mkString("\n")
       os.write("Sentences\tRDF-triple\tPositive Datapoint\tPredicted Results:\t".getBytes("UTF-8"))
       os.write(data.getBytes("UTF-8"))
