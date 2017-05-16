@@ -57,7 +57,6 @@ object Word2VecEncoder {
 
 /**
   * This class wraps the specific Word2Vec implementation. We've tried Spark's, DL4J's and now Marcus'.
-  * @param model
   */
 class Word2VecEncoder extends Externalizable{
 
@@ -99,7 +98,7 @@ class Word2VecEncoder extends Externalizable{
     }
   }
 
-  def emptyVector(): Vector = {
+  def emptyVector: Vector = {
     Vectors.zeros(model.dim)
   }
 

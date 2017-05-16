@@ -13,6 +13,6 @@ trait Annotater {
     * @param conf     the configuration - defaults to "default"
     * @return        an annotated docforia Document
    */
-  def annotate(input: String, lang: String = "sv", conf: String = "default"): Document
+  def annotate(input: String, lang: String = "sv", conf: String = "default"): Either[String, Document]
 }
 
