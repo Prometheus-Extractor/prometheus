@@ -151,6 +151,7 @@ object FeatureExtractor {
     sentence.nodes(classOf[Token])
       .asScala
       .toSeq
+      .sortBy(_.getStart)
       .zipWithIndex
       .foreach(t => t._1.putTag("idx", t._2))
 
@@ -173,7 +174,7 @@ object FeatureExtractor {
         /*
         Find the positions of the entities
          */
-        val grp1 :: grp2 :: _ = set.toList
+        val grp1 :: grp2 :: _ = set.toList.sortBy(_.value(0, T).getStart)
 
         val start1 = grp1.value(0, T).getTag("idx"): Int
         val end1 = grp1.value(grp1.size() - 1, T).getTag("idx"): Int
