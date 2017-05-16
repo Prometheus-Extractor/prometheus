@@ -251,7 +251,7 @@ object FeatureExtractor {
 
     val allowedTypes = RelationConfigReader.load(relationConfig)
       .filter(_.types.length == 2)
-      .map(r => (r.id -> ((r.types(0), r.types(1)))))
+      .map(r => r.id -> (r.types(0), r.types(1)))
       .toMap
     prunedData = prunedData.filter(d => {
       /* Filter points without correct entity types.
