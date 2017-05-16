@@ -107,11 +107,7 @@ object FeatureExtractor {
       featureArrays
     })
 
-    val str2 = trainingPoints.map(t => t.relationClass).distinct().collect().mkString("  ")
-    log.info(s"training points $str2")
     val data = pruneTrainingData(trainingPoints, relationConfigPath).repartition(Prometheus.DATA_PARTITIONS)
-    val str3 = data.map(t => t.relationClass).distinct().collect().mkString(" $$ ")
-    log.info(s"after pruning $str3")
     data
   }
 
