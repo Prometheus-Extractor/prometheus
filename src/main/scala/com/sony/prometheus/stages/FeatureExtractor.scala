@@ -45,7 +45,7 @@ object FeatureExtractor {
   val EMPTY_TOKEN = "<empty>"
   val NBR_WORDS_BEFORE = 3
   val NBR_WORDS_AFTER = 3
-  val MIN_FEATURE_LENGTH = 4
+  val MIN_FEATURE_LENGTH = 0
   val DEPENDENCY_WINDOW = 1
   val NEGATIVE_CLASS_NAME = "neg"
   val NEGATIVE_CLASS_NBR = 0
@@ -233,14 +233,15 @@ object FeatureExtractor {
                                (implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
 
     log.info(s"Training Data Pruner - Initial size: ${data.count}")
-    var prunedData = data.filter(d => {
-      /* Filter out short feature arrays */
+    /*var prunedData = data.filter(d => {
+      /* Filter out short feature arrays*/
       d.wordFeatures.count(_ != EMPTY_TOKEN) >= MIN_FEATURE_LENGTH
     })
     log.info(s"Training Data Pruner - Feature length: ${prunedData.count}")
+    */
 
     /* Filter out points without any dependency paths */
-    prunedData = prunedData.filter(d => {
+    var prunedData = data.filter(d => {
       d.dependencyPath.nonEmpty
     })
     log.info(s"Training Data Pruner - Empty dependency paths: ${prunedData.count}")
@@ -341,8 +342,9 @@ object FeatureExtractor {
      */
     val features = Seq(
       Seq.fill(NBR_WORDS_BEFORE - wordsBefore1.length)(EMPTY_TOKEN) ++ wordsBefore1.map(f),
-      wordsAfter1.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter1.length)(EMPTY_TOKEN),
-      Seq.fill(NBR_WORDS_BEFORE - wordsBefore2.length)(EMPTY_TOKEN) ++ wordsBefore2.map(f),
+      /* We use word sequence between instead */
+//    wordsAfter1.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter1.length)(EMPTY_TOKEN),
+//    Seq.fill(NBR_WORDS_BEFORE - wordsBefore2.length)(EMPTY_TOKEN) ++ wordsBefore2.map(f),
       wordsAfter2.map(f) ++ Seq.fill(NBR_WORDS_AFTER - wordsAfter2.length)(EMPTY_TOKEN)
     ).flatten
     features
