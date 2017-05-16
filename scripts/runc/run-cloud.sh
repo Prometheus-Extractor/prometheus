@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.6.0
+VERSION=0.7.0
 JAR_NAME="prometheus-relation-model_2.10-"$VERSION".jar"
 args=${@:2}
 
