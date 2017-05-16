@@ -317,6 +317,7 @@ object FeatureExtractor {
     sentence
       .nodes(classOf[Token]).asScala.toSeq.slice(end1 + 1, start2)
       .map(f)
+      .slice(0, FeatureTransformer.WORDS_BETWEEN_SIZE)
   }
 
   /** Extract string features from a Token window around two entities.

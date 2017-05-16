@@ -202,8 +202,10 @@ object Evaluator {
       val os = new BufferedOutputStream(output)
       log.info(s"Saving debug information to $f...")
 
-      val data = evalDataPoints.zip(predictedRelations)
-        .filter(_._1.positive()).flatMap{case (dP, rels) => rels.map(rel => s"$rel\t$dP")
+      val data = evalDataPoints
+        .zip(predictedRelations)
+        .filter(_._1.positive()).flatMap{case (dP, rels) =>
+          rels.map(rel => s"$rel\t$dP")
         }.collect().mkString("\n")
 
       os.write("predicted relation\tevaluation data point".getBytes("UTF-8"))

@@ -65,6 +65,7 @@ class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncod
 /** Used for creating a FeatureTransformer
  */
 object FeatureTransformer {
+  val WORDS_BETWEEN_SIZE = 8
 
   val log = LogManager.getLogger(classOf[FeatureTransformer])
 
@@ -118,7 +119,7 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
                          neTypeEncoder: StringIndexer, dependencyEncoder: StringIndexer) extends Serializable {
 
   val DEPENDENCY_FEATURE_SIZE = 8
-  val WORDS_BETWEEN_SIZE = 8
+
 
   lazy val emptyDependencyVector = oneHotEncode(Seq(0), dependencyEncoder.vocabSize()).toArray ++
                                   wordEncoder.emptyVector.toArray ++
@@ -160,13 +161,13 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
     ).toArray
 
     /* Sequence of words between the two entities */
-    val wordsBetweenVectors = wordsBetween.slice(0, WORDS_BETWEEN_SIZE).map(wordEncoder.index).map(_.toArray)
-    val wordsPadding = Seq.fill(WORDS_BETWEEN_SIZE - wordsBetween.size)(wordEncoder.emptyVector.toArray)
+    val wordsBetweenVectors = wordsBetween.slice(0, FeatureTransformer.WORDS_BETWEEN_SIZE).map(wordEncoder.index).map(_.toArray)
+    val wordsPadding = Seq.fill(FeatureTransformer.WORDS_BETWEEN_SIZE - wordsBetween.size)(wordEncoder.emptyVector.toArray)
     val paddedWordsBetweenVectors = (wordsBetweenVectors ++ wordsPadding).flatten.toArray
     // ... and their POS tags
-    val posBetweenVectors = posBetween.slice(0, WORDS_BETWEEN_SIZE).map(posEncoder.index).map(Seq(_))
+    val posBetweenVectors = posBetween.slice(0, FeatureTransformer.WORDS_BETWEEN_SIZE).map(posEncoder.index).map(Seq(_))
       .map(oneHotEncode(_, posEncoder.vocabSize()).toArray)
-    val posPadding = Seq.fill(WORDS_BETWEEN_SIZE - posBetween.size)(oneHotEncode(Seq(0), dependencyEncoder.vocabSize()).toArray)
+    val posPadding = Seq.fill(FeatureTransformer.WORDS_BETWEEN_SIZE - posBetween.size)(oneHotEncode(Seq(0), dependencyEncoder.vocabSize()).toArray)
     val paddedPosVectors = (posBetweenVectors ++ posPadding).flatten.toArray
 
     /* Named entity types */
