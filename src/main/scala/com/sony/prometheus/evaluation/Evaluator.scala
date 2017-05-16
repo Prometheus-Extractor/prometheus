@@ -210,7 +210,7 @@ object Evaluator {
                                    n: Int): Unit = {
     val cutOff = predictedRelations
       .flatMap(rs => rs.map(_.probability))
-      .takeOrdered(n)
+      .takeOrdered(n)(math.Ordering.Double.reverse)
       .last
     log.info(s"cutOff is: $cutOff")
     val trueProb = truePositives.map(_.probability).collect()
