@@ -33,7 +33,7 @@ class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncod
       data.map(d => (d.relationClass, d.relationId)).distinct().collect().sortBy(_._1).map(_._2).toList: _*)
 
     val numClasses = data.map(d => d.relationClass).distinct().count().toInt
-    val balancedData = FeatureTransformer.balanceData(data, false)
+    val balancedData = data //FeatureTransformer.balanceNegatives(data)
 
     val featureTransformer = sqlContext.sparkContext.broadcast(
       FeatureTransformer(word2VecData.getData(), posEncoderStage.getData(), neTypeEncoder.getData(),
@@ -81,36 +81,26 @@ object FeatureTransformer {
     sqlContext.sparkContext.objectFile[DataSet](path)
   }
 
-  /**
-    * Rebalances an imbalanced dataset. Either undersample or oversample.
-    * Balances to match biggest or smallest class, excluding class 0, i.e. the negative class.
-    */
-  def balanceData(rawData: RDD[TrainingDataPoint], underSample: Boolean = false): RDD[TrainingDataPoint] = {
+  def balanceNegatives(rawData: RDD[TrainingDataPoint]): RDD[TrainingDataPoint] = {
 
     val classCount = rawData.map(d => d.relationClass).countByValue()
     val posClasses = classCount.filter(_._1 != FeatureExtractor.NEGATIVE_CLASS_NBR)
-    val sampleTo = if (underSample) posClasses.map(_._2).min else posClasses.map(_._2).max
-    val nbrClasses = classCount.keys.size
+    val sampleTo = posClasses.map(_._2).max * (classCount.keys.size - 1)
 
-    log.info(s"Rebalancing dataset (${if (underSample) "undersample" else "oversample"})")
+    log.info(s"Rebalancing negative examples to 50%")
     classCount.foreach(pair => log.info(s"\tClass ${pair._1}: ${pair._2}"))
 
     /* Resample positive classes */
     val balancedDataset = classCount.map{
-/*      case (FeatureExtractor.NEGATIVE_CLASS_NBR, count: Long) =>
-        val samplePercentage = sampleTo / count.toDouble * 0.625
-        val replacement = sampleTo > count
-        val neg = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == FeatureExtractor.DATA_TYPE_NEG)
-          .sample(replacement, samplePercentage)
-        val nearPos = rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR && d.pointType == FeatureExtractor.DATA_TYPE_NEARPOS)
-            .sample(replacement, samplePercentage)
-        neg ++ nearPos
-*/
-      case (key: Long, count: Long) =>
+
+      case (FeatureExtractor.NEGATIVE_CLASS_NBR, count: Long) =>
         /* Make all positive classes equally big and our two negative types ,*/
         val samplePercentage = sampleTo / count.toDouble
         val replacement = sampleTo > count
-        rawData.filter(d => d.relationClass == key).sample(replacement, samplePercentage)
+        rawData.filter(d => d.relationClass == FeatureExtractor.NEGATIVE_CLASS_NBR).sample(replacement, samplePercentage)
+
+      case (key: Long, count: Long) =>
+        rawData.filter(d => d.relationClass == key)
 
     }.reduce(_++_)
 
