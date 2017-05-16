@@ -16,12 +16,17 @@ object REST {
     case req @ POST -> Root / "api" / lang / "extract" =>
       val is = scalaz.stream.io.toInputStream(req.body)
       val input = scala.io.Source.fromInputStream(is).getLines().mkString("\n")
-      val doc = VildeAnnotater.annotate(input, lang = lang, conf = "herd")
-      val results = predictor
-        .extractRelations(sc.parallelize(List(doc)))
-        .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
-      val res = Json.toJson(results.collect()).toString
-      Ok(res).putHeaders(`Content-Type`(`application/json`))
+      VildeAnnotater.annotate(input, lang = lang, conf = "herd") match {
+        case Right(doc) => {
+          val results = predictor
+            .extractRelations(sc.parallelize(List(doc)))
+            .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
+          val res = Json.toJson(results.collect()).toString
+          Ok(res).putHeaders(`Content-Type`(`application/json`))
+        }
+        case Left(msg) => InternalServerError(msg)
+      }
+
     case GET -> Root =>
       Ok("POST text to /api/<lang>/extract to extract relations.")
   }

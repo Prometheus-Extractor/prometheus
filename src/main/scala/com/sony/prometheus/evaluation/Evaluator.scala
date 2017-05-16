@@ -4,8 +4,8 @@ import java.io.BufferedOutputStream
 import java.nio.file.{Files, Paths}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import scala.collection.JavaConverters._
 
+import scala.collection.JavaConverters._
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
@@ -18,7 +18,7 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.Token
-import se.lth.cs.docforia.memstore.MemoryDocumentIO
+import se.lth.cs.docforia.memstore.{MemoryDocument, MemoryDocumentIO}
 
 /** Pipeline stage to run evaluation
  *
@@ -83,7 +83,16 @@ object Evaluator {
         evalDataPoints
           // treat multiple snippets as one string of multiple paragraphs
           .map(dP => dP.evidences.map(_.snippet).mkString("\n"))
-          .map(e => VildeAnnotater.annotate(e, lang = lang, conf = "herd"))
+          .map{e =>
+            val docEither = VildeAnnotater.annotate(e, lang = lang, conf = "herd")
+            docEither match {
+              case Right(doc) => doc
+              case Left(msg) => {
+                log.error(msg)
+                new MemoryDocument()
+              }
+            }
+          }
       annotatedEvidence
         .map(doc => Tuple1(doc.toBytes))
         .toDF("doc")
