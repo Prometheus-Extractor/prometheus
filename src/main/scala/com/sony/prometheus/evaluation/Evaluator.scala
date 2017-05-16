@@ -211,7 +211,8 @@ object Evaluator {
     val cutOff = predictedRelations
       .flatMap(rs => rs.map(_.probability))
       .takeOrdered(n)
-    .last
+      .last
+    log.info(s"cutOff is: $cutOff")
     val trueProb = truePositives.map(_.probability).collect()
     val falseProb = falsePositives.map(_.probability).collect()
     val newTP = trueProb.count(_ >= cutOff)
