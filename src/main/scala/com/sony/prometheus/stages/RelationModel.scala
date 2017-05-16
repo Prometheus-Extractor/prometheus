@@ -118,6 +118,9 @@ object RelationModel {
       .optimizer.setNumIterations(10)
     val model = classifier.run(trainData)
 
+    trainData.unpersist(true)
+    testData.persist(StorageLevel.DISK_ONLY)
+
     val predictionWithLabel = model.predict(testData.map(_.features)).zip(testData.map(_.label))
     val metrics = new MulticlassMetrics(predictionWithLabel)
 
@@ -156,9 +159,7 @@ object RelationModel {
     println(s"Weighted false positive rate: ${metrics.weightedFalsePositiveRate}")
 
     testData.unpersist(true)
-    trainData.unpersist(true)
     model
-
   }
 
   def trainClassificationNetwork(rawData: RDD[DataSet], numClasses: Int, epochs: Int)
