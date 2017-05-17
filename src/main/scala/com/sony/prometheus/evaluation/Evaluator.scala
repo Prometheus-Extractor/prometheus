@@ -44,6 +44,7 @@ class EvaluatorStage(
   override def run(): Unit = {
     val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
+      .filter(dP => dP.positive())  // Don't use the "incorrect annotation by the google algorithm"
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
     val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"), Some(nBest))
 
