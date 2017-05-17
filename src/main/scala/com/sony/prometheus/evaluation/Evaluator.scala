@@ -139,16 +139,12 @@ object Evaluator {
     log.info("Evaluating the predicted relations")
     val truePositives: RDD[ExtractedRelation] = zippedTestPrediction.flatMap{
       case (datapoint, predRelations) =>
-        predRelations.filter(r => {
-          datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate
-        })
+        predRelations.filter(r => isCorrectPrediction(datapoint, r ))
     }.cache()
 
     val falsePositives: RDD[ExtractedRelation] = zippedTestPrediction.flatMap{
       case (datapoint, predRelations) =>
-        predRelations.filter(r => {
-          !(datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate)
-        })
+        predRelations.filter(r => !isCorrectPrediction(datapoint, r))
     }.cache()
 
     val nbrTruePositives = truePositives.count()
@@ -189,6 +185,10 @@ object Evaluator {
     ents.contains(dataPoint.wd_obj) && ents.contains(dataPoint.wd_sub)
   }
 
+  private def isCorrectPrediction(datapoint: EvaluationDataPoint, r: ExtractedRelation): Boolean = {
+    datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate
+  }
+
   private def computeF1(recall: Double, precision: Double): Double = 2 * (precision * recall) / (precision + recall)
 
   private def writeDebug(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document],
@@ -201,12 +201,13 @@ object Evaluator {
       val output = fs.create(new Path(f))
       val os = new BufferedOutputStream(output)
       log.info(s"Saving debug information to $f...")
-      val data = evalDataPoints.zip(predictedRelations).map{
-        case (evalPoint, relations) =>
-          val relResults = relations.map(r => s"${r.subject}/${r.predictedPredicate}/${r.obj} - ${r.probability}").mkString("\t")
-          s"${evalPoint.evidences.map(_.snippet).mkString(" >> ")}\t${evalPoint.positive()}\t${evalPoint.wd_sub}/${evalPoint.wd_pred}/${evalPoint.wd_obj}\t$relResults"
+      val data = evalDataPoints.zip(annotatedEvidence).zip(predictedRelations).map{
+        case ((evalPoint, annotatedDocument), relations) =>
+          val herdResult = herdSucceded(evalPoint, annotatedDocument)
+          val relResults = relations.map(r => s"${r.subject}/${r.predictedPredicate}/${r.obj} - ${r.probability} - ${isCorrectPrediction(evalPoint, r)}").mkString("\t")
+          s"${evalPoint.evidences.map(_.snippet).mkString(" >> ")}\t${evalPoint.positive()}\t${evalPoint.wd_sub}/${evalPoint.wd_pred}/${evalPoint.wd_obj}\t$herdResult\t$relResults"
       }.collect().mkString("\n")
-      os.write("Sentences\tPositive Datapoint\tRDF-triple\tPredicted Results:\n".getBytes("UTF-8"))
+      os.write("Sentences\tPositive Datapoint\tRDF-triple\tHerd\tPredicted Results:\n".getBytes("UTF-8"))
       os.write(data.getBytes("UTF-8"))
       os.close()
     })
