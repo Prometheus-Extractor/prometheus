@@ -329,13 +329,13 @@ object FeatureExtractor {
       Extract words before and after entity 1
      */
     val wordsBefore1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start1 - NBR_WORDS_BEFORE, start1)
-    val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + NBR_WORDS_AFTER, end1 + NBR_WORDS_AFTER + 1)
+    val wordsAfter1 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end1 + 1, end1 + NBR_WORDS_AFTER + 1)
 
     /*
       Extract words before and after entity 2
      */
     val wordsBefore2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(start2 - NBR_WORDS_BEFORE, start2)
-    val wordsAfter2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end2 + NBR_WORDS_AFTER, end2 + NBR_WORDS_AFTER + 1)
+    val wordsAfter2 = sentence.nodes(classOf[Token]).asScala.toSeq.slice(end2 + 1, end2 + NBR_WORDS_AFTER + 1)
 
     /*
       Create string feature vector for the pair
