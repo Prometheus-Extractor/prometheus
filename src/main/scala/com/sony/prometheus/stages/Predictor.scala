@@ -17,13 +17,13 @@ import com.sony.prometheus.utils.Utils.pathExists
 object Predictor {
 
   def apply(modelStage: RelationModelStage, posEncoder: PosEncoderStage, word2VecData: Word2VecData,
-            neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage, entityPairs: EntityPairExtractorStage)
+            neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage, relationConfig: RelationConfigData)
            (implicit sqlContext: SQLContext): Predictor = {
 
     val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData(), neTypeEncoder.getData(),
                                                 dependencyEncoderStage.getData())
     val model = RelationModel.load(modelStage.getData(), sqlContext.sparkContext)
-    val relations = EntityPairExtractor.load(entityPairs.getData())
+    val relations = RelationConfigReader.load(relationConfig.getData())
     val ft = sqlContext.sparkContext.broadcast(featureTransformer)
     new Predictor(model, ft, relations)
   }
@@ -40,13 +40,13 @@ object Predictor {
 
 }
 
-class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: RDD[Relation]) extends Serializable {
+class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: Seq[Relation]) extends Serializable {
 
   val UNKNOWN_CLASS = "<unknown_class>"
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
 
-    val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).collect().toList.toMap
+    val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).toList.toMap
 
     docs.map(doc => {
       val sentences = doc.nodes(classOf[Sentence])

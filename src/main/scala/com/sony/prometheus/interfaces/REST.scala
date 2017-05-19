@@ -20,7 +20,7 @@ object REST {
         case Right(doc) => {
           val results = predictor
             .extractRelations(sc.parallelize(List(doc)))
-            .map(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
+            .flatMap(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
           val res = Json.toJson(results.collect()).toString
           Ok(res).putHeaders(`Content-Type`(`application/json`))
         }

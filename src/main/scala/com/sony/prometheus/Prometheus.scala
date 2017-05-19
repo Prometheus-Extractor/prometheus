@@ -192,13 +192,13 @@ object Prometheus {
           conf.evaluationFiles.foreach(evalFiles => {
             log.info("Performing evaluation")
             val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage,
-              depEncoder, entityPairs)
+              depEncoder, configData)
             performEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
           })
 
           // Serve HTTP API
           if (conf.demoServer()) {
-            val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, entityPairs)
+            val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, configData)
             try {
               val task = BlazeBuilder
                 .bindHttp(PORT, "localhost")
