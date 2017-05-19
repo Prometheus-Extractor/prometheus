@@ -201,8 +201,8 @@ object FeatureExtractor {
         /* Dependency Path */
         val lastTokenFirstEntity = grp1.value(grp1.size() - 1, T)
         val firstTokenLastEntity =  grp2.value(0, T)
-        val depRels = findDependencyPath(lastTokenFirstEntity, Set(), Seq(), firstTokenLastEntity)
-        val dependencyPath = depRels.map(relationToPath)
+        val depRels = findDependencyPath(lastTokenFirstEntity, Set(), Seq(), firstTokenLastEntity).toList
+        val dependencyPath = depRels.map(relationToPath).toList
 
         /* Dependency Window */
         val ent1DepWindow = Random.shuffle(dependencyWindow(lastTokenFirstEntity, depRels).map(relationToPath)).take(DEPENDENCY_WINDOW).toSeq
@@ -220,7 +220,7 @@ object FeatureExtractor {
           ent2TokensPos,
           ent1Type,
           ent2Type,
-          dependencyPath.slice(1, dependencyPath.size - 1),
+          dependencyPath.slice(0, dependencyPath.size),
           ent1DepWindow,
           ent2DepWindow)
       }).toSeq
