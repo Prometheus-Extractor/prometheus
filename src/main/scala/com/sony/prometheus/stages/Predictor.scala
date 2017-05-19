@@ -1,5 +1,6 @@
 package com.sony.prometheus.stages
 
+
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -10,6 +11,31 @@ import se.lth.cs.docforia.graph.text.Sentence
 
 import scala.collection.JavaConverters._
 import com.sony.prometheus.utils.Utils.pathExists
+import org.apache.log4j.LogManager
+
+class PredictorStage(path: String, corpusData: CorpusData, modelStage: RelationModelStage, posEncoder: PosEncoderStage,
+                     word2VecData: Word2VecData, neTypeEncoder: NeTypeEncoderStage,
+                     dependencyEncoderStage: DependencyEncoderStage, relationConfig: RelationConfigData)
+                    (implicit sqlContext: SQLContext, sparkContext: SparkContext)extends Task with Data {
+
+  override def getData(): String = {
+    if (!pathExists(path)) {
+      run()
+    }
+    path
+  }
+
+  override def run(): Unit = {
+    LogManager.getLogger(classOf[PredictorStage]).info("Extracting relations from corpus")
+
+    val predictor = Predictor.apply(modelStage, posEncoder, word2VecData, neTypeEncoder, dependencyEncoderStage, relationConfig)
+    val corpus = CorpusReader.readCorpus(corpusData.getData())
+    val data = predictor.extractRelations(corpus)
+
+    import sqlContext.implicits._
+    data.flatMap(d => d).toDF().write.json(path)
+  }
+}
 
 /**
   * Created by erik on 2017-02-28.
@@ -26,16 +52,6 @@ object Predictor {
     val relations = RelationConfigReader.load(relationConfig.getData())
     val ft = sqlContext.sparkContext.broadcast(featureTransformer)
     new Predictor(model, ft, relations)
-  }
-
-  def load(path: String)(implicit sqlContext: SQLContext): RDD[ExtractedRelation] = {
-    import sqlContext.implicits._
-    sqlContext.read.json(path).as[ExtractedRelation].rdd
-  }
-
-  def save(data: RDD[Seq[ExtractedRelation]], path: String)(implicit sqlContext: SQLContext): Unit = {
-    import sqlContext.implicits._
-    data.flatMap(d => d).toDF().write.json(path)
   }
 
 }
