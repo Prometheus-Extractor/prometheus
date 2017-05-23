@@ -25,7 +25,8 @@ object VildeAnnotater extends Annotater {
         .asString
 
       val docJson = response.body
-      Right(MemoryDocumentIO.getInstance().fromJson(docJson))
+      val doc = resolveCorefs(MemoryDocumentIO.getInstance().fromJson(docJson))
+      Right(doc)
     } catch {
       case e: java.net.SocketTimeoutException => Left(e.getMessage)
     }
@@ -50,11 +51,12 @@ object VildeAnnotater extends Annotater {
 
         val ned = pg.key(NED)
         corefs.filter(m => m.getProperty("mention-type") != "PROPER").foreach(m => {
-          // TODO: add label?
-          new NamedEntityDisambiguation(doc)
+          val newNed = new NamedEntityDisambiguation(doc)
             .setRange(m.getStart, m.getEnd)
             .setIdentifier(ned.getIdentifier)
             .setScore(ned.getScore)
+          if (ned.hasProperty("LABEL"))
+            newNed.putProperty("LABEL", ned.getProperty("LABEL"))
           m
         })
       })
