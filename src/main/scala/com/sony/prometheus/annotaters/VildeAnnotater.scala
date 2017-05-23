@@ -1,12 +1,10 @@
 package com.sony.prometheus.annotaters
 
-import java.util.stream.Collectors
-
 import scalaj.http.{Http, HttpResponse}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.{CoreferenceChain, CoreferenceChainEdge, CoreferenceMention, Token}
-import se.lth.cs.docforia.memstore.{MemoryDocument, MemoryDocumentIO}
+import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import se.lth.cs.docforia.query.QueryCollectors
 
 import scala.collection.JavaConverters._
@@ -35,30 +33,31 @@ object VildeAnnotater extends Annotater {
 
   /** Resolve any coreference chains in doc by copying over the named entity to the mentions
     */
-  private def resolveCoref(doc: Document): Document = {
-    val M = CoreferenceMention.`var`()
-    val EDGE = CoreferenceChainEdge.`var`()
-    val NED = NamedEntityDisambiguation.`var`()
+  private def resolveCorefs(doc: Document): Document = {
     val T = Token.`var`()
+    val M = CoreferenceMention.`var`()
+    val NED = NamedEntityDisambiguation.`var`()
 
-
-
-    val nedGroups = doc.select(T, M, NED).where(T).coveredBy(M)
+    doc.select(T, M, NED).where(T).coveredBy(M).where(NED).coveredBy(M)
       .stream()
       .collect(QueryCollectors.groupBy(doc, M).values(T).collector())
       .asScala
-      .map(pg => {
-        val what = pg.key().get(M).connectedEdges(classOf[CoreferenceChainEdge]).asScala.toList
-        val corefs = what.flatMap(edge => edge.getHead[CoreferenceChain].connectedNodes(classOf[CoreferenceMention]).asScala.toList)
-        val thisCoref = pg.key(M)
-        val ned = corefs.filter(coref => coref.getProperty("mention-type") == "PROPER").headOption.get.getL
-        //val newNed = new NamedEntityDisambiguation(doc).setRange(thisCoref.getStart, thisCoref.getEnd).setLabel(ned.get.)
+      .foreach(pg => {
+        val mention = pg.key(M)
+        val corefs = mention
+          .connectedEdges(classOf[CoreferenceChainEdge]).asScala
+          .flatMap(edge => edge.getHead[CoreferenceChain].connectedNodes(classOf[CoreferenceMention]).asScala)
 
-        (thisCoref, corefs, ned)
+        val ned = pg.key(NED)
+        corefs.filter(m => m.getProperty("mention-type") != "PROPER").foreach(m => {
+          // TODO: add label?
+          new NamedEntityDisambiguation(doc)
+            .setRange(m.getStart, m.getEnd)
+            .setIdentifier(ned.getIdentifier)
+            .setScore(ned.getScore)
+          m
+        })
       })
-      .toList
-
-
-    ???
+    doc
   }
 }
