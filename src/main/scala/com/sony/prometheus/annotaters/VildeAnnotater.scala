@@ -41,7 +41,7 @@ object VildeAnnotater extends Annotater {
 
     doc.select(T, M, NED).where(T).coveredBy(M).where(NED).coveredBy(M)
       .stream()
-      .collect(QueryCollectors.groupBy(doc, M).values(T).collector())
+      .collect(QueryCollectors.groupBy(doc, M, NED).values(T).collector())
       .asScala
       .foreach(pg => {
         val mention = pg.key(M)
