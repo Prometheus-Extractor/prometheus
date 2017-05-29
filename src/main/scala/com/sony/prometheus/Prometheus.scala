@@ -176,29 +176,35 @@ object Prometheus {
         log.info(s"Entity pairs saved to ${featuresPath}")
       } else {
 
-        // Train classifier
-        val modelTrainingTask = new RelationModelStage(
-          tempDataPath + "/models",
+        // Train models
+        val classificationModelStage = new ClassificationModelStage(
+          tempDataPath + "/classification_model",
           featureTransformerStage,
           conf.epochs()
         )
 
-        val path = modelTrainingTask.getData()
+        val filterModelStage = new FilterModelStage(
+          tempDataPath + "/filter_model",
+          featureTransformerStage
+        )
+
+        val relationModel = RelationModel(filterModelStage, classificationModelStage)
 
         if (conf.stage() == "train") {
-          log.info(s"Saved model to $path")
+          filterModelStage.getData()
+          log.info(s"Saved model to ${classificationModelStage.getData()} and ${filterModelStage.getData()}")
         } else {
           // Evaluate
           conf.evaluationFiles.foreach(evalFiles => {
             log.info("Performing evaluation")
-            val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage,
+            val predictor = Predictor(relationModel, posEncoderStage, word2VecData, neTypeEncoderStage,
               depEncoder, configData)
             performEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
           })
 
           // Serve HTTP API
           if (conf.demoServer()) {
-            val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, configData)
+            val predictor = Predictor(relationModel,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, configData)
             try {
               val task = BlazeBuilder
                 .bindHttp(PORT, "localhost")
