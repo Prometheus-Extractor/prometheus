@@ -129,8 +129,14 @@ object Evaluator {
 
     log.info("Testing predictor on test set")
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
-      // Filter out the UNKNOWN_CLASS. Distinct. Keep the empty lists.
-      .map(rs => rs.filter(r => !r.predictedPredicate.contains(predictor.UNKNOWN_CLASS)).distinct).cache()
+      .map(rs => rs.filter(r => !r.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
+      .map(rs => {
+        // Distinct the predictions for each data point. That is all triples are unique per data point.
+        rs.groupBy(r => s"${r.subject}${r.predictedPredicate}${r.obj}").map{
+          case (key: String, relations: Seq[ExtractedRelation]) =>
+            relations.sortBy(1 - _.probability).head
+        }.toSeq
+      }).cache()
 
     val zippedTestPrediction = evalDataPoints.zip(predictedRelations).cache()
 
