@@ -129,8 +129,8 @@ object Evaluator {
 
     log.info("Testing predictor on test set")
     val predictedRelations = predictor.extractRelations(annotatedEvidence)
-      // Filter out the UNKNOWN_CLASS. Keep the empty lists.
-      .map(rs => rs.filter(r => !r.predictedPredicate.contains(predictor.UNKNOWN_CLASS))).cache()
+      // Filter out the UNKNOWN_CLASS. Distinct. Keep the empty lists.
+      .map(rs => rs.filter(r => !r.predictedPredicate.contains(predictor.UNKNOWN_CLASS)).distinct).cache()
 
     val zippedTestPrediction = evalDataPoints.zip(predictedRelations).cache()
 
