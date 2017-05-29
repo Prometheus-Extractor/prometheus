@@ -13,7 +13,7 @@ import scala.collection.JavaConverters._
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.LogManager
 
-class PredictorStage(path: String, corpusData: CorpusData, modelStage: RelationModelStage, posEncoder: PosEncoderStage,
+class PredictorStage(path: String, corpusData: CorpusData, model: RelationModel, posEncoder: PosEncoderStage,
                      word2VecData: Word2VecData, neTypeEncoder: NeTypeEncoderStage,
                      dependencyEncoderStage: DependencyEncoderStage, relationConfig: RelationConfigData)
                     (implicit sqlContext: SQLContext, sparkContext: SparkContext)extends Task with Data {
@@ -28,7 +28,7 @@ class PredictorStage(path: String, corpusData: CorpusData, modelStage: RelationM
   override def run(): Unit = {
     LogManager.getLogger(classOf[PredictorStage]).info("Extracting relations from corpus")
 
-    val predictor = Predictor.apply(modelStage, posEncoder, word2VecData, neTypeEncoder, dependencyEncoderStage, relationConfig)
+    val predictor = Predictor.apply(model, posEncoder, word2VecData, neTypeEncoder, dependencyEncoderStage, relationConfig)
     val corpus = CorpusReader.readCorpus(corpusData.getData())
     val data = predictor.extractRelations(corpus)
 
@@ -42,13 +42,12 @@ class PredictorStage(path: String, corpusData: CorpusData, modelStage: RelationM
   */
 object Predictor {
 
-  def apply(modelStage: RelationModelStage, posEncoder: PosEncoderStage, word2VecData: Word2VecData,
+  def apply(model: RelationModel,  posEncoder: PosEncoderStage, word2VecData: Word2VecData,
             neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage, relationConfig: RelationConfigData)
            (implicit sqlContext: SQLContext): Predictor = {
 
     val featureTransformer = FeatureTransformer(word2VecData.getData(), posEncoder.getData(), neTypeEncoder.getData(),
                                                 dependencyEncoderStage.getData())
-    val model = RelationModel.load(modelStage.getData(), sqlContext.sparkContext)
     val relations = RelationConfigReader.load(relationConfig.getData())
     val ft = sqlContext.sparkContext.broadcast(featureTransformer)
     new Predictor(model, ft, relations)
