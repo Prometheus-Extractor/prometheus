@@ -170,7 +170,9 @@ object Prometheus {
         depEncoder,
         featureExtractionTask)
 
-      /* Preprocess done */
+      val featuresPath = featureTransformerStage.getData()
+      log.info(s"Entity pairs saved to ${featuresPath}")
+
       if (conf.stage() == "preprocess") {
         val featuresPath = featureTransformerStage.getData()
         log.info(s"Entity pairs saved to ${featuresPath}")
@@ -220,7 +222,23 @@ object Prometheus {
                 }
               }
           }
+
+          // Start generating data
+          val predictorStage = new PredictorStage(
+            tempDataPath + "/extractions",
+            corpusData,
+            relationModel,
+            posEncoderStage,
+            word2VecData,
+            neTypeEncoderStage,
+            depEncoder,
+            configData)
+
+          // Force running
+          predictorStage.run()
+
         }
+
       }
       log.info("Successfully completed all requested stages!")
     } finally {

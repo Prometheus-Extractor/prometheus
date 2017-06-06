@@ -33,7 +33,9 @@ class PredictorStage(path: String, corpusData: CorpusData, model: RelationModel,
     val data = predictor.extractRelations(corpus)
 
     import sqlContext.implicits._
+    data.cache()
     data.flatMap(d => d).toDF().write.json(path)
+    data.unpersist(false)
   }
 }
 
@@ -58,6 +60,8 @@ object Predictor {
 class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: Seq[Relation]) extends Serializable {
 
   val UNKNOWN_CLASS = "<unknown_class>"
+  val SENTENCE_MIN_LENGTH = 5
+  val SENTENCE_MAX_LENGTH = 300
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
 
@@ -68,12 +72,14 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
         .asScala
         .toSeq
         .map(s => doc.subDocument(s.getStart, s.getEnd))
+        .filter(s => s.length >= SENTENCE_MIN_LENGTH && s.length <= SENTENCE_MAX_LENGTH)
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
         .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
           p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow))
         .map(model.predict)
+        .filter(_.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
 
       classes.zip(points).map{
         case (result: Prediction, point: TestDataPoint) =>
