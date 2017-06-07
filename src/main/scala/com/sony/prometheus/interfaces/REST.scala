@@ -19,9 +19,9 @@ object REST {
       VildeAnnotater.annotate(input, lang = lang, conf = "herd") match {
         case Right(doc) => {
           val results = predictor
-            .extractRelations(sc.parallelize(List(doc)))
+            .extractRelationsLocally(Seq(doc))
             .flatMap(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
-          val res = Json.toJson(results.collect()).toString
+          val res = Json.toJson(results).toString
           Ok(res).putHeaders(`Content-Type`(`application/json`))
         }
         case Left(msg) => InternalServerError(msg)

@@ -89,6 +89,32 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
     })
   }
 
+  def extractRelationsLocally(docs: Seq[Document])(implicit sqlContext: SQLContext): Seq[Seq[ExtractedRelation]] = {
+
+    val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).toList.toMap
+
+    docs.map(doc => {
+      val sentences = doc.nodes(classOf[Sentence])
+        .asScala
+        .toSeq
+        .map(s => doc.subDocument(s.getStart, s.getEnd))
+        .filter(s => s.length >= SENTENCE_MIN_LENGTH && s.length <= SENTENCE_MAX_LENGTH)
+
+      val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
+      val classes = points
+        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
+          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow))
+        .map(model.predict)
+        .filter(_.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
+
+      classes.zip(points).map{
+        case (result: Prediction, point: TestDataPoint) =>
+          val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
+          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), result.probability)
+      }.toList
+    })
+  }
+
 }
 
 case class ExtractedRelation(
