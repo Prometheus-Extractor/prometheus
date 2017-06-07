@@ -170,9 +170,6 @@ object Prometheus {
         depEncoder,
         featureExtractionTask)
 
-      val featuresPath = featureTransformerStage.getData()
-      log.info(s"Entity pairs saved to ${featuresPath}")
-
       if (conf.stage() == "preprocess") {
         val featuresPath = featureTransformerStage.getData()
         log.info(s"Entity pairs saved to ${featuresPath}")
