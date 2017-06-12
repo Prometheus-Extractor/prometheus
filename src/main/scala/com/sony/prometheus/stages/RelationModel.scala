@@ -57,7 +57,7 @@ object RelationModel {
 class RelationModel(val filterModel: LogisticRegressionModel, val classModel: MultiLayerNetwork) extends Serializable {
 
   val NN_THRESHOLD = 0.0
-  val LOG_THRESHOLD = 0.5
+  val LOG_THRESHOLD = 0.85
 
   filterModel.clearThreshold()
 
