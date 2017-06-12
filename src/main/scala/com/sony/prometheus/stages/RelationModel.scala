@@ -6,6 +6,7 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
+import org.nd4j.linalg.cpu.nativecpu.NDArray
 import org.nd4j.linalg.factory.Nd4j
 
 /** Provides the RelationModel classifier
@@ -60,6 +61,7 @@ class RelationModel(val filterModel: LogisticRegressionModel, val classModel: Mu
   val LOG_THRESHOLD = 0.85
 
   filterModel.clearThreshold()
+  classModel.conf().setUseDropConnect(false);
 
   def predict(vector: Vector): Prediction = {
     val vec = Nd4j.create(vector.toArray)
@@ -70,8 +72,9 @@ class RelationModel(val filterModel: LogisticRegressionModel, val classModel: Mu
       Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, (1 - isRelation))
     } else {
 
-      val cls = classModel.predict(vec)(0)
-      val prob = classModel.output(vec, false).getDouble(cls)
+      val output = classModel.output(vec, false)
+      val cls = Nd4j.argMax(output).getInt(0)
+      val prob = output.getDouble(cls);
 
       if (prob >= NN_THRESHOLD) {
         Prediction(cls, prob * isRelation)
