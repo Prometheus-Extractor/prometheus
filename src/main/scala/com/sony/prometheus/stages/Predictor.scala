@@ -79,9 +79,8 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
         .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
           p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow))
         .map(model.predict)
-        .filter(_.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
 
-      classes.zip(points).map{
+      classes.zip(points).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR).map{
         case (result: Prediction, point: TestDataPoint) =>
           val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
           ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), result.probability)
@@ -105,9 +104,8 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
         .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
           p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow))
         .map(model.predict)
-        .filter(_.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
 
-      classes.zip(points).map{
+      classes.zip(points).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR).map{
         case (result: Prediction, point: TestDataPoint) =>
           val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
           ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), result.probability)

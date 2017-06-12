@@ -69,20 +69,19 @@ class RelationModel(val filterModel: LogisticRegressionModel, val classModel: Mu
     val isRelation = filterModel.predict(vector)
 
     if(isRelation < LOG_THRESHOLD){
-      Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, (1 - isRelation))
+      Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, (1 - isRelation), 1 - isRelation, 0.0)
     } else {
-
       val output = classModel.output(vec, false)
       val cls = Nd4j.argMax(output).getInt(0)
       val prob = output.getDouble(cls);
 
       if (prob >= NN_THRESHOLD) {
-        Prediction(cls, prob * isRelation)
+        Prediction(cls, prob * isRelation, isRelation, prob)
       } else {
-        Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, prob * (1.0 - isRelation))
+        Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, prob * (1.0 - isRelation), 1 - isRelation, prob)
       }
     }
   }
 }
 
-case class Prediction(clsIdx: Int, probability: Double)
+case class Prediction(clsIdx: Int, probability: Double, filterProb: Double, classProb: Double)
