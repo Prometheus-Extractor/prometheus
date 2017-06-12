@@ -13,9 +13,13 @@ import play.api.libs.json._
 import java.nio.charset.{Charset, CodingErrorAction}
 
 object REST {
+
+  val log = LogManager.getLogger("REST Api")
+
   def api(predictor: Predictor)
          (implicit sc: SparkContext, sqlContext: SQLContext): HttpService = HttpService {
     case req @ POST -> Root / "api" / lang / "extract" =>
+      log.info(s"Incoming request: ${req}")
       val is = scalaz.stream.io.toInputStream(req.body)
       val decoder = Charset.forName("UTF-8").newDecoder()
       decoder.onMalformedInput(CodingErrorAction.IGNORE)
@@ -26,10 +30,11 @@ object REST {
             .extractRelationsLocally(Seq(doc))
             .flatMap(rels => rels.filter(!_.predictedPredicate.contains(predictor.UNKNOWN_CLASS)))
           val res = Json.toJson(results).toString
+          log.info(s"Returning request: ${req}")
           Ok(res).putHeaders(`Content-Type`(`application/json`))
         }
         case Left(msg) => {
-          LogManager.getLogger("REST Api").error(s"Error while handling REST api request: $msg")
+          log.error(s"Error while handling REST api request: $msg")
           InternalServerError(msg)
         }
       }
