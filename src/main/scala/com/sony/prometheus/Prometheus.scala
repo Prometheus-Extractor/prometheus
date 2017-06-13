@@ -59,7 +59,7 @@ object Prometheus {
       default = Option(1.0))
     val probabilityCutoff = opt[Double](
       descr = "use this to sample a fraction of the corpus",
-      validate = x => (x > 0 && x <= 1),
+      validate = x => (x >= 0 && x <= 1),
       default = Option(RelationModel.THRESHOLD))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")

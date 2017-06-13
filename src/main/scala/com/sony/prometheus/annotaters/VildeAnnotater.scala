@@ -3,7 +3,7 @@ package com.sony.prometheus.annotaters
 import scalaj.http.{Http, HttpResponse}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
-import se.lth.cs.docforia.graph.text.{CoreferenceChain, CoreferenceChainEdge, CoreferenceMention, Token}
+import se.lth.cs.docforia.graph.text._
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
 import se.lth.cs.docforia.query.QueryCollectors
 
@@ -38,19 +38,24 @@ object VildeAnnotater extends Annotater {
     val T = Token.`var`()
     val M = CoreferenceMention.`var`()
     val NED = NamedEntityDisambiguation.`var`()
+    val NE = NamedEntity.`var`()
 
-    doc.select(T, M, NED).where(T).coveredBy(M).where(NED).coveredBy(M)
+    doc.select(T, M, NED, NE).where(T).coveredBy(M).where(NED, NE).coveredBy(M)
       .stream()
-      .collect(QueryCollectors.groupBy(doc, M, NED).values(T).collector())
+      .collect(QueryCollectors.groupBy(doc, M, NED, NE).values(T).collector())
       .asScala
       .foreach(pg => {
         val mention = pg.key(M)
+        val ne = pg.key(NE)
         val corefs = mention
           .connectedEdges(classOf[CoreferenceChainEdge]).asScala
           .flatMap(edge => edge.getHead[CoreferenceChain].connectedNodes(classOf[CoreferenceMention]).asScala)
 
         val ned = pg.key(NED)
         corefs.filter(m => m.getProperty("mention-type") != "PROPER").foreach(m => {
+          val newNe = new NamedEntity(doc)
+            .setRange(m.getStart, m.getEnd)
+            .setLabel(ne.getLabel)
           val newNed = new NamedEntityDisambiguation(doc)
             .setRange(m.getStart, m.getEnd)
             .setIdentifier(ned.getIdentifier)
