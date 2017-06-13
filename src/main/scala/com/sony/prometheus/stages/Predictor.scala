@@ -78,7 +78,9 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
       val classes = points
         .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
           p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow)))
-        .map(x => (model.predict(x._2), x._1)).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
+        .map(x => (model.predict(x._2), x._1))
+        .filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
+        .filter(x => prunePrediction(x._1, x._2))
 
       classes.map{
         case (result: Prediction, point: TestDataPoint) =>
@@ -104,7 +106,9 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
       val classes = points
         .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
           p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow)))
-        .map(x => (model.predict(x._2), x._1)).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
+        .map(x => (model.predict(x._2), x._1))
+        .filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
+        .filter(x => prunePrediction(x._1, x._2))
 
       classes.map{
         case (result: Prediction, point: TestDataPoint) =>
@@ -113,6 +117,24 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
                             result.probability, result.filterProb, result.classProb)
       }.toList
     })
+  }
+
+  /**
+    * Performs a sanity check to prune away bad predictions
+    */
+  def prunePrediction(prediction: Prediction, point: TestDataPoint): Boolean = {
+
+    val relation = relations.find(_.classIdx == prediction.clsIdx).get
+    if(relation.types.length < 2){
+      true
+    } else {
+      val ent1Type = point.ent1Type.toLowerCase
+      val ent2Type = point.ent2Type.toLowerCase
+      val expected1 = relation.types(0).toLowerCase
+      val expected2 = relation.types(1).toLowerCase
+      ent1Type == expected1 && ent2Type == expected2 || ent1Type == expected2 && ent2Type == expected1
+    }
+
   }
 
 }

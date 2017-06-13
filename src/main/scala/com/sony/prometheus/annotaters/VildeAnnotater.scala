@@ -1,5 +1,8 @@
 package com.sony.prometheus.annotaters
 
+import com.sony.prometheus.Prometheus
+import com.sony.prometheus.stages.Coref
+
 import scalaj.http.{Http, HttpResponse}
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
@@ -25,46 +28,14 @@ object VildeAnnotater extends Annotater {
         .asString
 
       val docJson = response.body
-      val doc = resolveCorefs(MemoryDocumentIO.getInstance().fromJson(docJson))
+      var doc: Document = MemoryDocumentIO.getInstance().fromJson(docJson)
+      if (Prometheus.conf.corefs())
+        doc = Coref.propagateCorefs(doc)
+      
       Right(doc)
     } catch {
       case e: java.net.SocketTimeoutException => Left(e.getMessage)
     }
   }
 
-  /** Resolve any coreference chains in doc by copying over the named entity to the mentions
-    */
-  private def resolveCorefs(doc: Document): Document = {
-    val T = Token.`var`()
-    val M = CoreferenceMention.`var`()
-    val NED = NamedEntityDisambiguation.`var`()
-    val NE = NamedEntity.`var`()
-
-    doc.select(T, M, NED, NE).where(T).coveredBy(M).where(NED, NE).coveredBy(M)
-      .stream()
-      .collect(QueryCollectors.groupBy(doc, M, NED, NE).values(T).collector())
-      .asScala
-      .foreach(pg => {
-        val mention = pg.key(M)
-        val ne = pg.key(NE)
-        val corefs = mention
-          .connectedEdges(classOf[CoreferenceChainEdge]).asScala
-          .flatMap(edge => edge.getHead[CoreferenceChain].connectedNodes(classOf[CoreferenceMention]).asScala)
-
-        val ned = pg.key(NED)
-        corefs.filter(m => m.getProperty("mention-type") != "PROPER").foreach(m => {
-          val newNe = new NamedEntity(doc)
-            .setRange(m.getStart, m.getEnd)
-            .setLabel(ne.getLabel)
-          val newNed = new NamedEntityDisambiguation(doc)
-            .setRange(m.getStart, m.getEnd)
-            .setIdentifier(ned.getIdentifier)
-            .setScore(ned.getScore)
-          if (ned.hasProperty("LABEL"))
-            newNed.putProperty("LABEL", ned.getProperty("LABEL"))
-          m
-        })
-      })
-    doc
-  }
 }

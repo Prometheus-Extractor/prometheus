@@ -21,6 +21,7 @@ object Prometheus {
 
   val DATA_PARTITIONS = 432
   val PORT = 8080
+  var conf: Conf = null
 
   /** Provides arugment parsing
    */
@@ -58,9 +59,12 @@ object Prometheus {
       validate = x => (x > 0 && x <= 1),
       default = Option(1.0))
     val probabilityCutoff = opt[Double](
-      descr = "use this to sample a fraction of the corpus",
+      descr = "use this to set the cutoff probability for extractions",
       validate = x => (x >= 0 && x <= 1),
       default = Option(RelationModel.THRESHOLD))
+    val corefs = opt[Boolean](
+      descr = "enable co-reference resolutions for annotation",
+      default = Option(false))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
@@ -114,7 +118,7 @@ object Prometheus {
   }
 
   def main(args: Array[String]): Unit = {
-    val conf = new Conf(args)
+    conf = new Conf(args)
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
     val log = LogManager.getLogger(Prometheus.getClass)
