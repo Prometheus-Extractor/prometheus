@@ -16,7 +16,14 @@ object Utils {
     final val RED: String = "\u001B[31m"
     final val GREEN: String = "\u001B[32m"
   }
+  import Colours._
 
+  def colouredExistString(fileType: String, file: String, exists: Boolean): String = {
+    if (exists)
+      s"${GREEN}${fileType} ${file} exists${RESET}"
+    else
+      s"${RED}${fileType} ${file} is not available${RESET}"
+  }
 
   /** Returns true if path (file or dir) exists
     * @param path - the path to check, hdfs or local
@@ -31,12 +38,12 @@ object Utils {
         )
         val fs = org.apache.hadoop.fs.FileSystem.get(sc.hadoopConfiguration)
         val exists = fs.exists(new Path(suffix))
-        println(s"HDFS file $suffix $exists")
+        println(colouredExistString("HDFS file", suffix, exists))
         exists
       }
       case Array("file", suffix) => {
         val exists = Files.exists(Paths.get(suffix))
-        println(s"Local file $suffix $exists")
+        println(colouredExistString("Local file", suffix, exists))
         exists
       }
       case Array("s3", suffix) => {
@@ -45,7 +52,7 @@ object Utils {
         conf.set("fs.default.name", "s3://sony-prometheus-data")
         val fs = org.apache.hadoop.fs.FileSystem.get(conf)
         val exists = fs.exists(new Path(suffix))
-        println(s"S3 file $suffix $exists")
+        println(colouredExistString("s3 file", suffix, exists))
         exists
       }
       case _ => {

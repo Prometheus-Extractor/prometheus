@@ -14,8 +14,8 @@ import scala.collection.JavaConverters._
   */
 object VildeAnnotater extends Annotater {
   override def annotate(input: String, lang: String, conf: String): Either[String, Document] = {
-    val CONNECTION_TIMEOUT = 2000
-    val READ_TIMEOUT = 10000
+    val CONNECTION_TIMEOUT = 5000
+    val READ_TIMEOUT = 60000
     val vildeURL = s"http://vilde.cs.lth.se:9000/$lang/$conf/api/json"
     try {
       val response: HttpResponse[String] = Http(vildeURL)

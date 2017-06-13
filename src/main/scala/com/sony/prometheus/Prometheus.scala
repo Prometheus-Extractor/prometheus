@@ -57,6 +57,10 @@ object Prometheus {
       descr = "use this to sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
       default = Option(1.0))
+    val probabilityCutoff = opt[Double](
+      descr = "use this to sample a fraction of the corpus",
+      validate = x => (x > 0 && x <= 1),
+      default = Option(RelationModel.THRESHOLD))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
@@ -170,35 +174,40 @@ object Prometheus {
         depEncoder,
         featureExtractionTask)
 
-      /* Preprocess done */
       if (conf.stage() == "preprocess") {
         val featuresPath = featureTransformerStage.getData()
         log.info(s"Entity pairs saved to ${featuresPath}")
       } else {
 
-        // Train classifier
-        val modelTrainingTask = new RelationModelStage(
-          tempDataPath + "/models",
+        // Train models
+        val classificationModelStage = new ClassificationModelStage(
+          tempDataPath + "/classification_model",
           featureTransformerStage,
           conf.epochs()
         )
 
-        val path = modelTrainingTask.getData()
+        val filterModelStage = new FilterModelStage(
+          tempDataPath + "/filter_model",
+          featureTransformerStage
+        )
+
+        val relationModel = RelationModel(filterModelStage, classificationModelStage, conf.probabilityCutoff())
 
         if (conf.stage() == "train") {
-          log.info(s"Saved model to $path")
+          filterModelStage.getData()
+          log.info(s"Saved model to ${classificationModelStage.getData()} and ${filterModelStage.getData()}")
         } else {
           // Evaluate
           conf.evaluationFiles.foreach(evalFiles => {
             log.info("Performing evaluation")
-            val predictor = Predictor(modelTrainingTask, posEncoderStage, word2VecData, neTypeEncoderStage,
+            val predictor = Predictor(relationModel, posEncoderStage, word2VecData, neTypeEncoderStage,
               depEncoder, configData)
             performEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
           })
 
           // Serve HTTP API
           if (conf.demoServer()) {
-            val predictor = Predictor(modelTrainingTask,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, configData)
+            val predictor = Predictor(relationModel,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, configData)
             try {
               val task = BlazeBuilder
                 .bindHttp(PORT, "localhost")
@@ -214,7 +223,23 @@ object Prometheus {
                 }
               }
           }
+
+          // Start generating data
+          val predictorStage = new PredictorStage(
+            tempDataPath + "/extractions",
+            corpusData,
+            relationModel,
+            posEncoderStage,
+            word2VecData,
+            neTypeEncoderStage,
+            depEncoder,
+            configData)
+
+          // Force running
+          predictorStage.run()
+
         }
+
       }
       log.info("Successfully completed all requested stages!")
     } finally {
