@@ -76,11 +76,11 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
-        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
-          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow))
-        .map(model.predict)
+        .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
+          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow)))
+        .map(x => (model.predict(x._2), x._1)).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
 
-      classes.zip(points).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR).map{
+      classes.map{
         case (result: Prediction, point: TestDataPoint) =>
           val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
           ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(),
@@ -102,11 +102,11 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
 
       val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
       val classes = points
-        .map(p => transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
-          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow))
-        .map(model.predict)
+        .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
+          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow)))
+        .map(x => (model.predict(x._2), x._1)).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
 
-      classes.zip(points).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR).map{
+      classes.map{
         case (result: Prediction, point: TestDataPoint) =>
           val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
           ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(),

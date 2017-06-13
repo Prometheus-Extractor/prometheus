@@ -13,6 +13,8 @@ import org.nd4j.linalg.factory.Nd4j
  */
 object RelationModel {
 
+  val THRESHOLD = 0.75
+
   val log = LogManager.getLogger(classOf[RelationModel])
 
   def splitToTestTrain[T](data: RDD[T], testPercentage: Double = 0.1): (RDD[T], RDD[T]) = {
@@ -44,42 +46,37 @@ object RelationModel {
     balancedDataset //.repartition(Prometheus.DATA_PARTITIONS)
   }
 
-  def apply(filterModelStage: FilterModelStage, classificationModelStage: ClassificationModelStage)
-           (implicit sqlContext: SQLContext): RelationModel = {
+  def apply(filterModelStage: FilterModelStage, classificationModelStage: ClassificationModelStage,
+            threshold: Double = RelationModel.THRESHOLD) (implicit sqlContext: SQLContext): RelationModel = {
 
 
     val filterModel = FilterModel.load(filterModelStage.getData())
     val classificationModel = ClassificationModel.load(classificationModelStage.getData())
-    new RelationModel(filterModel, classificationModel)
+    new RelationModel(filterModel, classificationModel, threshold)
   }
 
 }
 
-class RelationModel(val filterModel: LogisticRegressionModel, val classModel: MultiLayerNetwork) extends Serializable {
-
-  val NN_THRESHOLD = 0.0
-  val LOG_THRESHOLD = 0.85
+class RelationModel(val filterModel: LogisticRegressionModel, val classModel: MultiLayerNetwork,
+                    val threshold: Double) extends Serializable {
 
   filterModel.clearThreshold()
-  classModel.conf().setUseDropConnect(false);
+  classModel.conf().setUseDropConnect(false)
 
-  def predict(vector: Vector): Prediction = {
+  def predict(vector: Vector, threshold: Double = threshold): Prediction = {
     val vec = Nd4j.create(vector.toArray)
 
     val isRelation = filterModel.predict(vector)
+    val output = classModel.output(vec, false)
+    val cls = Nd4j.argMax(output).getInt(0)
+    val prob = output.getDouble(cls)
 
-    if(isRelation < LOG_THRESHOLD){
-      Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, (1 - isRelation), 1 - isRelation, 0.0)
+    val combinedProb = isRelation * prob
+
+    if(combinedProb < threshold){
+      Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, (1 - combinedProb), isRelation, prob)
     } else {
-      val output = classModel.output(vec, false)
-      val cls = Nd4j.argMax(output).getInt(0)
-      val prob = output.getDouble(cls);
-
-      if (prob >= NN_THRESHOLD) {
-        Prediction(cls, prob * isRelation, isRelation, prob)
-      } else {
-        Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, prob * (1.0 - isRelation), 1 - isRelation, prob)
-      }
+      Prediction(cls, combinedProb, isRelation, prob)
     }
   }
 }

@@ -57,6 +57,10 @@ object Prometheus {
       descr = "use this to sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
       default = Option(1.0))
+    val probabilityCutoff = opt[Double](
+      descr = "use this to sample a fraction of the corpus",
+      validate = x => (x > 0 && x <= 1),
+      default = Option(RelationModel.THRESHOLD))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
@@ -187,7 +191,7 @@ object Prometheus {
           featureTransformerStage
         )
 
-        val relationModel = RelationModel(filterModelStage, classificationModelStage)
+        val relationModel = RelationModel(filterModelStage, classificationModelStage, conf.probabilityCutoff())
 
         if (conf.stage() == "train") {
           filterModelStage.getData()
