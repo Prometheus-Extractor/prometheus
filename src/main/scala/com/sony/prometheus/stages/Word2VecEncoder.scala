@@ -82,6 +82,8 @@ class Word2VecEncoder extends Externalizable{
       log.info("Reading word2vec")
       val vocabFile = new File(SparkFiles.get(vocabName))
       val vecsFile = new File(SparkFiles.get(vecName))
+      vocabFile.deleteOnExit()
+      vecsFile.deleteOnExit()
       val startTime = System.currentTimeMillis()
       model = new Word2VecDict(vocabFile, vecsFile)
       log.info(s"Read binary word2vec model in ${(System.currentTimeMillis() - startTime)/1000} s")
