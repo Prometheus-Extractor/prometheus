@@ -9,7 +9,7 @@ import se.lth.cs.docforia.memstore.MemoryDocumentIO
 object VildeAnnotater extends Annotater {
   override def annotate(input: String, lang: String, conf: String): Either[String, Document] = {
     val CONNECTION_TIMEOUT = 5000
-    val READ_TIMEOUT = 30000
+    val READ_TIMEOUT = 60000
     val vildeURL = s"http://vilde.cs.lth.se:9000/$lang/$conf/api/json"
     try {
       val response: HttpResponse[String] = Http(vildeURL)

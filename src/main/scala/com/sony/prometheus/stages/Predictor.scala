@@ -83,7 +83,8 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
       classes.zip(points).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR).map{
         case (result: Prediction, point: TestDataPoint) =>
           val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
-          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), result.probability)
+          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(),
+                            result.probability, result.filterProb, result.classProb)
       }.toList
     })
   }
@@ -108,7 +109,8 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
       classes.zip(points).filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR).map{
         case (result: Prediction, point: TestDataPoint) =>
           val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
-          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(), result.probability)
+          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(),
+                            result.probability, result.filterProb, result.classProb)
       }.toList
     })
   }
@@ -121,7 +123,9 @@ case class ExtractedRelation(
   obj: String,
   sentence: String,
   source: String,
-  probability: Double)
+  probability: Double,
+  filterProbability: Double,
+  classificationProbability: Double)
 
 object ExtractedRelation {
   implicit val extractedRelationFormat = Json.format[ExtractedRelation]
