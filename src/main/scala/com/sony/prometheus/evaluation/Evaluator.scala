@@ -9,7 +9,7 @@ import scala.collection.JavaConverters._
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
-import com.sony.prometheus.stages.{Predictor, _}
+import com.sony.prometheus.stages.{Predictor, PredictorStage, _}
 import com.sony.prometheus.utils.Utils
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.rdd.RDD
@@ -22,17 +22,17 @@ import se.lth.cs.docforia.memstore.{MemoryDocument, MemoryDocumentIO}
 
 /** Pipeline stage to run evaluation
  *
- * @param path            path to save evaluation results
- * @param evaluationData  the Data to evaluate, should point to path with
- * [[EvaluationDataPoint]]:s
+ * @param path           path to save evaluation results
+ * @param evaluationData the Data to evaluate, should point to path with
+ *                       [[ModelEvaluationDataPoint]]:s
  */
-class EvaluatorStage(
+class ModelEvaluatorStage(
   path: String,
-  evaluationData: Data,
+  evaluationData: ModelEvaluationData,
   lang: String,
   predictor: Predictor,
   nBest: Int)
-  (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
     if (!pathExists(path)) {
@@ -42,7 +42,7 @@ class EvaluatorStage(
   }
 
   override def run(): Unit = {
-    val evalDataPoints: RDD[EvaluationDataPoint] = EvaluationDataReader.load(evaluationData.getData())
+    val evalDataPoints: RDD[ModelEvaluationDataPoint] = ModelEvaluationDataReader.load(evaluationData.getData())
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
       .filter(dP => dP.positive())  // Don't use the "incorrect annotation by the google algorithm"
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
@@ -52,18 +52,38 @@ class EvaluatorStage(
   }
 }
 
-/** Performs evaluation of [[EvaluationDataPoint]]:s
+class DataEvaluationStage(
+   path: String,
+   entityPairs: EntityPairExtractorStage,
+   lang: String,
+   predictions: PredictorStage,
+   nBest: Int)(implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+
+  override def getData(): String = {
+    if (!pathExists(path)) {
+      run()
+    }
+    path
+  }
+
+  override def run(): Unit = {
+    val relations = EntityPairExtractor.load(entityPairs.getData())
+    val extractions = Predictor.load(predictions.getData())
+  }
+}
+
+/** Performs evaluation of [[ModelEvaluationDataPoint]]:s
  */
 object Evaluator {
 
 
   /** Annotate the snippets data with VildeAnnotater, use cache if possible
     *
-    * @param evalDataPoints   [[EvaluationDataPoint]]:s to annotate
-    * @param path             path to the cache file
+    * @param evalDataPoints [[ModelEvaluationDataPoint]]:s to annotate
+    * @param path           path to the cache file
     * @return                 RDD of annotateted Documents
     */
-  def annotateTestData(evalDataPoints: RDD[EvaluationDataPoint], path: String, lang: String)
+  def annotateTestData(evalDataPoints: RDD[ModelEvaluationDataPoint], path: String, lang: String)
                       (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
     import sqlContext.implicits._
 
@@ -104,11 +124,37 @@ object Evaluator {
 
   val log = LogManager.getLogger(Evaluator.getClass)
 
+  def evaluateData(knownRelations: RDD[Relation], extractions: RDD[ExtractedRelation])
+                  (implicit sqlContext: SQLContext, sc: SparkContext): Unit = {
+    extractions.cache()
+    knownRelations.cache()
+    val nbrExtractedRelations = extractions.count()
+    val nbrDataPoints = knownRelations.count()
+    log.info(s"validationPoints.count: $nbrDataPoints")
+
+    // TODO: keep per relation information
+
+    val validationStrings = knownRelations
+      .flatMap(rel =>
+        rel.entities.map(entPair => {
+          s"${entPair.source}/${rel.id}/${entPair.dest}"
+        })
+      )
+    val extractionStrings = extractions.map(rel =>
+      s"${rel.source}/${rel.predictedPredicate}/${rel.obj}"
+    )
+
+    val nbrTruePositives = extractionStrings.intersection(validationStrings).count()
+    val nbrFalsePositives = extractionStrings.count() - nbrTruePositives
+  }
+
+
   /** Returns an [[EvaluationResult]]
-    * @param evalDataPoints   RDD of [[EvaluationDataPoint]]
+ *
+    * @param evalDataPoints RDD of [[ModelEvaluationDataPoint]]
     * @return                 an [[EvaluationResult]]
    */
-  def evaluate(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor,
+  def evaluate(evalDataPoints: RDD[ModelEvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor,
                debugOutFile: Option[String], nMostProbable: Option[Int])
     (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
@@ -122,7 +168,7 @@ object Evaluator {
     val nbrNegDataPoints = nbrEvalDataPoints - nbrTrueDataPoints
 
     log.info(s"There are ${nbrTrueDataPoints.toInt} positive examples in the evaluation data")
-    log.info(s"There are ${nbrNegDataPoints} negative examples in the evaluation data")
+    log.info(s"There are $nbrNegDataPoints negative examples in the evaluation data")
 
     val herdRecall = herdPoints.count() / nbrEvalDataPoints.toDouble
     log.info(s"Herd successfully found ${herdPoints.count()} target entity pairs, and recall is about: $herdRecall")
@@ -141,7 +187,7 @@ object Evaluator {
     val zippedTestPrediction = evalDataPoints.zip(predictedRelations).cache()
 
     val nbrPredictedRelations = predictedRelations.map(_.length).reduce(_ + _)
-    log.info(s"Extracted ${nbrPredictedRelations} relations from evaluation data")
+    log.info(s"Extracted $nbrPredictedRelations relations from evaluation data")
 
     log.info("Evaluating the predicted relations")
     val truePositives: RDD[ExtractedRelation] = zippedTestPrediction.flatMap{
@@ -156,12 +202,14 @@ object Evaluator {
 
     val nbrTruePositives = truePositives.count()
     val nbrFalsePositives = falsePositives.count()
+
     log.info(s"True Positives: $nbrTruePositives")
     log.info(s"False Positives: $nbrFalsePositives")
 
     val recall: Double = nbrTruePositives / nbrTrueDataPoints.toDouble
     val precision: Double = nbrTruePositives / nbrPredictedRelations.toDouble
     val f1: Double = computeF1(recall, precision)
+
     log.info(s"Precision is $precision")
     log.info(s"Recall is $recall")
     log.info(s"F1 is $f1")
@@ -185,20 +233,20 @@ object Evaluator {
     evaluation
   }
 
-  private def herdSucceded(zippedPoint: (EvaluationDataPoint, Document)): Boolean = {
+  private def herdSucceded(zippedPoint: (ModelEvaluationDataPoint, Document)): Boolean = {
     val dataPoint = zippedPoint._1
     val evidence = zippedPoint._2
     val ents = evidence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq.map(_.getIdentifier.split(":").last)
     ents.contains(dataPoint.wd_obj) && ents.contains(dataPoint.wd_sub)
   }
 
-  private def isCorrectPrediction(datapoint: EvaluationDataPoint, r: ExtractedRelation): Boolean = {
+  private def isCorrectPrediction(datapoint: ModelEvaluationDataPoint, r: ExtractedRelation): Boolean = {
     datapoint.wd_obj == r.obj && datapoint.wd_sub == r.subject && datapoint.wd_pred == r.predictedPredicate
   }
 
   private def computeF1(recall: Double, precision: Double): Double = 2 * (precision * recall) / (precision + recall)
 
-  private def writeDebug(evalDataPoints: RDD[EvaluationDataPoint], annotatedEvidence: RDD[Document],
+  private def writeDebug(evalDataPoints: RDD[ModelEvaluationDataPoint], annotatedEvidence: RDD[Document],
                          predictedRelations: RDD[Seq[ExtractedRelation]], debugOutFile: Option[String])
                         (implicit sc: SparkContext): Unit = {
 
