@@ -285,6 +285,7 @@ object FeatureExtractor {
     DependencyPath(d.getRelation, d.getHead[Token].text, d.getHead[Token].getStart < d.getTail[Token].getStart)
   }
 
+
   /**
     * This methods chunking causes problem with the dependency path feature.
     * Do not use before fixing those issues.

@@ -1,8 +1,17 @@
 package com.sony.prometheus.annotaters
 
-import scalaj.http._
+import com.sony.prometheus.Prometheus
+import com.sony.prometheus.stages.Coref
+
+import scalaj.http.{Http, HttpResponse}
 import se.lth.cs.docforia.Document
+import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
+import se.lth.cs.docforia.graph.text._
 import se.lth.cs.docforia.memstore.MemoryDocumentIO
+import se.lth.cs.docforia.query.QueryCollectors
+
+import scala.collection.JavaConverters._
+
 
 /** Provides a way to annotate strings into Docforia Documents
   */
@@ -19,9 +28,14 @@ object VildeAnnotater extends Annotater {
         .asString
 
       val docJson = response.body
-      Right(MemoryDocumentIO.getInstance().fromJson(docJson))
+      var doc: Document = MemoryDocumentIO.getInstance().fromJson(docJson)
+      if (Prometheus.conf.corefs())
+        doc = Coref.propagateCorefs(doc)
+      
+      Right(doc)
     } catch {
       case e: java.net.SocketTimeoutException => Left(e.getMessage)
     }
   }
+
 }
