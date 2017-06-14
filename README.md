@@ -3,7 +3,7 @@
 
 ## Installation
 This program depends on several libraries using SBT as its dependency manager
-and build tool.
+and build tool. Only one depedency (docforia) isn't publicly available through the Maven central repository.
 
 1. Install [docforia](https://github.com/marcusklang/docforia) by cloning and then `mvn install`
 2. Run `sbt compile`

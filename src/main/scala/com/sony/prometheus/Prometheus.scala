@@ -31,14 +31,6 @@ object Prometheus {
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
-    val stage = trailArg[String](
-      descr = """how far to run the program, [preprocess|train|full]
-        |train implies preprocess
-        |full implies train
-        |""".stripMargin,
-      validate = s => s == "preprocess" || s == "train" || s == "full",
-      default = Some("full"))
-
     val corpusPath = trailArg[String](
       descr = "path to the corpus to train on",
       validate = pathPrefixValidation)
@@ -73,10 +65,16 @@ object Prometheus {
       validate = x => (x > 0),
       default = Option(5))
     val language = opt[String](
-      required = true,
-      default = Some("sv"),
+      default = Some("en"),
       validate = l => l == "sv" || l == "en",
-      descr = "the language to use for the pipeline (default to sv)")
+      descr = "the language to use for the pipeline (default to en)")
+    val stage = opt[String](
+      descr = """how far to run the program, [preprocess|train|full]
+                |train implies preprocess
+                |full implies train
+                |""".stripMargin,
+      validate = s => s == "preprocess" || s == "train" || s == "full",
+      default = Some("full"))
 
     verify()
 
