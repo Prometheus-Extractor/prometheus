@@ -49,9 +49,9 @@ object ClassificationModel {
 
     val filtered = rawData.filter(_.getLabels().getDouble(0) != 1)
     def getClass = (d: DataSet) => Nd4j.argMax(d.getLabels).getInt(0).toLong
-    val balanced = balanceData(filtered, false, getClass)
 
-    val (trainData, testData) = splitToTestTrain(balanced, 0.10)
+    val (trainData, testData) = splitToTestTrain(filtered, 0.10)
+    val balancedTrain = balanceData(trainData, false, getClass)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
@@ -96,7 +96,7 @@ object ClassificationModel {
     for(i <- (1 to epochs)){
       log.info(s"Epoch: $i/$epochs")
       val start = System.currentTimeMillis
-      sparkNetwork.fit(trainData)
+      sparkNetwork.fit(balancedTrain)
       log.info(s"Epoch finished in ${(System.currentTimeMillis() - start) / 1000}s")
 
       evaluation = sparkNetwork.evaluate(testData)
@@ -109,7 +109,7 @@ object ClassificationModel {
     log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
     log.info(sparkNetwork.getNetwork.summary())
 
-    trainData.unpersist(true)
+    balancedTrain.unpersist(true)
     sparkNetwork.getNetwork
   }
 

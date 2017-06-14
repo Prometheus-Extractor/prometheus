@@ -66,7 +66,7 @@ object FeatureExtractor {
     val trainingPoints = trainingSentences.flatMap(t => {
       val featureArrays = featureArray(t.sentenceDoc).flatMap(f => {
           val positiveExample = t.entityPair.exists(p => {
-            p.dest == f.subj && p.source == f.obj || p.source == f.subj && p.dest == f.obj
+            p.source == f.subj && p.dest == f.obj
           })
           if (positiveExample && t.relationClass != NEGATIVE_CLASS_NBR) {
             Seq(TrainingDataPoint(
@@ -84,7 +84,8 @@ object FeatureExtractor {
               f.ent2Type,
               f.dependencyPath,
               f.ent1DepWindow,
-              f.ent2DepWindow))
+              f.ent2DepWindow,
+              f.ent1IsSubject))
           } else {
             Seq(TrainingDataPoint(
               NEGATIVE_CLASS_NAME,
@@ -101,7 +102,8 @@ object FeatureExtractor {
               f.ent2Type,
               f.dependencyPath,
               f.ent1DepWindow,
-              f.ent2DepWindow))
+              f.ent2DepWindow,
+              f.ent1IsSubject))
           }
       })
       featureArrays
@@ -135,7 +137,8 @@ object FeatureExtractor {
           f.ent2Type,
           f.dependencyPath,
           f.ent1DepWindow,
-          f.ent2DepWindow)
+          f.ent2DepWindow,
+          f.ent1IsSubject)
       })
     })
 
@@ -170,7 +173,7 @@ object FeatureExtractor {
         val grp1 :: grp2 :: _ = set.toList
         grp1.key(NED).getIdentifier != grp2.key(NED).getIdentifier
       })
-      .map(set => {
+      .flatMap(set => {
         /*
         Find the positions of the entities
          */
@@ -208,21 +211,40 @@ object FeatureExtractor {
         val ent1DepWindow = Random.shuffle(dependencyWindow(lastTokenFirstEntity, depRels).map(relationToPath)).take(DEPENDENCY_WINDOW).toSeq
         val ent2DepWindow = Random.shuffle(dependencyWindow(firstTokenLastEntity, depRels).map(relationToPath)).take(DEPENDENCY_WINDOW).toSeq
 
-        FeatureArray(
-          sentence,
-          grp1.key(NED).getIdentifier.split(":").last,
-          grp2.key(NED).getIdentifier.split(":").last,
-          words,
-          pos,
-          wordsBetween,
-          posBetween,
-          ent1TokensPos,
-          ent2TokensPos,
-          ent1Type,
-          ent2Type,
-          dependencyPath.slice(0, dependencyPath.size),
-          ent1DepWindow,
-          ent2DepWindow)
+        Seq(
+          FeatureArray(
+            sentence,
+            grp1.key(NED).getIdentifier.split(":").last,
+            grp2.key(NED).getIdentifier.split(":").last,
+            words,
+            pos,
+            wordsBetween,
+            posBetween,
+            ent1TokensPos,
+            ent2TokensPos,
+            ent1Type,
+            ent2Type,
+            dependencyPath.slice(0, dependencyPath.size),
+            ent1DepWindow,
+            ent2DepWindow,
+            true),
+          FeatureArray(
+            sentence,
+            grp1.key(NED).getIdentifier.split(":").last,
+            grp2.key(NED).getIdentifier.split(":").last,
+            words,
+            pos,
+            wordsBetween,
+            posBetween,
+            ent1TokensPos,
+            ent2TokensPos,
+            ent1Type,
+            ent2Type,
+            dependencyPath.slice(0, dependencyPath.size),
+            ent1DepWindow,
+            ent2DepWindow,
+            false)
+        )
       }).toSeq
 
     features
@@ -249,7 +271,7 @@ object FeatureExtractor {
 
     val allowedTypes = RelationConfigReader.load(relationConfig)
       .filter(_.types.length == 2)
-      .map(r => r.id -> (r.types(0), r.types(1)))
+      .map(r => r.id -> (r.types(0).toLowerCase, r.types(1).toLowerCase))
       .toMap
     prunedData = prunedData.filter(d => {
       /* Filter points without correct entity types.
@@ -260,9 +282,9 @@ object FeatureExtractor {
         allowedTypes.get(d.relationId).forall(t => {
           val ent1Type = d.ent1Type.toLowerCase
           val ent2Type = d.ent2Type.toLowerCase
-          val expected1 = t._1.toLowerCase
-          val expected2 = t._2.toLowerCase
-          ent1Type == expected1 && ent2Type == expected2 || ent1Type == expected2 && ent2Type == expected1
+          val expected1 = t._1
+          val expected2 = t._2
+          ent1Type == expected1 && ent2Type == expected2
         })
       }
     })
@@ -405,7 +427,8 @@ case class TrainingDataPoint(
   ent2Type: String,
   dependencyPath: Seq[DependencyPath],
   ent1DepWindow: Seq[DependencyPath],
-  ent2DepWindow: Seq[DependencyPath])
+  ent2DepWindow: Seq[DependencyPath],
+  ent1IsSubject: Boolean)
 
 case class TestDataPoint(
   sentence: Document,
@@ -421,7 +444,8 @@ case class TestDataPoint(
   ent2Type: String,
   dependencyPath: Seq[DependencyPath],
   ent1DepWindow: Seq[DependencyPath],
-  ent2DepWindow: Seq[DependencyPath])
+  ent2DepWindow: Seq[DependencyPath],
+  ent1IsSubject: Boolean)
 
 case class FeatureArray(
   sentence: Document,
@@ -437,5 +461,6 @@ case class FeatureArray(
   ent2Type: String,
   dependencyPath: Seq[DependencyPath],
   ent1DepWindow: Seq[DependencyPath],
-  ent2DepWindow: Seq[DependencyPath])
+  ent2DepWindow: Seq[DependencyPath],
+  ent1IsSubject: Boolean)
 

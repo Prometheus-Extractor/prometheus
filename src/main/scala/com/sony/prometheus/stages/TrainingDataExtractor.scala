@@ -102,7 +102,8 @@ object TrainingDataExtractor {
             val foundPairs = ListBuffer[EntityPair]()
             if (mapping.getOrDefault(pair(0), mutable.Set.empty).contains(pair(1))){
               foundPairs += EntityPair(pair(0), pair(1))
-            } else if (mapping.getOrDefault(pair(1), mutable.Set.empty).contains(pair(0))){
+            }
+            if (mapping.getOrDefault(pair(1), mutable.Set.empty).contains(pair(0))){
               foundPairs += EntityPair(pair(1), pair(0))
             }
             foundPairs
