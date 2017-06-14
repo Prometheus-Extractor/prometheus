@@ -102,21 +102,6 @@ object Prometheus {
 
   }
 
-  def printEnvironment(conf: Conf): Unit = {
-    val str =
-      s"""corpusPath:\t${conf.corpusPath()}
-         |relationConfigPath:\t${conf.relationConfig()}
-         |wikidataPath:\t${conf.wikiData()}
-         |tempDataPath:\t${conf.tempDataPath() + "/" + conf.language()}
-         |word2vecPath:\t${conf.word2vecPath()}
-         |sampleSize:\t${conf.sampleSize()}
-         |evaluationFiles:\t${conf.evaluationFiles}
-         |language:\t${conf.language()}
-         |epochs:\t${conf.epochs()}
-       """.stripMargin
-    println(str)
-  }
-
   def main(args: Array[String]): Unit = {
     conf = new Conf(args)
     Logger.getLogger("org").setLevel(Level.WARN)
@@ -130,7 +115,8 @@ object Prometheus {
     implicit val sqlContext = new SQLContext(sc)
 
     val tempDataPath = conf.tempDataPath() + "/" + conf.language()
-    printEnvironment(conf)
+    println("Program arguments:")
+    println(conf.summary.split("\n").tail.mkString("\n"))
 
     try {
       val corpusData = new CorpusData(conf.corpusPath(), conf.sampleSize())
