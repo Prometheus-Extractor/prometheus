@@ -29,9 +29,6 @@ object VildeAnnotater extends Annotater {
 
       val docJson = response.body
       var doc: Document = MemoryDocumentIO.getInstance().fromJson(docJson)
-      if (Prometheus.conf.corefs())
-        doc = Coref.propagateCorefs(doc)
-      
       Right(doc)
     } catch {
       case e: java.net.SocketTimeoutException => Left(e.getMessage)

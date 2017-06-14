@@ -76,7 +76,8 @@ object Evaluator {
       log.info(s"Using cached Vilde-annotated $file")
       val df = sqlContext.read.parquet(cachePath)
       df.map(row => {
-        MemoryDocumentIO.getInstance().fromBytes(row.getAs(0): Array[Byte]): Document
+        val d = MemoryDocumentIO.getInstance().fromBytes(row.getAs(0): Array[Byte]): Document
+        Coref.propagateCorefs(d)
       })
     } else {
       log.info(s"Did not find cached $file, annotating with Vilde...")
