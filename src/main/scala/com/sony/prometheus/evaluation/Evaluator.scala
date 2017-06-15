@@ -48,7 +48,7 @@ class ModelEvaluatorStage(
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
     val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"), Some(nBest))
 
-    Evaluator.save(evaluation, path)
+    Evaluator.save(evaluation.toString, path)
   }
 }
 
@@ -67,14 +67,17 @@ class DataEvaluationStage(
   }
 
   override def run(): Unit = {
-    val relations = EntityPairExtractor.load(entityPairs.getData())
+    val knownRelations = EntityPairExtractor.load(entityPairs.getData())
     val extractions = Predictor.load(predictions.getData())
+    val results = Evaluator.evaluateData(knownRelations, extractions, Some(path + "data_debug.tsv"))
+    Evaluator.save(results.mkString("\n\n"), path)
   }
 }
 
 /** Performs evaluation of [[ModelEvaluationDataPoint]]:s
- */
+  */
 object Evaluator {
+  val log = LogManager.getLogger(Evaluator.getClass)
 
 
   /** Annotate the snippets data with VildeAnnotater, use cache if possible
@@ -122,32 +125,78 @@ object Evaluator {
     }
   }
 
-  val log = LogManager.getLogger(Evaluator.getClass)
+  /**
+    * Evaluate *extractions* (from e.g. Wikipedia) against *knownRelations* (from e.g. Wikidata)
+    * @param knownRelations the entities that are known to partake in certain relations (ground truth)
+    * @param extractions    extractions from e.g. Wikipedia
+    * @param debugFile      optionally write a debug file w. all extractions
+    * @param nMostProbable  optionally evaluate against nMostProbable extractions only
+    * @return The result of evaluation for each relation
+    */
+  def evaluateData(knownRelations: RDD[Relation], extractions: RDD[ExtractedRelation], debugFile: Option[String],
+                   nMostProbable: Option[Int] = None)
+                  (implicit sqlContext: SQLContext, sc: SparkContext): Array[EvaluationResult] = {
 
-  def evaluateData(knownRelations: RDD[Relation], extractions: RDD[ExtractedRelation])
-                  (implicit sqlContext: SQLContext, sc: SparkContext): Unit = {
     extractions.cache()
     knownRelations.cache()
-    val nbrExtractedRelations = extractions.count()
-    val nbrDataPoints = knownRelations.count()
-    log.info(s"validationPoints.count: $nbrDataPoints")
 
-    // TODO: keep per relation information
+    val totalExtractions = extractions.count()
+    val totalKnownRelations = knownRelations.count()
+    log.info(s"Total known relations $totalKnownRelations")
+    log.info(s"Total extracted relations: $totalExtractions")
 
-    val validationStrings = knownRelations
-      .flatMap(rel =>
-        rel.entities.map(entPair => {
-          s"${entPair.source}/${rel.id}/${entPair.dest}"
-        })
+    val relationTypes = knownRelations.map(r => (r.id, r.name)).collect()
+
+    val results = relationTypes.map{ case (id, name) => {
+      log.info(s"Evaluating data for ${name}")
+
+      val validationTuples = knownRelations
+        .filter(_.id == id)
+        .flatMap(rel =>
+          rel.entities.map(entPair =>
+            (entPair.source, rel.id, entPair.dest)
+          )
+        )
+      val currentExtractions = extractions
+        .filter(extraction => extraction.predictedPredicate == id)
+
+      val extractionStrings = currentExtractions.map(rel =>
+        (rel.source, rel.predictedPredicate, rel.obj)
       )
-    val extractionStrings = extractions.map(rel =>
-      s"${rel.source}/${rel.predictedPredicate}/${rel.obj}"
-    )
 
-    val nbrTruePositives = extractionStrings.intersection(validationStrings).count()
-    val nbrFalsePositives = extractionStrings.count() - nbrTruePositives
+      val truePositives = extractionStrings.intersection(validationTuples)
+      val nbrTruePositives = truePositives.count()
+      val nbrFalsePositives = extractionStrings.count() - nbrTruePositives
+      val nbrTrueDataPoints = validationTuples.count()
+      val nbrExtractions = extractionStrings.count()
+
+      log.info(s"True Positives: $nbrTruePositives")
+      log.info(s"False Positives: $nbrFalsePositives")
+
+      val recall: Double = nbrTruePositives / nbrTrueDataPoints.toDouble
+      val precision: Double = nbrTruePositives / nbrExtractions.toDouble
+      val f1: Double = computeF1(recall, precision)
+
+      log.info(s"Precision is $precision")
+      log.info(s"Recall is $recall")
+      log.info(s"F1 is $f1")
+
+      nMostProbable.foreach(n => {
+        val cutoff = currentExtractions.map(_.probability).takeOrdered(n)(math.Ordering.Double.reverse).last
+        val predictions = currentExtractions.map(Seq(_))
+        val trueExtractions = truePositives.map(p =>
+          ExtractedRelation(p._1, p._2, p._3, "", "", Double.NaN, Double.NaN, Double.NaN)
+        )
+        // TODO: compute falsePositives: RDD[ExtractedRelation]
+        val falsePositives = ???
+        //val newTruePositives = currentExtractions.filter(_.probability >= cutoff)
+        nMostProbableOutcome(predictions, trueExtractions, falsePositives, nbrTrueDataPoints, n)
+      })
+      EvaluationResult(name, nbrTrueDataPoints.toInt, nbrTruePositives.toInt, recall, precision, f1, Double.NaN)
+    }}
+
+    results
   }
-
 
   /** Returns an [[EvaluationResult]]
  *
@@ -156,7 +205,7 @@ object Evaluator {
    */
   def evaluate(evalDataPoints: RDD[ModelEvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor,
                debugOutFile: Option[String], nMostProbable: Option[Int])
-    (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
+              (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
     evalDataPoints.cache()
     annotatedEvidence.cache()
@@ -219,7 +268,16 @@ object Evaluator {
     )
     suggestThreshold(truePositives, falsePositives, nbrTrueDataPoints)
 
-    writeDebug(evalDataPoints, annotatedEvidence, predictedRelations, debugOutFile)
+    debugOutFile.foreach(file => {
+      val data = evalDataPoints.zip(annotatedEvidence).zip(predictedRelations).map{
+        case ((evalPoint, annotatedDocument), relations) =>
+          val herdResult = herdSucceded(evalPoint, annotatedDocument)
+          val relResults = relations.map(r => s"${r.subject}/${r.predictedPredicate}/${r.obj} - ${r.probability} - ${isCorrectPrediction(evalPoint, r)}").mkString("\t")
+          s"${evalPoint.evidences.map(_.snippet).mkString(" >> ")}\t${evalPoint.positive()}\t${evalPoint.wd_sub}/${evalPoint.wd_pred}/${evalPoint.wd_obj}\t$herdResult\t$relResults"
+      }.collect().mkString("\n")
+      val header = "Sentences\tPositive Datapoint\tRDF-triple\tHerd\tPredicted Results:\n"
+      writeDebugFile(header, data, file)
+    })
 
     val evaluation: EvaluationResult = EvaluationResult(
       evalDataPoints.first().wd_pred,
@@ -246,26 +304,15 @@ object Evaluator {
 
   private def computeF1(recall: Double, precision: Double): Double = 2 * (precision * recall) / (precision + recall)
 
-  private def writeDebug(evalDataPoints: RDD[ModelEvaluationDataPoint], annotatedEvidence: RDD[Document],
-                         predictedRelations: RDD[Seq[ExtractedRelation]], debugOutFile: Option[String])
-                        (implicit sc: SparkContext): Unit = {
-
-    // Save debug information to TSV if debugOutFile supplied
-    debugOutFile.foreach(f => {
-      val fs = FileSystem.get(sc.hadoopConfiguration)
-      val output = fs.create(new Path(f))
-      val os = new BufferedOutputStream(output)
-      log.info(s"Saving debug information to $f...")
-      val data = evalDataPoints.zip(annotatedEvidence).zip(predictedRelations).map{
-        case ((evalPoint, annotatedDocument), relations) =>
-          val herdResult = herdSucceded(evalPoint, annotatedDocument)
-          val relResults = relations.map(r => s"${r.subject}/${r.predictedPredicate}/${r.obj} - ${r.probability} - ${isCorrectPrediction(evalPoint, r)}").mkString("\t")
-          s"${evalPoint.evidences.map(_.snippet).mkString(" >> ")}\t${evalPoint.positive()}\t${evalPoint.wd_sub}/${evalPoint.wd_pred}/${evalPoint.wd_obj}\t$herdResult\t$relResults"
-      }.collect().mkString("\n")
-      os.write("Sentences\tPositive Datapoint\tRDF-triple\tHerd\tPredicted Results:\n".getBytes("UTF-8"))
-      os.write(data.getBytes("UTF-8"))
-      os.close()
-    })
+  private def writeDebugFile(header: String, data: String, file: String)(implicit sc: SparkContext): Unit = {
+    // Save debug information to TSV
+    val fs = FileSystem.get(sc.hadoopConfiguration)
+    val output = fs.create(new Path(file))
+    val os = new BufferedOutputStream(output)
+    log.info(s"Saving debug information to $file...")
+    os.write(header.getBytes("UTF-8"))
+    os.write(data.getBytes("UTF-8"))
+    os.close()
   }
 
   private def nMostProbableOutcome(predictedRelations: RDD[Seq[ExtractedRelation]],
@@ -281,7 +328,7 @@ object Evaluator {
     val trueProb = truePositives.map(_.probability).collect()
     val falseProb = falsePositives.map(_.probability).collect()
     val newTP = trueProb.count(_ >= cutOff)
-    val newFP = falseProb.count(_ > cutOff)
+    val newFP = falseProb.count(_ >= cutOff)
     val recall = newTP / nbrTrueDataPoints
     val precision = newTP / (newTP + newFP).toDouble
     val f1 = computeF1(recall, precision)
@@ -312,11 +359,11 @@ object Evaluator {
     }
   }
 
-  def save(data: EvaluationResult, path: String)(implicit sc: SparkContext): Unit = {
+  def save(data: String, path: String)(implicit sc: SparkContext): Unit = {
     val fs = FileSystem.get(sc.hadoopConfiguration)
     val output = fs.create(new Path(path + ".tsv"))
     val os = new BufferedOutputStream(output)
-    os.write(data.toString.getBytes("UTF-8"))
+    os.write(data.getBytes("UTF-8"))
     os.close()
   }
 
@@ -335,4 +382,5 @@ object Evaluator {
       """.stripMargin
     }
   }
+
 }
