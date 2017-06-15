@@ -62,7 +62,7 @@ object Prometheus {
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
     val epochs = opt[Int](
       descr = "number of epochs for neural network",
-      validate = x => (x > 0),
+      validate = x => (x >= 0),
       default = Option(5))
     val language = opt[String](
       default = Some("en"),

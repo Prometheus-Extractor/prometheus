@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream
 import com.sony.prometheus.stages.RelationModel.{balanceData, log, splitToTestTrain}
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -35,10 +36,14 @@ class ClassificationModelStage(path: String, featureTransfomerStage: FeatureTran
   }
 
   override def run(): Unit = {
-    val data = FeatureTransformer.load(featureTransfomerStage.getData())
-    val numClasses = data.take(1)(0).getLabels.length
-    val classificationNet = ClassificationModel.trainClassificationNetwork(data, numClasses, epochs)
-    ClassificationModel.save(path, classificationNet)
+    if(epochs == 0) {
+      LogManager.getLogger(classOf[ClassificationModelStage]).info(s"Epochs set $epochs; skipping.")
+    } else {
+      val data = FeatureTransformer.load(featureTransfomerStage.getData())
+      val numClasses = data.take(1)(0).getLabels.length
+      val classificationNet = ClassificationModel.trainClassificationNetwork(data, numClasses, epochs)
+      ClassificationModel.save(path, classificationNet)
+    }
   }
 }
 
