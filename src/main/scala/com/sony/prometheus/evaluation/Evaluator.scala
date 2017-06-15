@@ -1,24 +1,19 @@
 package com.sony.prometheus.evaluation
 
 import java.io.BufferedOutputStream
-import java.nio.file.{Files, Paths}
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-import scala.collection.JavaConverters._
-import com.sony.prometheus.utils.Utils.pathExists
-import org.apache.log4j.LogManager
-import org.apache.spark.SparkContext
+import com.sony.prometheus.annotaters.VildeAnnotater
 import com.sony.prometheus.stages.{Predictor, PredictorStage, _}
 import com.sony.prometheus.utils.Utils
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.rdd.RDD
-import com.sony.prometheus.annotaters.VildeAnnotater
+import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.LogManager
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
-import se.lth.cs.docforia.graph.text.Token
 import se.lth.cs.docforia.memstore.{MemoryDocument, MemoryDocumentIO}
+import scala.collection.JavaConverters._
 
 /** Pipeline stage to run evaluation
  *
@@ -31,8 +26,7 @@ class ModelEvaluatorStage(
   evaluationData: ModelEvaluationData,
   lang: String,
   predictor: Predictor,
-  nBest: Int)
-                         (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+  nBest: Option[Int])(implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
     if (!pathExists(path)) {
@@ -46,7 +40,7 @@ class ModelEvaluatorStage(
       .filter(dP => dP.wd_sub != "false" && dP.wd_obj != "false")
       .filter(dP => dP.positive())  // Don't use the "incorrect annotation by the google algorithm"
     val annotatedEvidence = Evaluator.annotateTestData(evalDataPoints, path, lang)
-    val evaluation = Evaluator.evaluate(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"), Some(nBest))
+    val evaluation = Evaluator.evaluateModel(evalDataPoints, annotatedEvidence, predictor, Some(path + "_debug.tsv"), nBest)
 
     Evaluator.save(evaluation.toString, path)
   }
@@ -57,7 +51,7 @@ class DataEvaluationStage(
    entityPairs: EntityPairExtractorStage,
    lang: String,
    predictions: PredictorStage,
-   nBest: Int)(implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
+   nBest: Option[Int])(implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
     if (!pathExists(path)) {
@@ -69,7 +63,7 @@ class DataEvaluationStage(
   override def run(): Unit = {
     val knownRelations = EntityPairExtractor.load(entityPairs.getData())
     val extractions = Predictor.load(predictions.getData())
-    val results = Evaluator.evaluateData(knownRelations, extractions, Some(path + "data_debug.tsv"))
+    val results = Evaluator.evaluateData(knownRelations, extractions, Some(path + "data_debug.tsv"), nBest)
     Evaluator.save(results.mkString("\n\n"), path)
   }
 }
@@ -166,7 +160,8 @@ object Evaluator {
 
       val truePositives = extractionStrings.intersection(validationTuples)
       val nbrTruePositives = truePositives.count()
-      val nbrFalsePositives = extractionStrings.count() - nbrTruePositives
+      val falsePositives = extractionStrings.subtract(truePositives)
+      val nbrFalsePositives = falsePositives.count()
       val nbrTrueDataPoints = validationTuples.count()
       val nbrExtractions = extractionStrings.count()
 
@@ -182,14 +177,11 @@ object Evaluator {
       log.info(s"F1 is $f1")
 
       nMostProbable.foreach(n => {
-        val cutoff = currentExtractions.map(_.probability).takeOrdered(n)(math.Ordering.Double.reverse).last
         val predictions = currentExtractions.map(Seq(_))
         val trueExtractions = truePositives.map(p =>
           ExtractedRelation(p._1, p._2, p._3, "", "", Double.NaN, Double.NaN, Double.NaN)
         )
-        // TODO: compute falsePositives: RDD[ExtractedRelation]
-        val falsePositives = ???
-        //val newTruePositives = currentExtractions.filter(_.probability >= cutoff)
+        val falsePositives = currentExtractions.subtract(trueExtractions)
         nMostProbableOutcome(predictions, trueExtractions, falsePositives, nbrTrueDataPoints, n)
       })
       EvaluationResult(name, nbrTrueDataPoints.toInt, nbrTruePositives.toInt, recall, precision, f1, Double.NaN)
@@ -203,9 +195,9 @@ object Evaluator {
     * @param evalDataPoints RDD of [[ModelEvaluationDataPoint]]
     * @return                 an [[EvaluationResult]]
    */
-  def evaluate(evalDataPoints: RDD[ModelEvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor,
-               debugOutFile: Option[String], nMostProbable: Option[Int])
-              (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
+  def evaluateModel(evalDataPoints: RDD[ModelEvaluationDataPoint], annotatedEvidence: RDD[Document], predictor: Predictor,
+                    debugOutFile: Option[String], nMostProbable: Option[Int])
+                   (implicit sqlContext: SQLContext, sc: SparkContext): EvaluationResult = {
 
     evalDataPoints.cache()
     annotatedEvidence.cache()

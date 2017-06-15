@@ -235,7 +235,7 @@ object Prometheus {
               entityPairs,
               conf.language(),
               predictorStage,
-              N_BEST
+              Some(N_BEST)
             )
             val data = dataEvaluation.getData()
             log.info(s"Saved Wikidata evaluation to $data")
@@ -275,7 +275,7 @@ object Prometheus {
         evaluationData,
         lang,
         predictor,
-        N_MOST_PROBABLE)
+        Some(N_MOST_PROBABLE))
       val _ = evaluationTask.getData()
       log.info(s"Saved evaluation to $evalSavePath")
     })
