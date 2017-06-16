@@ -230,8 +230,8 @@ object FeatureExtractor {
             true),
           FeatureArray(
             sentence,
-            grp1.key(NED).getIdentifier.split(":").last,
             grp2.key(NED).getIdentifier.split(":").last,
+            grp1.key(NED).getIdentifier.split(":").last,
             words,
             pos,
             wordsBetween,
@@ -284,7 +284,7 @@ object FeatureExtractor {
           val ent2Type = d.ent2Type.toLowerCase
           val expected1 = t._1
           val expected2 = t._2
-          ent1Type == expected1 && ent2Type == expected2
+          if (d.ent1IsSubject) (ent1Type == expected1 && ent2Type == expected2) else (ent2Type == expected1 && ent1Type == expected2)
         })
       }
     })

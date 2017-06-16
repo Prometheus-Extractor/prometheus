@@ -90,8 +90,8 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
     classes.map{
       case (result: Prediction, point: TestDataPoint) =>
         val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result")
-        val subj = if(point.ent1IsSubject) point.qidSource else point.qidDest
-        val obj = if(point.ent1IsSubject) point.qidDest else point.qidSource
+        val subj = point.qidSource
+        val obj = point.qidDest
         ExtractedRelation(subj, predicate, obj, point.sentence.text(), doc.uri(),
           result.probability, result.filterProb, result.classProb)
     }.toList
@@ -110,9 +110,7 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
       val ent2Type = point.ent2Type.toLowerCase
       val expected1 = relation.types(0).toLowerCase
       val expected2 = relation.types(1).toLowerCase
-      ent1Type == expected1 && ent2Type == expected2
-    }
-
+      if (point.ent1IsSubject) (ent1Type == expected1 && ent2Type == expected2) else (ent2Type == expected1 && ent1Type == expected2)    }
   }
 
 }
