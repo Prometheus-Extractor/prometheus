@@ -75,6 +75,10 @@ object Prometheus {
                 |""".stripMargin,
       validate = s => s == "preprocess" || s == "train" || s == "full",
       default = Some("full"))
+    val name = opt[String](
+      descr = "Custom Spark application name",
+      default = Some("")
+    )
 
     verify()
 
@@ -105,7 +109,7 @@ object Prometheus {
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
     val log = LogManager.getLogger(Prometheus.getClass)
-    val appName = s"Prometheus Relation Model ${conf.language()} ${conf.stage()}"
+    val appName = s"Prometheus Relation Model ${conf.language()} ${conf.stage()} ${conf.name()}"
     val sparkConf = new SparkConf().setAppName(appName)
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
 
