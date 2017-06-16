@@ -25,6 +25,5 @@ Also note that you CANNOT persist off-heap memory with the `_SER`-flag.
 
 ## AWS
 When running on AWS EMR. Yarn requires some non-trivial configuration to work optimally.
-In general make sure to disable 
 
 - http://blog.cloudera.com/blog/2015/03/how-to-tune-your-apache-spark-jobs-part-2/
