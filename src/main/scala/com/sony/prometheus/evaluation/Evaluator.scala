@@ -64,7 +64,8 @@ class DataEvaluationStage(
     val knownRelations = EntityPairExtractor.load(entityPairs.getData())
     val extractions = Predictor.load(predictions.getData())
     val results = Evaluator.evaluateData(knownRelations, extractions, Some(path + "data_debug.tsv"), nBest)
-    Evaluator.save(results.mkString("\n\n"), path)
+    val header = "name\tnumber of extractions\tfound percentage\tverified percentage\n"
+    Evaluator.save(header + results.mkString("\n\n"), path)
   }
 }
 
@@ -129,12 +130,12 @@ object Evaluator {
     */
   def evaluateData(knownRelations: RDD[Relation], extractions: RDD[ExtractedRelation], debugFile: Option[String],
                    nMostProbable: Option[Int] = None)
-                  (implicit sqlContext: SQLContext, sc: SparkContext): Array[EvaluationResult] = {
+                  (implicit sqlContext: SQLContext, sc: SparkContext): Array[RelationEvaluationResult] = {
 
     extractions.cache()
     knownRelations.cache()
 
-    val totalExtractions = extractions.count()
+    val totalExtractions = extractions.filter(_.probability >= 0.85).count()
     val totalKnownRelations = knownRelations.count()
     log.info(s"Total known relations $totalKnownRelations")
     log.info(s"Total extracted relations: $totalExtractions")
@@ -144,50 +145,75 @@ object Evaluator {
     val results = relationTypes.map{ case (id, name) => {
       log.info(s"Evaluating data for ${name}")
 
-      val validationTuples = knownRelations
+      // Key the extractions for this relation by subject-predicate
+      val keyedExtractions = extractions
+        .filter(_.probability >= 0.85)
+        .filter(extraction => extraction.predictedPredicate == id)
+          .map(e => (s"${e.subject}${e.predictedPredicate}", e))
+
+      keyedExtractions.cache()
+
+      val nbrExtractions = keyedExtractions.count()
+      log.info(s"There are $nbrExtractions extractions for $name")
+
+      // Key known relations for this by subject-predicate
+      val keyedValidations = knownRelations
         .filter(_.id == id)
         .flatMap(rel =>
-          rel.entities.map(entPair =>
-            (entPair.source, rel.id, entPair.dest)
-          )
+          rel.entities.map(entPair => {
+            (s"${entPair.source}${rel.id}", entPair)
+          })
         )
-      val currentExtractions = extractions
-        .filter(extraction => extraction.predictedPredicate == id)
+      keyedValidations.cache()
 
-      val extractionStrings = currentExtractions.map(rel =>
-        (rel.source, rel.predictedPredicate, rel.obj)
-      )
+      val matches = keyedExtractions.join(keyedValidations)
+      val nbrMatches = matches.count()
+      log.info(s"There are $nbrMatches matching subject-predicate pairs for $name")
 
-      val truePositives = extractionStrings.intersection(validationTuples)
-      val nbrTruePositives = truePositives.count()
-      val falsePositives = extractionStrings.subtract(truePositives)
-      val nbrFalsePositives = falsePositives.count()
-      val nbrTrueDataPoints = validationTuples.count()
-      val nbrExtractions = extractionStrings.count()
+      val verifiedCorrect = matches.filter{case (_, (extraction, knownPair)) => {
+        extraction.obj == knownPair.dest
+      }}
+      val nbrVerified = verifiedCorrect.count()
+      log.info(s"There are $nbrVerified found $name")
 
-      log.info(s"True Positives: $nbrTruePositives")
-      log.info(s"False Positives: $nbrFalsePositives")
+      val conflictingMatches = matches.filter{case (_, (extraction, knownPair)) => {
+        extraction.obj != knownPair.dest
+      }}
+      val nbrConflicting = conflictingMatches.count()
+      log.info(s"There are $nbrConflicting matches for $name")
 
-      val recall: Double = nbrTruePositives / nbrTrueDataPoints.toDouble
-      val precision: Double = nbrTruePositives / nbrExtractions.toDouble
-      val f1: Double = computeF1(recall, precision)
-
-      log.info(s"Precision is $precision")
-      log.info(s"Recall is $recall")
-      log.info(s"F1 is $f1")
+      val foundPercentage: Double = 100 * (nbrMatches / nbrExtractions.toDouble)
+      val verifiedPercentage: Double = 100 * (nbrVerified / nbrExtractions.toDouble)
+      log.info(s"Found $foundPercentage % of the extractions")
+      log.info(s"Correctly verified $verifiedPercentage % of the extractions")
 
       nMostProbable.foreach(n => {
-        val predictions = currentExtractions.map(Seq(_))
-        val trueExtractions = truePositives.map(p =>
-          ExtractedRelation(p._1, p._2, p._3, "", "", Double.NaN, Double.NaN, Double.NaN)
-        )
-        val falsePositives = currentExtractions.subtract(trueExtractions)
-        nMostProbableOutcome(predictions, trueExtractions, falsePositives, nbrTrueDataPoints, n)
+        val predictions = extractions
+          .filter(_.probability >= 0.85)
+          .filter(extraction => extraction.predictedPredicate == id)
+          .map(Seq(_))
+        val truePositives = verifiedCorrect.map{case (_, (extraction, _)) => extraction}
+        val falsePositives = conflictingMatches.map{case (_, (extraction, _)) => extraction}
+
+        nMostProbableOutcome(predictions, truePositives, falsePositives, nbrExtractions, n)
       })
-      EvaluationResult(name, nbrTrueDataPoints.toInt, nbrTruePositives.toInt, recall, precision, f1, Double.NaN)
+      // TODO: Write debugfile?
+
+      RelationEvaluationResult(name, nbrExtractions.toInt, foundPercentage, verifiedPercentage)
     }}
 
     results
+  }
+
+  case class RelationEvaluationResult(
+    name: String,
+    nbrExtractions: Int,
+    foundPercentage: Double,
+    verifiedPercentage: Double) {
+
+    override def toString(): String = {
+      s"$name\t$nbrExtractions\t$foundPercentage\t$verifiedPercentage"
+    }
   }
 
   /** Returns an [[EvaluationResult]]
@@ -312,6 +338,7 @@ object Evaluator {
                                    falsePositives: RDD[ExtractedRelation],
                                    nbrTrueDataPoints: Double,
                                    n: Int): Unit = {
+    log.info(s"Evaluating for $n most probable...")
     val cutOff = predictedRelations
       .flatMap(rs => rs.map(_.probability))
       .takeOrdered(n)(math.Ordering.Double.reverse)
@@ -374,5 +401,7 @@ object Evaluator {
       """.stripMargin
     }
   }
+
+
 
 }
