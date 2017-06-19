@@ -137,8 +137,10 @@ object Evaluator {
 
     val totalExtractions = extractions.filter(_.probability >= 0.85).count()
     val totalKnownRelations = knownRelations.count()
-    log.info(s"Total known relations $totalKnownRelations")
-    log.info(s"Total extracted relations: $totalExtractions")
+    val formatter = java.text.NumberFormat.getIntegerInstance
+
+    log.info(s"Total known relations ${formatter.format(totalKnownRelations)}")
+    log.info(s"Total extracted relations: ${formatter.format(totalExtractions)}")
 
     val relationTypes = knownRelations.map(r => (r.id, r.name)).collect()
 
@@ -154,7 +156,7 @@ object Evaluator {
       keyedExtractions.cache()
 
       val nbrExtractions = keyedExtractions.count()
-      log.info(s"There are $nbrExtractions extractions for $name")
+      log.info(s"There are ${formatter.format(nbrExtractions)} extractions for $name")
 
       // Key known relations for this by subject-predicate
       val keyedValidations = knownRelations
@@ -168,24 +170,26 @@ object Evaluator {
 
       val matches = keyedExtractions.join(keyedValidations)
       val nbrMatches = matches.count()
-      log.info(s"There are $nbrMatches matching subject-predicate pairs for $name")
+      log.info(s"There are ${formatter.format(nbrMatches)} matching subject-predicate pairs for $name")
 
       val verifiedCorrect = matches.filter{case (_, (extraction, knownPair)) => {
         extraction.obj == knownPair.dest
       }}
       val nbrVerified = verifiedCorrect.count()
-      log.info(s"There are $nbrVerified found $name")
+      log.info(s"There are ${formatter.format(nbrVerified)} verified matches for $name")
 
       val conflictingMatches = matches.filter{case (_, (extraction, knownPair)) => {
         extraction.obj != knownPair.dest
       }}
       val nbrConflicting = conflictingMatches.count()
-      log.info(s"There are $nbrConflicting matches for $name")
+      log.info(s"There are ${formatter.format(nbrConflicting)} conflicting matches for $name")
 
       val foundPercentage: Double = 100 * (nbrMatches / nbrExtractions.toDouble)
       val verifiedPercentage: Double = 100 * (nbrVerified / nbrExtractions.toDouble)
-      log.info(s"Found $foundPercentage % of the extractions")
-      log.info(s"Correctly verified $verifiedPercentage % of the extractions")
+      val verifiedPercentageStr = f"$verifiedPercentage%4.2f"
+      val foundPercentageStr= f"$verifiedPercentage%4.2f"
+      log.info(s"Found $foundPercentageStr% of the extractions")
+      log.info(s"Correctly verified $verifiedPercentageStr% of the extractions")
 
       nMostProbable.foreach(n => {
         val predictions = extractions
