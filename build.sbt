@@ -24,7 +24,7 @@ libraryDependencies += "com.holdenkarau" %% "spark-testing-base" % "1.6.0_0.6.0"
 libraryDependencies += "org.rogach" %% "scallop" % "2.1.0"
 libraryDependencies += "se.lth.cs.nlp" % "docforia" % "1.0-SNAPSHOT"
 libraryDependencies += "org.scalaj" %% "scalaj-http" % "2.3.0"
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.4"
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.3.10"
 
 //libraryDependencies += "org.deeplearning4j" % "deeplearning4j-core" % "0.8.0"
 libraryDependencies += "org.deeplearning4j" % "dl4j-spark-nlp_2.10" % "0.8.0_spark_1"
@@ -75,4 +75,3 @@ preprocessVars in Preprocess := Map("VERSION" -> version.value)
 logBuffered in Test := false
 
 parallelExecution in Test := false
-

@@ -23,6 +23,19 @@ To run on the cluster use:
 
 That command creates a jar containing the program and all dependencies by running `sbt -Dmode=cluster assembly` then uploads it to cluster and runs `spark-submit`.
 
+### Docker
+There exists a docker image that is setup to download english models based of Wikipedia. The default command starts the REST api.
+
+```bash
+docker build -t prometheus/relation_extractor .
+docker run -p 8080:8080 prometheus/relation_extractor
+```
+
+It is possible to perform training and run custom commands but it requires overriding the default commands using the `docker exec` command or by passing parameters to `docker run` which will override the sbt subcommand.
+
+Depending on your system you might need to tweak the JVM options to allow for enough memory both off-heap for Javacpp and for the JVM. Define using the `--env <key>=<val>` flag to `docker run`.
+By default the image uses 14GB of ram.
+
 ## API Documentation
 [ScalaDoc](https://erikgartner.github.io/prometheus-relation-model)
 
