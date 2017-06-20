@@ -64,7 +64,7 @@ class DataEvaluationStage(
     val knownRelations = EntityPairExtractor.load(entityPairs.getData())
     val extractions = Predictor.load(predictions.getData())
     val results = Evaluator.evaluateData(knownRelations, extractions, nBest)
-    val header = "probability threshold\tname\tnumber of extractions\tfound percentage\tverified percentage\nprecision for n most probable"
+    val header = "probability threshold\tname\tnumber of extractions\tfound percentage\tverified percentage\tprecision for n most probable"
     Evaluator.save(header + results.mkString("\n"), path)
   }
 }
@@ -204,12 +204,13 @@ object Evaluator {
       log.info(s"Found $foundPercentage% of the extractions")
       log.info(s"Correctly verified $verifiedPercentage% of the extractions")
 
-      val theseExtractions = extractions
+      val theseMatches = matches
+        .flatMap{case (_, (es, pairs)) => es}
         .filter(_.probability >= modelThreshold)
         .filter(_.predictedPredicate == id)
 
       val nMostPrecision = nMostProbable.map(n => {
-        val predictions = theseExtractions.map(Seq(_))
+        val predictions = theseMatches.map(Seq(_))
         val (precision, _, _) = nMostProbableOutcome(predictions, verifiedCorrect, conflictingMatches, nbrValidations, n)
         precision
       })
@@ -218,10 +219,11 @@ object Evaluator {
       val end = 1.0
       val step = (end - modelThreshold) / 20
 
-      val theseResults = (modelThreshold to end by step).map(threshold => {
+      val theseResults = (modelThreshold + step to end by step).map(threshold => {
         log.info(s"Computing outcome if probability threshold was: ${f"$threshold%4.2f"}...")
-        val outcome = outcomeByThreshold(name, threshold, theseExtractions, verifiedCorrect, nbrValidations.toInt)
+        val outcome = outcomeByThreshold(name, threshold, theseMatches, verifiedCorrect, nbrValidations.toInt)
         log.info(s"\tVerified percentage: ${f"${outcome.verifiedPercentage}%4.2f"}")
+        println(outcome)
         outcome
       })
 
@@ -238,11 +240,11 @@ object Evaluator {
 
     val newExtractions = extractions.filter(_.probability >= threshold)
     val nbrExtractions = newExtractions.count()
-    val newFoundPercentage: Double = nbrExtractions / nbrExtractions.toDouble
+    val newFoundPercentage: Double = nbrExtractions / nbrRelations.toDouble
     val newVerifiedExtractions = verifiedExtractions.filter(_.probability >= threshold)
     val newVerifiedPercentage: Double = newVerifiedExtractions.count() /  nbrRelations.toDouble
 
-    RelationEvaluationResult(threshold, "name", nbrExtractions.toInt, newFoundPercentage, newVerifiedPercentage, None)
+    RelationEvaluationResult(threshold, name, nbrExtractions.toInt, newFoundPercentage, newVerifiedPercentage, None)
   }
 
   case class RelationEvaluationResult(
