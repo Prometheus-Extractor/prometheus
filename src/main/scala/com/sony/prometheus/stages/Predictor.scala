@@ -62,67 +62,45 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
   val UNKNOWN_CLASS = "<unknown_class>"
   val SENTENCE_MIN_LENGTH = 5
   val SENTENCE_MAX_LENGTH = 300
+  val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).toList.toMap
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
-
-    val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).toList.toMap
-
-    docs.map(doc => {
-      val sentences = doc.nodes(classOf[Sentence])
-        .asScala
-        .toSeq
-        .map(s => doc.subDocument(s.getStart, s.getEnd))
-        .filter(s => s.length >= SENTENCE_MIN_LENGTH && s.length <= SENTENCE_MAX_LENGTH)
-
-      val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
-      val classes = points
-        .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
-          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow)))
-        .map(x => (model.predict(x._2), x._1))
-        .filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
-        .filter(x => prunePrediction(x._1, x._2))
-
-      classes.map{
-        case (result: Prediction, point: TestDataPoint) =>
-          val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
-          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(),
-                            result.probability, result.filterProb, result.classProb)
-      }.toList
-    })
+    docs.map(extractDoc)
   }
 
   def extractRelationsLocally(docs: Seq[Document])(implicit sqlContext: SQLContext): Seq[Seq[ExtractedRelation]] = {
+    docs.map(extractDoc)
+  }
 
-    val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).toList.toMap
+  private def extractDoc(doc: Document)(implicit sqlContext: SQLContext): Seq[ExtractedRelation] = {
+    val sentences = doc.nodes(classOf[Sentence])
+      .asScala
+      .toSeq
+      .map(s => doc.subDocument(s.getStart, s.getEnd))
+      .filter(s => s.length >= SENTENCE_MIN_LENGTH && s.length <= SENTENCE_MAX_LENGTH)
 
-    docs.map(doc => {
-      val sentences = doc.nodes(classOf[Sentence])
-        .asScala
-        .toSeq
-        .map(s => doc.subDocument(s.getStart, s.getEnd))
-        .filter(s => s.length >= SENTENCE_MIN_LENGTH && s.length <= SENTENCE_MAX_LENGTH)
+    val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
+    val classes = points
+      .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
+        p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow, p.ent1IsSubject)))
+      .map(x => (model.predict(x._2), x._1))
+      .filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
+      .filter(x => prunePrediction(x._1, x._2))
 
-      val points: Seq[TestDataPoint] = FeatureExtractor.testData(sentences)
-      val classes = points
-        .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
-          p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow)))
-        .map(x => (model.predict(x._2), x._1))
-        .filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
-        .filter(x => prunePrediction(x._1, x._2))
-
-      classes.map{
-        case (result: Prediction, point: TestDataPoint) =>
-          val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result.clsIdx>")
-          ExtractedRelation(point.qidSource, predicate, point.qidDest, point.sentence.text(), doc.uri(),
-                            result.probability, result.filterProb, result.classProb)
-      }.toList
-    })
+    classes.map{
+      case (result: Prediction, point: TestDataPoint) =>
+        val predicate = classIdxToId.getOrElse(result.clsIdx, s"$UNKNOWN_CLASS: $result")
+        val subj = point.qidSource
+        val obj = point.qidDest
+        ExtractedRelation(subj, predicate, obj, point.sentence.text(), doc.uri(),
+          result.probability, result.filterProb, result.classProb)
+    }.toList
   }
 
   /**
     * Performs a sanity check to prune away bad predictions
     */
-  def prunePrediction(prediction: Prediction, point: TestDataPoint): Boolean = {
+  private def prunePrediction(prediction: Prediction, point: TestDataPoint): Boolean = {
 
     val relation = relations.find(_.classIdx == prediction.clsIdx).get
     if(relation.types.length < 2){
@@ -132,9 +110,7 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
       val ent2Type = point.ent2Type.toLowerCase
       val expected1 = relation.types(0).toLowerCase
       val expected2 = relation.types(1).toLowerCase
-      ent1Type == expected1 && ent2Type == expected2 || ent1Type == expected2 && ent2Type == expected1
-    }
-
+      if (point.ent1IsSubject) (ent1Type == expected1 && ent2Type == expected2) else (ent2Type == expected1 && ent1Type == expected2)    }
   }
 
 }

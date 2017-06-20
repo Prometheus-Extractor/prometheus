@@ -5,6 +5,7 @@ import java.io.BufferedOutputStream
 import com.sony.prometheus.stages.RelationModel.{balanceData, log, splitToTestTrain}
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -35,10 +36,14 @@ class ClassificationModelStage(path: String, featureTransfomerStage: FeatureTran
   }
 
   override def run(): Unit = {
-    val data = FeatureTransformer.load(featureTransfomerStage.getData())
-    val numClasses = data.take(1)(0).getLabels.length
-    val classificationNet = ClassificationModel.trainClassificationNetwork(data, numClasses, epochs)
-    ClassificationModel.save(path, classificationNet)
+    if(epochs == 0) {
+      LogManager.getLogger(classOf[ClassificationModelStage]).info(s"Epochs set $epochs; skipping.")
+    } else {
+      val data = FeatureTransformer.load(featureTransfomerStage.getData())
+      val numClasses = data.take(1)(0).getLabels.length
+      val classificationNet = ClassificationModel.trainClassificationNetwork(data, numClasses, epochs)
+      ClassificationModel.save(path, classificationNet)
+    }
   }
 }
 
@@ -49,9 +54,9 @@ object ClassificationModel {
 
     val filtered = rawData.filter(_.getLabels().getDouble(0) != 1)
     def getClass = (d: DataSet) => Nd4j.argMax(d.getLabels).getInt(0).toLong
-    val balanced = balanceData(filtered, false, getClass)
 
-    val (trainData, testData) = splitToTestTrain(balanced, 0.10)
+    val (trainData, testData) = splitToTestTrain(filtered, 0.10)
+    val balancedTrain = balanceData(trainData, false, getClass)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
@@ -96,7 +101,7 @@ object ClassificationModel {
     for(i <- (1 to epochs)){
       log.info(s"Epoch: $i/$epochs")
       val start = System.currentTimeMillis
-      sparkNetwork.fit(trainData)
+      sparkNetwork.fit(balancedTrain)
       log.info(s"Epoch finished in ${(System.currentTimeMillis() - start) / 1000}s")
 
       evaluation = sparkNetwork.evaluate(testData)
@@ -109,7 +114,7 @@ object ClassificationModel {
     log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
     log.info(sparkNetwork.getNetwork.summary())
 
-    trainData.unpersist(true)
+    balancedTrain.unpersist(true)
     sparkNetwork.getNetwork
   }
 

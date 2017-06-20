@@ -27,14 +27,16 @@ class FilterModelStage(path: String, featureTransfomerStage: FeatureTransformerS
 
   override def run(): Unit = {
     val data = FeatureTransformer.load(featureTransfomerStage.getData())
-    val filterNet = FilterModel.trainFilterNetwork(data, 10)
+    val filterNet = FilterModel.trainFilterNetwork(data)
     FilterModel.save(path, filterNet)
   }
 }
 
 object FilterModel {
 
-  def trainFilterNetwork(rawData: RDD[DataSet], iterations: Int = 10)
+  val DEFAULT_ITERATIONS = 10
+
+  def trainFilterNetwork(rawData: RDD[DataSet], iterations: Int = DEFAULT_ITERATIONS)
                         (implicit sqlContext: SQLContext): LogisticRegressionModel = {
 
     val labeledData: RDD[LabeledPoint] = rawData.map(d => {

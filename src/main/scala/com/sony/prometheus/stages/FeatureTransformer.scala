@@ -33,7 +33,7 @@ class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncod
       data.map(d => (d.relationClass, d.relationId)).distinct().collect().sortBy(_._1).map(_._2).toList: _*)
 
     val numClasses = data.map(d => d.relationClass).distinct().count().toInt
-    val balancedData = data //FeatureTransformer.balanceNegatives(data)
+    val balancedData = FeatureTransformer.balanceNegatives(data)
 
     val featureTransformer = sqlContext.sparkContext.broadcast(
       FeatureTransformer(word2VecData.getData(), posEncoderStage.getData(), neTypeEncoder.getData(),
@@ -41,7 +41,7 @@ class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncod
     balancedData.map(d => {
       val vector = featureTransformer.value.toFeatureVector(
         d.wordFeatures, d.posFeatures, d.wordsBetween, d.posBetween, d.ent1PosTags, d.ent2PosTags, d.ent1Type, d.ent2Type, d.dependencyPath,
-        d.ent1DepWindow, d.ent2DepWindow
+        d.ent1DepWindow, d.ent2DepWindow, d.ent1IsSubject
       ).toArray.map(_.toFloat)
       val features = Nd4j.create(vector)
       val label = Nd4j.create(featureTransformer.value.oneHotEncode(Seq(d.relationClass.toInt), numClasses).toArray)
@@ -140,7 +140,7 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
                       posBetween: Seq[String], ent1TokensPos: Seq[String],
                       ent2TokensPos: Seq[String], ent1Type: String, ent2Type: String,
                       dependencyPath: Seq[DependencyPath], ent1DepWindow: Seq[DependencyPath],
-                      ent2DepWindow: Seq[DependencyPath]): Vector = {
+                      ent2DepWindow: Seq[DependencyPath], ent1IsSubject: Boolean): Vector = {
 
     /* Word features */
     val wordVectors = wordFeatures.map(wordEncoder.index).flatMap(_.toArray).toArray
@@ -196,7 +196,10 @@ class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer
         (if (d.direction) Array(1.0) else Array(0.0))
     }) ++ Seq.fill(FeatureExtractor.DEPENDENCY_WINDOW - ent2DepWindow.size)(emptyDependencyVector)).flatten
 
+    /* Ordering of entities in relation to their order in the RDF triple */
+    val order = if(ent1IsSubject) Array(1.0) else Array(0.0)
+
     Vectors.dense(wordVectors ++ posVectors ++ paddedWordsBetweenVectors ++ paddedPosVectors ++ ent1Pos ++ ent2Pos
-      ++ neType1 ++ neType2 ++ paddedDepPath ++ ent1PaddedDepWindow  ++ ent2PaddedDepWindow)
+      ++ neType1 ++ neType2 ++ paddedDepPath ++ ent1PaddedDepWindow  ++ ent2PaddedDepWindow ++ order)
   }
 }

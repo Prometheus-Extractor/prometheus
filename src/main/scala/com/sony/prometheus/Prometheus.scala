@@ -62,7 +62,7 @@ object Prometheus {
     val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
     val epochs = opt[Int](
       descr = "number of epochs for neural network",
-      validate = x => (x > 0),
+      validate = x => (x >= 0),
       default = Option(5))
     val language = opt[String](
       default = Some("en"),
@@ -75,6 +75,10 @@ object Prometheus {
                 |""".stripMargin,
       validate = s => s == "preprocess" || s == "train" || s == "full",
       default = Some("full"))
+    val name = opt[String](
+      descr = "Custom Spark application name",
+      default = Some("")
+    )
 
     verify()
 
@@ -105,7 +109,7 @@ object Prometheus {
     Logger.getLogger("org").setLevel(Level.WARN)
     Logger.getLogger("akka").setLevel(Level.WARN)
     val log = LogManager.getLogger(Prometheus.getClass)
-    val appName = s"Prometheus Relation Model ${conf.language()} ${conf.stage()}"
+    val appName = s"Prometheus Relation Model ${conf.language()} ${conf.stage()} ${conf.name()}"
     val sparkConf = new SparkConf().setAppName(appName)
     envOrNone("SPARK_MASTER").foreach(m => sparkConf.setMaster(m))
 
