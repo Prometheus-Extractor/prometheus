@@ -19,8 +19,11 @@ curl -fsL $AWS_BUCKET"/prometheus/en/classification_model.tar.gz" | \
 
 cd ../..
 cd word2vec/en
-#curl -fsLO $AWS_BUCKET"/word2vec/en/model.opt.vecs"
-#curl -fsLO $AWS_BUCKET"/word2vec/en/model.opt.vocab"
+if [ $DOWNLOAD_WORD2VEC = "y" ]; then
+  echo "Downloading word2vec models... (this might take a while)"
+  curl -fsLO $AWS_BUCKET"/word2vec/en/model.opt.vecs"
+  curl -fsLO $AWS_BUCKET"/word2vec/en/model.opt.vocab"
+fi
 
 cd ../../
 curl -fsLO $AWS_BUCKET"/config.tsv"

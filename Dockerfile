@@ -4,6 +4,7 @@ LABEL maintainer "erikgartner@sony.com"
 ENV SCALA_VERSION 2.10.6
 ENV SBT_VERSION 0.13.8
 ENV DOCFORIA_TAG e3d2005b8c359cf4eb1e0d90932df79e2fe4ad2e
+ARG DOWNLOAD_WORD2VEC=y
 
 # Scala expects this file
 RUN touch /usr/lib/jvm/java-8-openjdk-amd64/release

@@ -36,6 +36,8 @@ It is possible to perform training and run custom commands but it requires overr
 Depending on your system you might need to tweak the JVM options to allow for enough memory both off-heap for Javacpp and for the JVM. Define using the `--env <key>=<val>` flag to `docker run`.
 By default the image uses 14GB of ram.
 
+To not  download the word2vec model (about 5-10 GB) set the build-arg flag: `--build-arg DOWNLOAD_WORD2VEC=n`.
+
 ## API Documentation
 [ScalaDoc](https://erikgartner.github.io/prometheus-relation-model)
 
