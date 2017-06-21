@@ -16,7 +16,7 @@ import org.apache.log4j.LogManager
 class PredictorStage(path: String, corpusData: CorpusData, model: RelationModel, posEncoder: PosEncoderStage,
                      word2VecData: Word2VecData, neTypeEncoder: NeTypeEncoderStage,
                      dependencyEncoderStage: DependencyEncoderStage, relationConfig: RelationConfigData)
-                    (implicit sqlContext: SQLContext, sparkContext: SparkContext)extends Task with Data {
+                    (implicit sqlContext: SQLContext, sparkContext: SparkContext) extends Task with Data {
 
   override def getData(): String = {
     if (!pathExists(path)) {
@@ -55,6 +55,10 @@ object Predictor {
     new Predictor(model, ft, relations)
   }
 
+  def load(path: String)(implicit sqlContext: SQLContext): RDD[ExtractedRelation] = {
+    import sqlContext.implicits._
+    sqlContext.read.json(path).as[ExtractedRelation].rdd
+  }
 }
 
 class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: Seq[Relation]) extends Serializable {

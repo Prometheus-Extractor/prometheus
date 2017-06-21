@@ -14,7 +14,7 @@ object Coref {
 
   /** Resolve any coreference chains in doc by copying over the named entity to the mentions
     */
-  def propagateCorefs(doc: Document): Document = {
+  def propagateCorefs(doc: Document): Unit = {
     val T = Token.`var`()
     val M = CoreferenceMention.`var`()
     val NED = NamedEntityDisambiguation.`var`()
@@ -40,12 +40,12 @@ object Coref {
             .setRange(m.getStart, m.getEnd)
             .setIdentifier(ned.getIdentifier)
             .setScore(ned.getScore)
-          if (ned.hasProperty("LABEL"))
+          if (ned.hasProperty("LABEL")) {
             newNed.putProperty("LABEL", ned.getProperty("LABEL"))
+          }
           m
         })
       })
-    doc
   }
 
 }

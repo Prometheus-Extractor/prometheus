@@ -21,16 +21,18 @@ object Prometheus {
 
   val DATA_PARTITIONS = 432
   val PORT = 8080
+  val DEFAULT_EPOCHS = 5
   var conf: Conf = null
 
   /** Provides arugment parsing
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer")
-    banner("""Usage: RelationModel [options] stage corpus-path entities-path temp-data-path word2vecPath
+    banner("""Usage: RelationModel [options] corpus-path config-file wikidata-path temp-data-path word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
+    /* Trailing args */
     val corpusPath = trailArg[String](
       descr = "path to the corpus to train on",
       validate = pathPrefixValidation)
@@ -46,6 +48,8 @@ object Prometheus {
     val word2vecPath = trailArg[String](
       descr = "path to a word2vec model in the C binary format",
       validate = pathPrefixValidation)
+
+    /* Options */
     val sampleSize = opt[Double](
       descr = "use this to sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
@@ -59,15 +63,16 @@ object Prometheus {
       default = Option(false))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
-    val evaluationFiles = opt[List[String]](descr = "path to evaluation files")
+    val modelEvaluationFiles = opt[List[String]](descr = "path to model evaluation files")
+    val dataEvaluation = opt[Boolean](descr = "flag to evaluate extractions against Wikidata")
     val epochs = opt[Int](
       descr = "number of epochs for neural network",
-      validate = x => (x >= 0),
-      default = Option(5))
+      validate = x => x >= 0,
+      default = Some(DEFAULT_EPOCHS))
     val language = opt[String](
       default = Some("en"),
       validate = l => l == "sv" || l == "en",
-      descr = "the language to use for the pipeline (default to en)")
+      descr = "the language to use for the pipeline (defaults to en)")
     val stage = opt[String](
       descr = """how far to run the program, [preprocess|train|full]
                 |train implies preprocess
@@ -134,7 +139,7 @@ object Prometheus {
       )
 
       // Extract training sentences
-      val trainingExtactorTask = new TrainingDataExtractorStage(
+      val trainingExtractorTask = new TrainingDataExtractorStage(
         tempDataPath + "/training_sentences",
         corpusData,
         entityPairs)
@@ -154,7 +159,7 @@ object Prometheus {
       // Extract features from the training data (Strings)
       val featureExtractionTask = new FeatureExtractorStage(
         tempDataPath + "/features",
-        trainingExtactorTask,
+        trainingExtractorTask,
         configData)
 
       // Transform features from Strings into vectors of numbers
@@ -190,11 +195,11 @@ object Prometheus {
           log.info(s"Saved model to ${classificationModelStage.getData()} and ${filterModelStage.getData()}")
         } else {
           // Evaluate
-          conf.evaluationFiles.foreach(evalFiles => {
+          conf.modelEvaluationFiles.foreach(evalFiles => {
             log.info("Performing evaluation")
             val predictor = Predictor(relationModel, posEncoderStage, word2VecData, neTypeEncoderStage,
               depEncoder, configData)
-            performEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
+            performModelEvaluation(evalFiles, predictor, conf.language(), log, tempDataPath)
           })
 
           // Serve HTTP API
@@ -216,7 +221,7 @@ object Prometheus {
               }
           }
 
-          // Start generating data
+          // Configure data extraction
           val predictorStage = new PredictorStage(
             tempDataPath + "/extractions",
             corpusData,
@@ -227,9 +232,25 @@ object Prometheus {
             depEncoder,
             configData)
 
-          // Force running
-          predictorStage.run()
+          // Evaluate extractions against Wikidata
+          if (conf.dataEvaluation()) {
+            val f = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss")
+            val t = LocalDateTime.now()
 
+            val N_BEST = 100
+            val dataEvaluation = new DataEvaluationStage(
+              tempDataPath + s"/evaluation/${t.format(f)}-wd",
+              entityPairs,
+              conf.language(),
+              predictorStage,
+              Some(N_BEST)
+            )
+            val data = dataEvaluation.getData()
+            log.info(s"Saved Wikidata evaluation to $data")
+          } else {
+            // Force running data extraction
+            predictorStage.run()
+          }
         }
 
       }
@@ -239,7 +260,7 @@ object Prometheus {
     }
   }
 
-  private def performEvaluation(
+  private def performModelEvaluation(
     evalFiles: List[String],
     predictor: Predictor,
     lang: String,
@@ -254,17 +275,17 @@ object Prometheus {
 
     evalFiles.foreach(evalFile => {
       log.info(s"Evaluating $evalFile")
-      val evaluationData = new EvaluationData(evalFile)
+      val evaluationData = new ModelEvaluationData(evalFile)
       val evalSavePath = tempDataPath +
         s"/evaluation/${t.format(f)}-${evalFile.split("/").last.split(".json")(0)}"
-      val evaluationTask = new EvaluatorStage(
+      val evaluationTask = new ModelEvaluatorStage(
         evalSavePath,
         evaluationData,
         lang,
         predictor,
-        N_MOST_PROBABLE)
+        Some(N_MOST_PROBABLE))
       val _ = evaluationTask.getData()
-      log.info(s"Saved evaluation to $evalSavePath")
+      log.info(s"Saved evaluation to $evalSavePath.tsv")
     })
   }
 }

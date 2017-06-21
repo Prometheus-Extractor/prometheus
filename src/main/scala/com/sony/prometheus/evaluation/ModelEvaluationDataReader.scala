@@ -10,7 +10,7 @@ import org.apache.log4j.LogManager
 import play.api.libs.json.Json
 import se.lth.cs.docforia.Document
 
-class EvaluationData(path: String)(implicit sc: SparkContext) extends Data {
+class ModelEvaluationData(path: String)(implicit sc: SparkContext) extends Data {
   override def getData(): String = {
     if (pathExists(path)) {
       path
@@ -36,10 +36,11 @@ object Evidence {
   implicit val format = Json.format[Evidence]
 }
 
+
 /** Data structure for both true and false examples of extracted relations and
   * their sources in the form of text snippets
   */
-case class EvaluationDataPoint(
+case class ModelEvaluationDataPoint(
   wd_sub: String,
   sub: String,
   judgments: Seq[Judgment],
@@ -51,26 +52,26 @@ case class EvaluationDataPoint(
   def positive(): Boolean = {judgments.count(_.judgment == "yes") > judgments.length / 2.0}
 }
 
-object EvaluationDataPoint {
-  implicit val format = Json.format[EvaluationDataPoint]
+object ModelEvaluationDataPoint {
+  implicit val format = Json.format[ModelEvaluationDataPoint]
 }
 
-object EvaluationDataReader {
-  val log = LogManager.getLogger(EvaluationDataReader.getClass)
+object ModelEvaluationDataReader {
+  val log = LogManager.getLogger(ModelEvaluationDataReader.getClass)
 
-  /** Returns an RDD of [[EvaluationDataPoint]] read from path
+  /** Returns an RDD of [[ModelEvaluationDataPoint]] read from path
     *
     */
-  def load(path: String)(implicit sqlContext: SQLContext): RDD[EvaluationDataPoint]  = {
+  def load(path: String)(implicit sqlContext: SQLContext): RDD[ModelEvaluationDataPoint]  = {
     import sqlContext.implicits._
-    sqlContext.read.json(path).as[EvaluationDataPoint].rdd
+    sqlContext.read.json(path).as[ModelEvaluationDataPoint].rdd
   }
 
   /** Retuns and RDD of HERD-annotated Document:s, read from file containing
-    * [[EvaluationDataPoint]]:s
+    * [[ModelEvaluationDataPoint]]:s
     *
     * @param path       the path to the file to read
-    * @returns          RDD of HERD-annotated Document:s; one Document per
+    * @return          RDD of HERD-annotated Document:s; one Document per
     * evidence snippet per EvaluationDataPoint in the file
    */
   def getAnnotatedDocs(path: String)(implicit sqlContext: SQLContext): RDD[Document] = {
