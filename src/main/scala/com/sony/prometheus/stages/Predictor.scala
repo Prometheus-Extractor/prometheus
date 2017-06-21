@@ -1,6 +1,7 @@
 package com.sony.prometheus.stages
 
 
+import com.sony.prometheus.Prometheus
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -67,6 +68,7 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
   val SENTENCE_MIN_LENGTH = 5
   val SENTENCE_MAX_LENGTH = 300
   val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).toList.toMap
+  val threshold = Prometheus.conf.probabilityCutoff()
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
     docs.map(extractDoc)
@@ -87,7 +89,7 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
     val classes = points
       .map(p => (p, transformer.value.toFeatureVector(p.wordFeatures, p.posFeatures, p.wordsBetween, p.posBetween, p.ent1PosFeatures, p.ent2PosFeatures,
         p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow, p.ent1IsSubject)))
-      .map(x => (model.predict(x._2), x._1))
+      .map(x => (model.predict(x._2, threshold), x._1))
       .filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
       .filter(x => prunePrediction(x._1, x._2))
 

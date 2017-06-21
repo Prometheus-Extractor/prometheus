@@ -63,22 +63,35 @@ class RelationModel(val filterModel: LogisticRegressionModel, val classModel: Mu
   filterModel.clearThreshold()
   classModel.conf().setUseDropConnect(false)
 
-  def predict(vector: Vector, threshold: Double = threshold): Prediction = {
-    val vec = Nd4j.create(vector.toArray)
+  def predict(vector: Vector, threshold: Double): Prediction = {
+    val filterProb = filterModel.predict(vector)
+    classify(vector, filterProb, threshold)
+  }
 
-    val isRelation = filterModel.predict(vector)
-    val output = classModel.output(vec, false)
-    val cls = Nd4j.argMax(output).getInt(0)
-    val prob = output.getDouble(cls)
+  def predict(vectors: RDD[Vector], threshold: Double): RDD[Prediction] = {
+    vectors.zip(filterModel.predict(vectors)).map(t => classify(t._1, t._2, threshold))
+  }
 
-    val combinedProb = isRelation * prob
-
-    if(combinedProb < threshold){
-      Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, (1 - combinedProb), isRelation, prob)
+  private def classify(vector: Vector, filterProb: Double, threshold: Double) = {
+    if(filterProb < threshold) {
+      Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, 1 - filterProb, filterProb, 0.0)
     } else {
-      Prediction(cls, combinedProb, isRelation, prob)
+      val vec = Nd4j.create(vector.toArray)
+
+      val output = classModel.output(vec, false)
+      val cls = Nd4j.argMax(output).getInt(0)
+      val prob = output.getDouble(cls)
+
+      val combinedProb = filterProb * prob
+
+      if(combinedProb < threshold){
+        Prediction(FeatureExtractor.NEGATIVE_CLASS_NBR, (1 - combinedProb), filterProb, prob)
+      } else {
+        Prediction(cls, combinedProb, filterProb, prob)
+      }
     }
   }
+
 }
 
 case class Prediction(clsIdx: Int, probability: Double, filterProb: Double, classProb: Double)

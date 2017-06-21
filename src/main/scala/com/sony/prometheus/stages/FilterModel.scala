@@ -110,7 +110,9 @@ object FilterModel {
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): LogisticRegressionModel = {
-    LogisticRegressionModel.load(sqlContext.sparkContext, path)
+    val model = LogisticRegressionModel.load(sqlContext.sparkContext, path)
+    log.info(s"Filter model loaded. Input features: ${model.numFeatures}, Classes: ${model.numClasses}")
+    model
   }
 
 }

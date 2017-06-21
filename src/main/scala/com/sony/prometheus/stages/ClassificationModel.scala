@@ -132,6 +132,7 @@ object ClassificationModel {
     val input = fs.open(new Path(path + "/dl4j_model_classify.bin"))
     val classNetwork = ModelSerializer.restoreMultiLayerNetwork(input.getWrappedStream, true)
     input.close()
+    log.info(s"Classification model loaded: ${classNetwork.summary()}")
     classNetwork
   }
 
