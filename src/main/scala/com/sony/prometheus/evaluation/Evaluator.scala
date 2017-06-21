@@ -163,7 +163,7 @@ object Evaluator {
 
       keyedExtractions.cache()
 
-      val nbrExtractions = keyedExtractions.count()
+      val nbrExtractions = keyedExtractions.flatMap{case (_, es) => es}.count()
       log.info(s"There are ${formatter.format(nbrExtractions)} extractions for $name")
 
       // Key known relations for this by subject-predicate
@@ -173,47 +173,51 @@ object Evaluator {
           rel.entities.map(entPair => {
             (s"${entPair.source}${rel.id}", entPair)
           })
-        )
-        .groupByKey()
+        ).groupByKey()
 
       keyedValidations.cache()
-      val nbrValidations = keyedValidations.count()
+      val nbrValidations = keyedValidations.flatMap{case (_, ks) => ks}.count()
+      log.info(s"There are ${formatter.format(nbrValidations)} known $name triples in Wikidata")
 
-      // Join extractions and validations to get common matches (matches subject and predicate)
-      val matches = keyedExtractions.join(keyedValidations)
-      val nbrMatches = matches.count()
-      log.info(s"There are ${formatter.format(nbrMatches)} matching subject-predicate pairs for $name")
+      // Join extractions and validations to get common pairs (matching subj and predicate but not necessarily obj)
+      val pairMatches = keyedExtractions.join(keyedValidations)
+      // Nbr of found subj-predicate pairs that matches corresponding Wikidata known relation
+      val nbrPairMatches = keyedExtractions.count()
+      // Total nbr of found triples that at least partially matches entries in Wikidata
+      val nbrTotalMatches = pairMatches.flatMap{case (_, (es, _)) => es}.count()
+      log.info(s"There are ${formatter.format(nbrTotalMatches)} matching subject-predicate pairs for $name")
 
-      // Filter out correct matches (where also the object is correct)
-      val verifiedCorrect = matches.flatMap{case (_, (es, pairs)) => {
+      // Filter out correct pairMatches (where also the object is correct)
+      val verifiedCorrect = pairMatches.flatMap{case (_, (es, pairs)) => {
         es.filter(extraction => pairs.exists(pair => pair.dest == extraction.obj))
       }}
 
       val nbrVerified = verifiedCorrect.count()
-      log.info(s"There are ${formatter.format(nbrVerified)} verified matches for $name")
+      log.info(s"There are ${formatter.format(nbrVerified)} verified triples for $name")
 
-      val conflictingMatches = matches.flatMap{case (_, (es, knownPairs)) => {
-        es.filter(extraction => !knownPairs.exists(pair => pair.dest == extraction.obj))
+      val conflictingMatches = pairMatches.flatMap{case (_, (es, pairs)) => {
+        es.filter(extraction => !pairs.exists(pair => pair.dest == extraction.obj))
       }}
 
       val nbrConflicting = conflictingMatches.count()
-      log.info(s"There are ${formatter.format(nbrConflicting)} conflicting matches for $name")
+      log.info(s"There are ${formatter.format(nbrConflicting)} conflicting pairMatches for $name")
 
-      val foundProportion: Double =  nbrMatches / nbrValidations.toDouble
+      // Proportion of Wikidata entries that we find at least a partial match
+      val foundProportion: Double =  nbrPairMatches / nbrExtractions.toDouble
       val foundPercentage = f"${foundProportion * 100}%4.2f"
-      val verifiedProportion: Double =  nbrVerified / nbrValidations.toDouble
+      val verifiedProportion: Double =  nbrVerified / nbrTotalMatches.toDouble
       val verifiedPercentage = f"${verifiedProportion * 100}%4.2f"
-      log.info(s"Found $foundPercentage% of the extractions")
-      log.info(s"Correctly verified $verifiedPercentage% of the extractions")
+      log.info(s"Found suggestions for $foundPercentage% of the extractions")
+      log.info(s"Correctly verified $verifiedPercentage% of the matching extractions")
 
-      val theseMatches = matches
-        .flatMap{case (_, (es, pairs)) => es}
+      val theseMatches = pairMatches
+        .flatMap{case (_, (es, _)) => es}
         .filter(_.probability >= modelThreshold)
-        .filter(_.predictedPredicate == id)
 
       val nMostPrecision = nMostProbable.map(n => {
         val predictions = theseMatches.map(Seq(_))
         val (precision, _, _) = nMostProbableOutcome(predictions, verifiedCorrect, conflictingMatches, nbrValidations, n)
+        log.info(s"$n most probable precision: $precision")
         precision
       })
 
@@ -279,7 +283,7 @@ object Evaluator {
     evalDataPoints.cache()
     annotatedEvidence.cache()
 
-    val herdPoints = evalDataPoints.zip(annotatedEvidence).filter(herdSucceded)
+    val herdPoints = evalDataPoints.zip(annotatedEvidence).filter(herdSucceeded)
 
     val nbrEvalDataPoints = evalDataPoints.count()
     val nbrTrueDataPoints = evalDataPoints.filter(_.positive()).count()
@@ -340,7 +344,7 @@ object Evaluator {
     debugOutFile.foreach(file => {
       val data = evalDataPoints.zip(annotatedEvidence).zip(predictedRelations).map{
         case ((evalPoint, annotatedDocument), relations) =>
-          val herdResult = herdSucceded(evalPoint, annotatedDocument)
+          val herdResult = herdSucceeded(evalPoint, annotatedDocument)
           val relResults = relations.map(r => s"${r.subject}/${r.predictedPredicate}/${r.obj} - ${r.probability} - ${isCorrectPrediction(evalPoint, r)}").mkString("\t")
           s"${evalPoint.evidences.map(_.snippet).mkString(" >> ")}\t${evalPoint.positive()}\t${evalPoint.wd_sub}/${evalPoint.wd_pred}/${evalPoint.wd_obj}\t$herdResult\t$relResults"
       }.collect().mkString("\n")
@@ -360,7 +364,7 @@ object Evaluator {
     evaluation
   }
 
-  private def herdSucceded(zippedPoint: (ModelEvaluationDataPoint, Document)): Boolean = {
+  private def herdSucceeded(zippedPoint: (ModelEvaluationDataPoint, Document)): Boolean = {
     val dataPoint = zippedPoint._1
     val evidence = zippedPoint._2
     val ents = evidence.nodes(classOf[NamedEntityDisambiguation]).asScala.toSeq.map(_.getIdentifier.split(":").last)
