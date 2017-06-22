@@ -1,4 +1,4 @@
-package com.sony.prometheus.stages
+package com.sony.prometheus.utils
 
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation

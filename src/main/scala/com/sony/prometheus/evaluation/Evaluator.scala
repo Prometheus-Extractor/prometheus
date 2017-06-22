@@ -1,9 +1,10 @@
 package com.sony.prometheus.evaluation
 
 import java.io.BufferedOutputStream
+
 import com.sony.prometheus.annotaters.VildeAnnotater
 import com.sony.prometheus.stages.{Predictor, PredictorStage, _}
-import com.sony.prometheus.utils.Utils
+import com.sony.prometheus.utils.{Coref, Utils}
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.LogManager
@@ -13,6 +14,7 @@ import org.apache.spark.sql.SQLContext
 import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.memstore.{MemoryDocument, MemoryDocumentIO}
+
 import scala.collection.JavaConverters._
 
 /** Pipeline stage to run evaluation

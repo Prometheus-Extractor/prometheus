@@ -2,6 +2,7 @@ package com.sony.prometheus.stages
 
 
 import com.sony.prometheus.Prometheus
+import com.sony.prometheus.utils.Pruner
 import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
@@ -53,7 +54,8 @@ object Predictor {
                                                 dependencyEncoderStage.getData())
     val relations = RelationConfigReader.load(relationConfig.getData())
     val ft = sqlContext.sparkContext.broadcast(featureTransformer)
-    new Predictor(model, ft, relations)
+    val pruner = Pruner(relationConfig.getData())
+    new Predictor(model, ft, relations, pruner)
   }
 
   def load(path: String)(implicit sqlContext: SQLContext): RDD[ExtractedRelation] = {
@@ -62,13 +64,14 @@ object Predictor {
   }
 }
 
-class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: Seq[Relation]) extends Serializable {
+class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer], relations: Seq[Relation], pruner: Broadcast[Pruner]) extends Serializable {
 
   val UNKNOWN_CLASS = "<unknown_class>"
   val SENTENCE_MIN_LENGTH = 5
   val SENTENCE_MAX_LENGTH = 300
   val classIdxToId: Map[Int, String] = relations.map(r => (r.classIdx, r.id)).toList.toMap
   val threshold = Prometheus.conf.probabilityCutoff()
+
 
   def extractRelations(docs: RDD[Document])(implicit sqlContext: SQLContext): RDD[Seq[ExtractedRelation]] = {
     docs.map(extractDoc)
@@ -91,7 +94,7 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
         p.ent1Type, p.ent2Type, p.dependencyPath, p.ent1DepWindow, p.ent2DepWindow, p.ent1IsSubject)))
       .map(x => (model.predict(x._2, threshold), x._1))
       .filter(_._1.clsIdx != FeatureExtractor.NEGATIVE_CLASS_NBR)
-      .filter(x => prunePrediction(x._1, x._2))
+      .filter(x => pruner.value.prunePrediction(x._1, x._2))
 
     classes.map{
       case (result: Prediction, point: TestDataPoint) =>
@@ -101,22 +104,6 @@ class Predictor(model: RelationModel, transformer: Broadcast[FeatureTransformer]
         ExtractedRelation(subj, predicate, obj, point.sentence.text(), doc.uri(),
           result.probability, result.filterProb, result.classProb)
     }.toList
-  }
-
-  /**
-    * Performs a sanity check to prune away bad predictions
-    */
-  private def prunePrediction(prediction: Prediction, point: TestDataPoint): Boolean = {
-
-    val relation = relations.find(_.classIdx == prediction.clsIdx).get
-    if(relation.types.length < 2){
-      true
-    } else {
-      val ent1Type = point.ent1Type.toLowerCase
-      val ent2Type = point.ent2Type.toLowerCase
-      val expected1 = relation.types(0).toLowerCase
-      val expected2 = relation.types(1).toLowerCase
-      if (point.ent1IsSubject) (ent1Type == expected1 && ent2Type == expected2) else (ent2Type == expected1 && ent1Type == expected2)    }
   }
 
 }

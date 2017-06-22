@@ -1,7 +1,7 @@
 package com.sony.prometheus.annotaters
 
 import com.sony.prometheus.Prometheus
-import com.sony.prometheus.stages.Coref
+import com.sony.prometheus.utils.Coref
 
 import scalaj.http.{Http, HttpResponse}
 import se.lth.cs.docforia.Document

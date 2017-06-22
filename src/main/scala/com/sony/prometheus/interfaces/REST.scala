@@ -5,7 +5,7 @@ import org.http4s.dsl._
 import org.http4s.headers.`Content-Type`
 import org.http4s.MediaType._
 import com.sony.prometheus.annotaters._
-import com.sony.prometheus.stages.{Coref, Predictor}
+import com.sony.prometheus.stages.Predictor
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -13,6 +13,7 @@ import play.api.libs.json._
 import java.nio.charset.{Charset, CodingErrorAction}
 
 import com.sony.prometheus.Prometheus
+import com.sony.prometheus.utils.Coref
 
 object REST {
 

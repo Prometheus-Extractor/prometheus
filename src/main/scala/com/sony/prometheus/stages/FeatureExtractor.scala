@@ -1,6 +1,7 @@
 package com.sony.prometheus.stages
 
 import com.sony.prometheus._
+import com.sony.prometheus.utils.Pruner
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -109,7 +110,8 @@ object FeatureExtractor {
       featureArrays
     })
 
-    val data = pruneTrainingData(trainingPoints, relationConfigPath).repartition(Prometheus.DATA_PARTITIONS)
+    val pruner = Pruner(relationConfigPath)
+    val data = pruner.value.pruneTrainingData(trainingPoints).repartition(Prometheus.DATA_PARTITIONS)
     data
   }
 
@@ -251,47 +253,8 @@ object FeatureExtractor {
 
   }
 
-  private def pruneTrainingData(data: RDD[TrainingDataPoint], relationConfig: String)
-                               (implicit sqlContext: SQLContext): RDD[TrainingDataPoint] = {
-
-    log.info(s"Training Data Pruner - Initial size: ${data.count}")
-    /*var prunedData = data.filter(d => {
-      /* Filter out short feature arrays*/
-      d.wordFeatures.count(_ != EMPTY_TOKEN) >= MIN_FEATURE_LENGTH
-    })
-    log.info(s"Training Data Pruner - Feature length: ${prunedData.count}")
-    */
-
-    /* Filter out points without any dependency paths */
-    var prunedData = data.filter(d => {
-      d.dependencyPath.nonEmpty
-    })
-    log.info(s"Training Data Pruner - Empty dependency paths: ${prunedData.count}")
 
 
-    val allowedTypes = RelationConfigReader.load(relationConfig)
-      .filter(_.types.length == 2)
-      .map(r => r.id -> (r.types(0).toLowerCase, r.types(1).toLowerCase))
-      .toMap
-    prunedData = prunedData.filter(d => {
-      /* Filter points without correct entity types.
-       * Allows all negative points and points without type information, also doesn't care about ordering. */
-      if (d.relationId == NEGATIVE_CLASS_NAME) {
-        true
-      } else {
-        allowedTypes.get(d.relationId).forall(t => {
-          val ent1Type = d.ent1Type.toLowerCase
-          val ent2Type = d.ent2Type.toLowerCase
-          val expected1 = t._1
-          val expected2 = t._2
-          if (d.ent1IsSubject) (ent1Type == expected1 && ent2Type == expected2) else (ent2Type == expected1 && ent1Type == expected2)
-        })
-      }
-    })
-    log.info(s"Training Data Pruner - Correct NE types: ${prunedData.count}")
-
-    prunedData
-  }
 
   /** Finds the depedency window of an entity. I.e. Dependency relations that connected to the entity not
     * part of the dependency path.
