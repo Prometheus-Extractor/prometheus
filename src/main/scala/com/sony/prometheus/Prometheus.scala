@@ -192,6 +192,7 @@ object Prometheus {
 
         if (conf.stage() == "train") {
           filterModelStage.getData()
+          classificationModelStage.getData()
           log.info(s"Saved model to ${classificationModelStage.getData()} and ${filterModelStage.getData()}")
         } else {
           // Evaluate
