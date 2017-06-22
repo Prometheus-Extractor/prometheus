@@ -15,50 +15,62 @@ Below follows a short overview of the stages.
 
 #### Corpus Reader
 *(Annotated Corpus Folder -> CorpusData)*
+
 Reads the annotated corpus from disk to memory.
 
 #### Entity Pair Extractor
 *(Config file, Wikidata -> EntityPairs)*
+
 Extracts all entities pair that uses that are connected by relation defined in the configuration file.
 
 #### Training Data Extractor
 *(EntityPairs, Annotated Corpus -> TrainingSentences)*
+
 Extracts all sentences in the corpus containing the any entity pair.
 
 #### PoS/Dep/NEType Encoders
 *(Annotated Corpus -> PoS/Dep/NEType Encoders)*
+
 The encoders learns numeric representations for the features. The Word2Vec encoder is special since it uses an externally trained Word2Vec-model that has to be supplied as a program argument.
 
 #### Feature Extractor
 *(TrainingSentences -> FeatureArrays)*
+
 Creates (string) feature arrays by extracting the features for the TrainingSentences.
 
 #### Feature Transformer
 *(FeatureArrays -> VectorFeatures)* `--stage preprocess`
+
 Transforms the string features to numeric features using the encoders. Since Prometheus use Word2Vec the features are stored as dense vectors that are quite space consuming.
 
 #### Filter Model
 *(VectorFeatures -> FilterModel)* `--stage train`
+
 Trains the first model that performs filtering of between relevant/irrelevant sentences.
 
 #### Classification Model
 *(VectorFeatures -> ClassificationModel)* `--stage train`
+
 Trains the second model that performs classification of relevant sentences between the classes / relations defined in the configuration file.
 
 #### Predictor
 *(CorpusData, Models, Encoders -> Extractions)* `--stage full`
+
 This stage runs the models over the entire CorpusData to extract all relations found in the text. Note that this CorpusData can but doesn't have to be the same as the the one used during Training Data Extraction.
 
 #### Model Evaluation
 *(Models, EvaluationFiles -> EvaluationResults)* `--model-evaluation-files <files>`
+
 Using labeled evaluation sentences (found in `data/model_evaluation`) the models performance is evaluated. Uses the external annotation server to annotate the evaluation sentences on-the-fly.
 
 #### Data Evaluation
 *(Models, Extractions, Wikidata -> EvaluationResults)* `--data-evaluation>`
+
 Compares the Extractions against the fact found in Wikidata to evaluate the number of correct/incorrect extraction.
 
 #### Demo
 *(Models, Encoders -> REST API)* `-d`
+
 Technically not a stage, this command serves a simple REST API at `0.0.0.0:8080/api/<lang>/extract`. When sending a text in the body of a POST request it gets annotated by the external annotation server and the models extracts the relations.
 
 ### Data sources
