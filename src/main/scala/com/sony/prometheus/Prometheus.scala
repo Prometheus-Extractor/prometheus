@@ -188,13 +188,14 @@ object Prometheus {
           featureTransformerStage
         )
 
-        val relationModel = RelationModel(filterModelStage, classificationModelStage, conf.probabilityCutoff())
-
         if (conf.stage() == "train") {
           filterModelStage.getData()
           classificationModelStage.getData()
           log.info(s"Saved model to ${classificationModelStage.getData()} and ${filterModelStage.getData()}")
         } else {
+
+          val relationModel = RelationModel(filterModelStage, classificationModelStage, conf.probabilityCutoff())
+2
           // Evaluate
           conf.modelEvaluationFiles.foreach(evalFiles => {
             log.info("Performing evaluation")
