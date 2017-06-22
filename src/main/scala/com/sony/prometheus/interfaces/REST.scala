@@ -18,10 +18,12 @@ import com.sony.prometheus.utils.Coref
 object REST {
 
   val log = LogManager.getLogger("REST Api")
+  val lang = Prometheus.conf.language()
 
   def api(predictor: Predictor)
          (implicit sc: SparkContext, sqlContext: SQLContext): HttpService = HttpService {
-    case req @ POST -> Root / "api" / lang / "extract" =>
+
+    case req @ POST -> Root / "api" / `lang` / "extract" =>
       log.info(s"Incoming request: ${req}")
       val is = scalaz.stream.io.toInputStream(req.body)
       val decoder = Charset.forName("UTF-8").newDecoder()

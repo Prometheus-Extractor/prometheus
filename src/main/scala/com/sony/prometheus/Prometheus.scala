@@ -28,7 +28,7 @@ object Prometheus {
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer")
-    banner("""Usage: RelationModel [options] corpus-path config-file wikidata-path temp-data-path word2vecPath
+    banner("""Usage: Prometheus [options] corpus-path config-file wikidata-path temp-data-path word2vecPath
            |Prometheus model trainer trains a relation extractor
            |Options:
            |""".stripMargin)
