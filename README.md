@@ -26,7 +26,7 @@ Extracts all entities pair that uses that are connected by relation defined in t
 #### Training Data Extractor
 *(EntityPairs, Annotated Corpus -> TrainingSentences)*
 
-Extracts all sentences in the corpus containing the any entity pair.
+Extracts all sentences in the corpus containing any entity pair.
 
 #### PoS/Dep/NEType Encoders
 *(Annotated Corpus -> PoS/Dep/NEType Encoders)*
@@ -61,17 +61,17 @@ This stage runs the models over the entire CorpusData to extract all relations f
 #### Model Evaluation
 *(Models, EvaluationFiles -> EvaluationResults)* `--model-evaluation-files <files>`
 
-Using labeled evaluation sentences (found in `data/model_evaluation`) the models performance is evaluated. Uses the external annotation server to annotate the evaluation sentences on-the-fly.
+Using labeled evaluation sentences (found in `data/model_evaluation`) the model performance is evaluated. Uses the external annotation server to annotate the evaluation sentences on-the-fly.
 
 #### Data Evaluation
 *(Models, Extractions, Wikidata -> EvaluationResults)* `--data-evaluation>`
 
-Compares the Extractions against the fact found in Wikidata to evaluate the number of correct/incorrect extraction.
+Compares the Extractions against the fact found in Wikidata to evaluate the number of correct/incorrect extractions.
 
 #### Demo
 *(Models, Encoders -> REST API)* `-d`
 
-Technically not a stage, this command serves a simple REST API at `0.0.0.0:8080/api/<lang>/extract`. When sending a text in the body of a POST request it gets annotated by the external annotation server and the models extracts the relations.
+Technically not a stage, this command serves a simple REST API at `0.0.0.0:8080/api/<lang>/extract`. When sending a text in the body of a POST request it gets annotated by the external annotation server and then the system replies with extracted relations found by the model.
 
 ### Data sources
 Prometheus uses several different types of input data, here's a quick run down.
@@ -109,7 +109,7 @@ The Prometheus system is built for large-scale data processing and thus require 
 
 The recommended amount of dedicated memory per worker is 32GB.
 
-The minimum amount is about 14GB though that require some tweaking. Specifically you need to configure so that the system has 14GB of heap memory during all stages *except* during the ClassificationModel training, that requires about 6GB of heap memory and about 8GB of off-heap memory. See [neuralnet.md](neuralnet.md).
+The minimum amount is about 20GB though that require some tweaking. Specifically you need to configure so that the system has 18GB of heap memory during all stages *except* during the ClassificationModel training, that stage requires about 6GB of heap memory and about 14GB of off-heap memory. See [neuralnet.md](./neuralnet.md).
 
 Our cluster didn't have GPUs, so we do all training on CPUs. However it is possible to train on GPUs by changing the [DeepLearning4j](https://deeplearning4j.org/) dependencies from the CPU version to GPU version in the `pom.xml`-file.
 
@@ -165,6 +165,7 @@ full implies train
                                intermediate results
   word2vec-path (required)     path to a word2vec model in the C binary format
 ```
+Note that paths are written as either `hdfs:/`,  `s3:/` or `file:/` depending on where they are stored.
 
 To run the program locally using SBT use:
 ```
