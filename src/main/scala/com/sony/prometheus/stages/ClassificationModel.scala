@@ -78,11 +78,12 @@ object ClassificationModel {
       .iterations(1) // Not the same as epoch. Should probably only ever be 1.
       .activation(Activation.RELU)
       .weightInit(WeightInit.XAVIER)
-      .updater(Updater.ADADELTA)
+      .updater(Updater.ADADELTA) // test with ADAM?
       //.learningRate(0.005)
       //.momentum(0.9)
       .epsilon(1.0E-8)
       .dropOut(0.5)
+      .regularization(true)
       .list()
       .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(512).build())
       .layer(1, new DenseLayer.Builder().nIn(512).nOut(256).build())
