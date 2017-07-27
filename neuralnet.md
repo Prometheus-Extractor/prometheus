@@ -3,7 +3,7 @@
 
 ## DL4J Quirks
 
-The biggest problem with DL4J is the memory issues with JavaCPP, since it uses off-heap memory and seems to use more than it advices.
+The biggest problem with DL4J is the memory issues with JavaCPP, since it uses off-heap memory and seems to use more than it advertises.
 
 To make it work you need to set:
 - `org.bytedeco.javacpp.maxbytes` to around minimum `5g`. Though more is required for larger batch sizes and larger networks.
