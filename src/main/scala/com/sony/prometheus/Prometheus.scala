@@ -209,7 +209,7 @@ object Prometheus {
             val predictor = Predictor(relationModel,  posEncoderStage, word2VecData, neTypeEncoderStage, depEncoder, configData)
             try {
               val task = BlazeBuilder
-                .bindHttp(PORT, "localhost")
+                .bindHttp(PORT, "0.0.0.0")
                 .mountService(REST.api(predictor), "/")
                 .run
                 println(s"${GREEN}REST interface ready to accept connections on $PORT ${RESET}")
