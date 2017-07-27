@@ -67,4 +67,4 @@ EXPOSE 8080
 
 WORKDIR /app
 ENTRYPOINT ["sbt"]
-CMD ["run -c -d -l en file:/data/corpus file:/data/config.tsv file:/data/wikidata file:/data/prometheus file:/data/word2vec"]
+CMD ["run -c -d -l en file:/data/corpus file:/data/config.tsv file:/data/wikidata file:/data/prometheus file:/data/word2vec/en"]
