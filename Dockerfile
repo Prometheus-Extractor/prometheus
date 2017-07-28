@@ -5,7 +5,8 @@ ENV SCALA_VERSION 2.10.6
 ENV SBT_VERSION 0.13.8
 ENV DOCFORIA_TAG e3d2005b8c359cf4eb1e0d90932df79e2fe4ad2e
 ARG DOWNLOAD_WORD2VEC=y
-ARG MAVEN_OPTS=""
+ARG MAVEN_OPTS=''
+ARG SBT_OPTS=''
 
 # Scala expects this file
 RUN touch /usr/lib/jvm/java-8-openjdk-amd64/release
@@ -31,7 +32,7 @@ RUN \
   apt-get install -y maven
 RUN git clone https://github.com/marcusklang/docforia.git /root/docforia
 WORKDIR /root/docforia
-RUN git checkout $DOCFORIA_TAG
+RUN git checkout $DOCFORIA_TA
 RUN mvn install
 
 # Copy app
