@@ -26,7 +26,7 @@ docker-upload: docker-build
 docker-run: docker-build docker-stop
 	docker run -d --rm \
 		--net="host" \
-		-p 8080:80 \
+		-p 8080:8080 \
 		-e http_proxy=http://$(PROXY_HOST):$(PROXY_PORT) \
 		-e https_proxy=http://$(PROXY_HOST):$(PROXY_PORT) \
 		-e HTTP_PROXY=http://$(PROXY_HOST):$(PROXY_PORT) \
