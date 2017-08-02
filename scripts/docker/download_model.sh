@@ -21,8 +21,8 @@ cd ../..
 cd word2vec/en
 if [ $DOWNLOAD_WORD2VEC = "y" ]; then
   echo "Downloading word2vec models... (this might take a while)"
-  curl -fsLO $AWS_BUCKET"/word2vec/en/model.opt.vecs"
-  curl -fsLO $AWS_BUCKET"/word2vec/en/model.opt.vocab"
+  curl -fLO $AWS_BUCKET"/word2vec/en/model.opt.vecs"
+  curl -fLO $AWS_BUCKET"/word2vec/en/model.opt.vocab"
 fi
 
 cd ../../

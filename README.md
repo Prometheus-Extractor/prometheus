@@ -189,6 +189,13 @@ By default the image uses 14GB of ram.
 
 To not  download the word2vec model (about 5-10 GB) set the build-arg flag: `--build-arg DOWNLOAD_WORD2VEC=n`.
 
+Working at Sony requires the usage of the corporate proxy. Use the custom make file to configure the Docker image to make
+use of the proxy using the following command:
+
+```bash
+make -f scripts/sony/Makefile
+```
+
 ## API Documentation
 [ScalaDoc](https://erikgartner.github.io/prometheus-relation-model)
 

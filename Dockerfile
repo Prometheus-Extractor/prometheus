@@ -35,16 +35,6 @@ WORKDIR /root/docforia
 RUN git checkout $DOCFORIA_TA
 RUN mvn install
 
-# Copy app
-RUN mkdir /app
-WORKDIR /app
-COPY src ./src
-COPY project ./project
-COPY .sbtopts .env build.sbt ./
-
-# Install sbt plugins and compile software
-RUN sbt compile
-
 # Copy scripts
 COPY scripts ./scripts
 
@@ -60,6 +50,16 @@ RUN touch config.tsv
 # Download pretrained models from AWS
 COPY scripts/docker/download_model.sh ./
 RUN ./download_model.sh
+
+# Copy app
+RUN mkdir /app
+WORKDIR /app
+COPY src ./src
+COPY project ./project
+COPY .sbtopts .env build.sbt ./
+
+# Install sbt plugins and compile software
+RUN sbt compile
 
 # Make data accessible as a volume to allow custom data.
 VOLUME /data
