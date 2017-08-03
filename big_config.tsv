@@ -4,7 +4,5 @@ spouse	P26	PERSON	PERSON
 director	P57	PERSON	*
 fought_in	P607	PERSON	*
 capital	P36	LOCATION	LOCATION
-ceo	P169	*	PERSON
-head_of_government	P6	PERSON	LOCATION
 part_of	P361	*	*
 cast_member_of	P161	PERSON	*
