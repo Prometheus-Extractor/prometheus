@@ -1,18 +1,40 @@
-# This config is intended to spin up 30gb containers using 7 cores each.
-# It will try to allocate as many 30gb containers as possible. Caching large RDDS might crash and require fine tuning of the memory.
 REMOTE_HOST="prometheus-master"
 WORK_PATH="~/"
-HEAP_SIZE="12g"
-OFF_HEAP_SIZE="20000"
-CPP_MAXPHY_BYTES="28g"
-CPP_MAX_BYTES="6g"
-EXECUTOR_CORES=7
 
-DRIVER_MEM="30g"
-JVMOPTS="-Dorg.bytedeco.javacpp.maxbytes=$CPP_MAX_BYTES -Dorg.bytedeco.javacpp.maxphysicalbytes=$CPP_MAXPHY_BYTES -Dorg.bytedeco.javacpp.maxretries=100"
-EXTRA_SPARK_OPTIONS="--deploy-mode client --master yarn --driver-memory=$DRIVER_MEM --executor-cores=$EXECUTOR_CORES --conf spark.yarn.executor.memoryOverhead=$OFF_HEAP_SIZE  --conf spark.executor.memory=$HEAP_SIZE --conf spark.locality.wait=0"
+# This configuration is optimized for a cluster where each node has at least
+# 8 vcpus and 61 GB memory. Using dynamic allocation it scales to the number
+# of nodes.
+# Running on AWS it is recommended to only cache training data to memory and
+# not disk because the available storage is very low for some instances.
 
-# NOT USED.
-# NUM_EXECUTORS=9
-# --conf spark.dynamicAllocation.minExecutors=$NUM_EXECUTORS --conf spark.worker.cleanup.enabled=true --conf yarn.nodemanager.resource.memory-mb=$EXECUTOR_MEM_MB --conf yarn.nodemanager.resource.cpu-vcore=$EXECUTOR_CORES
-#EXECUTOR_MEM_MB="30000"
+CORES_PER_EXECUTOR=7
+CORES_PER_NODE=7
+CORES_PER_CONTAINER=7
+
+MEMORY_PER_EXECUTOR=35g
+OFF_HEAP_PER_CONTAINER=15000
+MEMORY_PER_CONTAINER=60000
+MEMORY_PER_NODE=60000
+
+DRIVER_MEMORY=50g
+
+EXTRA_SPARK_OPTIONS=\
+"--deploy-mode client "\
+"--master yarn "\
+"--conf spark.executor.cores=$CORES_PER_EXECUTOR "\
+"--conf spark.executor.memory=$MEMORY_PER_EXECUTOR "\
+"--conf spark.yarn.scheduler.maximum-allocation-vcores=$CORES_PER_CONTAINER "\
+"--conf spark.yarn.scheduler.maximum-allocation-mb=$MEMORY_PER_CONTAINER "\
+"--conf spark.yarn.nodemanager.resource.memory-mb=$MEMORY_PER_NODE "\
+"--conf spark.yarn.nodemanager.resource.cpu-vcores=$CORES_PER_NODE "\
+"--conf spark.yarn.executor.memoryOverhead=$OFF_HEAP_PER_CONTAINER "\
+"--conf spark.dynamicAllocation.enabled=true "\
+"--conf spark.driver.memory=$DRIVER_MEMORY "\
+"--conf spark.locality.wait=0"
+
+CPP_MAXPHY_BYTES="50g"
+CPP_MAX_BYTES="10g"
+JVMOPTS=\
+"-Dorg.bytedeco.javacpp.maxbytes=$CPP_MAX_BYTES "\
+"-Dorg.bytedeco.javacpp.maxphysicalbytes=$CPP_MAXPHY_BYTES "\
+"-Dorg.bytedeco.javacpp.maxretries=100"
