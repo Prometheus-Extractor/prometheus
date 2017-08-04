@@ -21,7 +21,7 @@ import scala.util.Random
 
 class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
                               neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
-                              featureExtractorStage: FeatureExtractorStage)
+                              featureExtractorStage: FeatureExtractorStage, configData: RelationConfigData)
                              (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data{
   /**
     * Runs the task, saving results to disk
@@ -32,7 +32,7 @@ class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncod
     val labelNames: util.List[String] = ListBuffer(
       data.map(d => (d.relationClass, d.relationId)).distinct().collect().sortBy(_._1).map(_._2).toList: _*)
 
-    val numClasses = data.map(d => d.relationClass).distinct().count().toInt
+    val numClasses = RelationConfigReader.load(configData.getData()).size + 1
     val balancedData = FeatureTransformer.balanceNegatives(data)
 
     val featureTransformer = sqlContext.sparkContext.broadcast(
