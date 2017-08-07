@@ -12,8 +12,8 @@ import org.apache.spark.sql.SQLContext
 import org.apache.spark.storage.StorageLevel
 import org.deeplearning4j.eval.Evaluation
 import org.deeplearning4j.nn.api.OptimizationAlgorithm
-import org.deeplearning4j.nn.conf.{NeuralNetConfiguration, Updater}
 import org.deeplearning4j.nn.conf.layers.{DenseLayer, OutputLayer}
+import org.deeplearning4j.nn.conf.{NeuralNetConfiguration, Updater}
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.deeplearning4j.nn.weights.WeightInit
 import org.deeplearning4j.spark.api.{RDDTrainingApproach, Repartition}
@@ -25,7 +25,12 @@ import org.nd4j.linalg.dataset.DataSet
 import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.lossfunctions.LossFunctions
 
-class ClassificationModelStage(path: String, featureTransfomerStage: FeatureTransformerStage, epochs: Int)
+/**
+  * Trains a classification model
+  * @param featureTransformerStage  to provide training data (sentences)
+  * @param epochs                   number of epochs to train
+  */
+class ClassificationModelStage(path: String, featureTransformerStage: FeatureTransformerStage, epochs: Int)
                               (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -39,7 +44,7 @@ class ClassificationModelStage(path: String, featureTransfomerStage: FeatureTran
     if(epochs == 0) {
       LogManager.getLogger(classOf[ClassificationModelStage]).info(s"Epochs set $epochs; skipping.")
     } else {
-      val data = FeatureTransformer.load(featureTransfomerStage.getData())
+      val data = FeatureTransformer.load(featureTransformerStage.getData())
       val numClasses = data.take(1)(0).getLabels.length
       val classificationNet = ClassificationModel.trainClassificationNetwork(data, numClasses, epochs)
       ClassificationModel.save(path, classificationNet)

@@ -13,9 +13,10 @@ import org.apache.spark.storage.StorageLevel
 import org.nd4j.linalg.dataset.DataSet
 
 /**
-  * Created by erik on 2017-05-29.
+  *  Trains a filter model
+  * @param featureTransformerStage  to provide training examples
   */
-class FilterModelStage(path: String, featureTransfomerStage: FeatureTransformerStage)
+class FilterModelStage(path: String, featureTransformerStage: FeatureTransformerStage)
                       (implicit sqlContext: SQLContext, sc: SparkContext) extends Task with Data {
 
   override def getData(): String = {
@@ -26,7 +27,7 @@ class FilterModelStage(path: String, featureTransfomerStage: FeatureTransformerS
   }
 
   override def run(): Unit = {
-    val data = FeatureTransformer.load(featureTransfomerStage.getData())
+    val data = FeatureTransformer.load(featureTransformerStage.getData())
     val filterNet = FilterModel.trainFilterNetwork(data)
     FilterModel.save(path, filterNet)
   }

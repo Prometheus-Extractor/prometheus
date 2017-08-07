@@ -2,6 +2,8 @@ package com.sony.prometheus.stages
 
 import com.sony.prometheus._
 import com.sony.prometheus.utils.Pruner
+import com.sony.prometheus.utils.Utils.pathExists
+import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
@@ -9,16 +11,14 @@ import se.lth.cs.docforia.Document
 import se.lth.cs.docforia.graph.disambig.NamedEntityDisambiguation
 import se.lth.cs.docforia.graph.text.{DependencyRelation, NamedEntity, Token}
 import se.lth.cs.docforia.query.QueryCollectors
-import com.sony.prometheus.utils.Utils.pathExists
-import org.apache.log4j.LogManager
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.util.Random
 
-/**
- * Stage to extract features, will not run if output already exists
- */
+/** Extracts features from the sentences provided by `trainingDataExtractor`
+  * @param trainingDataExtractor  to provide the training sentences
+  * @param relationConfigData     used to prune training data - check type of entities etc
+  */
 class FeatureExtractorStage(
    path: String,
    trainingDataExtractor: TrainingDataExtractorStage,
@@ -256,7 +256,7 @@ object FeatureExtractor {
 
 
 
-  /** Finds the depedency window of an entity. I.e. Dependency relations that connected to the entity not
+  /** Finds the dependency window of an entity. I.e. Dependency relations that connected to the entity not
     * part of the dependency path.
     */
   private def dependencyWindow(entity: Token, dependencyPath: Seq[DependencyRelation]): Set[DependencyRelation] = {

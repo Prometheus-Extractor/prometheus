@@ -5,8 +5,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SQLContext}
-
 import scala.collection.mutable
+
 
 class RelationConfigData(path: String)(implicit sc: SparkContext) extends Data{
   override def getData(): String = {
@@ -28,6 +28,12 @@ class WikidataData(path: String)(implicit sc: SparkContext) extends Data{
   }
 }
 
+/**
+  * Extracts entity pairs, that is (subject, object) pairs, from `wikidata` that participate in the relations given by
+  * `configData`
+  * @param configData   defines which relations to extract pairs for
+  * @param wikidata     Wikidata corpus dump
+  */
 class EntityPairExtractorStage(path: String, configData: RelationConfigData, wikidata: WikidataData)
                               (implicit sqlContext:SQLContext, sparkContext: SparkContext) extends Task with Data {
 
@@ -42,7 +48,8 @@ class EntityPairExtractorStage(path: String, configData: RelationConfigData, wik
 
     val relationList = RelationConfigReader.load(configData.getData())
     // Each relation yields about 100kb parquet data
-    val data = EntityPairExtractor.getEntities(wikidata.getData(), relationList, "en", sqlContext, sparkContext).repartition(1)
+    val data = EntityPairExtractor.getEntities(wikidata.getData(), relationList, "en", sqlContext, sparkContext)
+                                  .repartition(1)
 
     import sqlContext.implicits._
     val df = data.map(relation => {

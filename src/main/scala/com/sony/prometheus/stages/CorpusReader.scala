@@ -28,7 +28,7 @@ class CorpusData(path: String, val sampleSize: Double)(implicit sc: SparkContext
  */
 object CorpusReader {
 
-  /** Returns an RDD of [[se.lth.cs.docforia.Document]]
+  /** Returns an RDD of [[se.lth.cs.docforia.Document]] where each Doc is of type "ARTICLE" from the source corpus
    *
    *  @param file - the path to the corpus
    *  @param sampleSize - sample this fraction of the corpus (default 1)

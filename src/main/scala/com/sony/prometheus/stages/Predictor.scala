@@ -15,6 +15,10 @@ import scala.collection.JavaConverters._
 import com.sony.prometheus.utils.Utils.pathExists
 import org.apache.log4j.LogManager
 
+/**
+  * Performs extractions on `corpusData` corpus by collecting all predictions on each sentence in the corpus made by
+  * the RelationModel `model`
+  */
 class PredictorStage(path: String, corpusData: CorpusData, model: RelationModel, posEncoder: PosEncoderStage,
                      word2VecData: Word2VecData, neTypeEncoder: NeTypeEncoderStage,
                      dependencyEncoderStage: DependencyEncoderStage, relationConfig: RelationConfigData)
@@ -41,9 +45,6 @@ class PredictorStage(path: String, corpusData: CorpusData, model: RelationModel,
   }
 }
 
-/**
-  * Created by erik on 2017-02-28.
-  */
 object Predictor {
 
   def apply(model: RelationModel,  posEncoder: PosEncoderStage, word2VecData: Word2VecData,

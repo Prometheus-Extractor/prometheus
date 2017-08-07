@@ -17,8 +17,9 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-/** Stage for training data extraction
- */
+/**
+  * Extracts training data from `corpusData`, it produces training examples
+  */
 class TrainingDataExtractorStage(
   path: String,
   corpusData: CorpusData,

@@ -6,7 +6,6 @@ import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
-import org.nd4j.linalg.cpu.nativecpu.NDArray
 import org.nd4j.linalg.factory.Nd4j
 
 /** Provides the RelationModel classifier
@@ -57,6 +56,9 @@ object RelationModel {
 
 }
 
+/**
+  * Combines the filter model and the classification model to make predictions
+  */
 class RelationModel(val filterModel: LogisticRegressionModel, val classModel: MultiLayerNetwork,
                     val threshold: Double) extends Serializable {
 

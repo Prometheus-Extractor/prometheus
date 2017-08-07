@@ -24,7 +24,7 @@ object Prometheus {
   val DEFAULT_EPOCHS = 5
   var conf: Conf = null
 
-  /** Provides arugment parsing
+  /** Provides argument parsing
    */
   class Conf(arguments: Seq[String]) extends ScallopConf(arguments) {
     version("Prometheus Model Trainer")

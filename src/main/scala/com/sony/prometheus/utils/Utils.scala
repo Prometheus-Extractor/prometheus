@@ -6,9 +6,7 @@ import org.apache.hadoop.fs.{Path}
 import org.apache.spark.SparkContext
 import scala.util.Properties.envOrNone
 
-/**
-  * Created by axel on 2017-03-23.
-  */
+
 object Utils {
   object Colours {
     final val RESET: String = "\u001B[0m"

@@ -2,9 +2,7 @@ package com.sony.prometheus.utils
 
 import java.util.regex.Pattern
 
-/**
-  * Created by erik on 2017-02-21.
-  */
+
 object Filters {
 
   val wordPattern = Pattern.compile(".*(\\p{L}{1,}|\\d{1,}).*")

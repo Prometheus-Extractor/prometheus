@@ -3,22 +3,29 @@ package com.sony.prometheus.stages
 import java.util
 
 import com.sony.prometheus.Prometheus
+import com.sony.prometheus.utils.Utils.pathExists
+import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext
-import org.apache.spark.broadcast.Broadcast
-
-import scala.collection.JavaConversions._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
-import se.lth.cs.docforia.Document
-import com.sony.prometheus.utils.Utils.pathExists
-import org.apache.log4j.LogManager
-import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.dataset.DataSet
+import org.nd4j.linalg.factory.Nd4j
 
+import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
+/**
+  * Transform string features into numerical vector suitable for model training. Depends on a number of encoders to
+  * encode the features.
+  * @param word2VecData           for Word2Vec encoding
+  * @param posEncoderStage        to encode Part-Of-Speech tags
+  * @param neTypeEncoder          to encode Named Entity types
+  * @param dependencyEncoderStage to encode dependency parse
+  * @param featureExtractorStage  to provide the string features
+  * @param configData             to provide meta information about the relations
+  */
 class FeatureTransformerStage(path: String, word2VecData: Word2VecData, posEncoderStage: PosEncoderStage,
                               neTypeEncoder: NeTypeEncoderStage, dependencyEncoderStage: DependencyEncoderStage,
                               featureExtractorStage: FeatureExtractorStage, configData: RelationConfigData)
@@ -113,8 +120,6 @@ object FeatureTransformer {
 
 }
 
-/**
- */
 class FeatureTransformer(wordEncoder: Word2VecEncoder, posEncoder: StringIndexer,
                          neTypeEncoder: StringIndexer, dependencyEncoder: StringIndexer) extends Serializable {
 

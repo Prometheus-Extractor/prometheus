@@ -7,12 +7,10 @@ import se.lth.cs.docforia.query.QueryCollectors
 
 import scala.collection.JavaConverters._
 
-/**
-  * Created by erik on 2017-06-13.
-  */
+
 object Coref {
 
-  /** Resolve any coreference chains in doc by copying over the named entity to the mentions
+  /** Resolves any coreference chains in `doc` by copying over the named entity to the mentions
     */
   def propagateCorefs(doc: Document): Unit = {
     val T = Token.`var`()

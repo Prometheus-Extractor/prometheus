@@ -25,6 +25,9 @@ object Pruner {
 
 }
 
+/**
+  * Prune bad training examples and predictions.
+  */
 class Pruner(types: Map[Long, (String, String)]) extends Serializable{
 
   def pruneTrainingData(data: RDD[TrainingDataPoint])

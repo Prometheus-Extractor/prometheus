@@ -12,6 +12,9 @@ import org.apache.spark.{SparkContext, SparkFiles}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import com.sony.prometheus.utils.Utils.pathExists
 
+/**
+  * Provides the Word2Vec model as a Data stage
+  */
 class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
 
   var hasUploaded = false
@@ -41,9 +44,7 @@ class Word2VecData(path: String)(implicit sc: SparkContext) extends Data {
 
 }
 
-/**
-  * Created by erik on 2017-03-22.
-  */
+
 object Word2VecEncoder {
 
   def apply(modelPath: String): Word2VecEncoder = {
@@ -56,9 +57,10 @@ object Word2VecEncoder {
 }
 
 /**
+  * The Word2Vec encoder.
   * This class wraps the specific Word2Vec implementation. We've tried Spark's, DL4J's and now Marcus'.
   */
-class Word2VecEncoder extends Externalizable{
+class Word2VecEncoder extends Externalizable {
 
   var model: Word2VecDict = null
   var vocabName: String = null
