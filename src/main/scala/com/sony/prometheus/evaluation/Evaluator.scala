@@ -71,7 +71,7 @@ class DataEvaluationStage(
   }
 }
 
-/** Performs evaluation of [[ModelEvaluationDataPoint]]:s
+/** Performs evaluation of [[ModelEvaluationDataPoint]]:s and/or extractions
   */
 object Evaluator {
   val log = LogManager.getLogger(Evaluator.getClass)
@@ -79,9 +79,9 @@ object Evaluator {
 
   /** Annotate the snippets data with VildeAnnotater, use cache if possible
     *
-    * @param evalDataPoints [[ModelEvaluationDataPoint]]:s to annotate
-    * @param path           path to the cache file
-    * @return                 RDD of annotateted Documents
+    * @param evalDataPoints  [[ModelEvaluationDataPoint]]:s to annotate
+    * @param path            path to the cache file
+    * @return                RDD of annotateted Documents
     */
   def annotateTestData(evalDataPoints: RDD[ModelEvaluationDataPoint], path: String, lang: String)
                       (implicit sqlContext: SQLContext, sc: SparkContext): RDD[Document] = {
