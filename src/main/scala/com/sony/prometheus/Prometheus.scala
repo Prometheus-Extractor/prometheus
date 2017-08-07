@@ -169,7 +169,9 @@ object Prometheus {
         posEncoderStage,
         neTypeEncoderStage,
         depEncoder,
-        featureExtractionTask)
+        featureExtractionTask,
+        configData
+      )
 
       if (conf.stage() == "preprocess") {
         val featuresPath = featureTransformerStage.getData()
@@ -195,7 +197,7 @@ object Prometheus {
         } else {
 
           val relationModel = RelationModel(filterModelStage, classificationModelStage, conf.probabilityCutoff())
-2
+
           // Evaluate
           conf.modelEvaluationFiles.foreach(evalFiles => {
             log.info("Performing evaluation")

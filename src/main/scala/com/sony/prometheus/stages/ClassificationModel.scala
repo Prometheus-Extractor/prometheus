@@ -65,7 +65,7 @@ object ClassificationModel {
       .averagingFrequency(5)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
-      .storageLevel(StorageLevel.DISK_ONLY) // DISK_ONLY or NONE. We have little memory left for caching.
+      .storageLevel(StorageLevel.NONE) // DISK_ONLY or NONE. We have little memory left for caching.
       .repartionData(Repartition.Always) // Should work with never because we repartitioned the dataset before storing. Default is always
       .build()
 
@@ -78,7 +78,7 @@ object ClassificationModel {
       .iterations(1) // Not the same as epoch. Should probably only ever be 1.
       .activation(Activation.RELU)
       .weightInit(WeightInit.XAVIER)
-      .updater(Updater.ADADELTA) // test with ADAM?
+      .updater(Updater.ADAM) // test with ADAM?
       //.learningRate(0.005)
       //.momentum(0.9)
       .epsilon(1.0E-8)

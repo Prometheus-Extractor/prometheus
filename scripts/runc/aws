@@ -10,11 +10,12 @@ WORK_PATH="~/"
 CORES_PER_EXECUTOR=7
 CORES_PER_NODE=7
 CORES_PER_CONTAINER=7
+PARALLELISM=210
 
-MEMORY_PER_EXECUTOR=35g
-OFF_HEAP_PER_CONTAINER=15000
-MEMORY_PER_CONTAINER=60000
-MEMORY_PER_NODE=60000
+MEMORY_PER_EXECUTOR=30000m
+OFF_HEAP_PER_CONTAINER=24000
+MEMORY_PER_CONTAINER=54000
+MEMORY_PER_NODE=54000
 
 DRIVER_MEMORY=50g
 
@@ -24,16 +25,18 @@ EXTRA_SPARK_OPTIONS=\
 "--conf spark.executor.cores=$CORES_PER_EXECUTOR "\
 "--conf spark.executor.memory=$MEMORY_PER_EXECUTOR "\
 "--conf spark.yarn.scheduler.maximum-allocation-vcores=$CORES_PER_CONTAINER "\
+"--conf spark.yarn.scheduler.minimum-allocation-vcores=$CORES_PER_CONTAINER "\
 "--conf spark.yarn.scheduler.maximum-allocation-mb=$MEMORY_PER_CONTAINER "\
 "--conf spark.yarn.nodemanager.resource.memory-mb=$MEMORY_PER_NODE "\
 "--conf spark.yarn.nodemanager.resource.cpu-vcores=$CORES_PER_NODE "\
 "--conf spark.yarn.executor.memoryOverhead=$OFF_HEAP_PER_CONTAINER "\
 "--conf spark.dynamicAllocation.enabled=true "\
 "--conf spark.driver.memory=$DRIVER_MEMORY "\
-"--conf spark.locality.wait=0"
+"--conf spark.locality.wait=0 "\
+"--conf spark.default.parallelism=$PARALLELISM "\
 
 CPP_MAXPHY_BYTES="50g"
-CPP_MAX_BYTES="10g"
+CPP_MAX_BYTES="12g"
 JVMOPTS=\
 "-Dorg.bytedeco.javacpp.maxbytes=$CPP_MAX_BYTES "\
 "-Dorg.bytedeco.javacpp.maxphysicalbytes=$CPP_MAXPHY_BYTES "\
