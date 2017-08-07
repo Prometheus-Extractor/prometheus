@@ -46,7 +46,7 @@ object FilterModel {
       LabeledPoint(label, vector)
     })
     val (trainData, testData) = splitToTestTrain(labeledData, 0.10)
-    trainData.persist(StorageLevel.MEMORY_AND_DISK)
+    trainData.persist(StorageLevel.MEMORY_ONLY)
 
     val classifier = new LogisticRegressionWithLBFGS()
     classifier
@@ -56,7 +56,7 @@ object FilterModel {
     val model = classifier.run(trainData)
 
     trainData.unpersist(true)
-    testData.persist(StorageLevel.DISK_ONLY)
+    testData.persist(StorageLevel.MEMORY_ONLY)
 
     val defaultThreshold = model.getThreshold
     model.clearThreshold()
