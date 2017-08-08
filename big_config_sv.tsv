@@ -1,5 +1,5 @@
 place_of_birth	P19	person	place
 place_of_death	P20	person	place
 spouse	P26	person	person
-educated_at P69 person  *
-capital P36 place place
+educated_at	P69	person	*
+capital	P36	place	place
