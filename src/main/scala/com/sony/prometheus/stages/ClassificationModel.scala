@@ -46,7 +46,7 @@ class ClassificationModelStage(path: String, featureTransformerStage: FeatureTra
     } else {
       val data = FeatureTransformer.load(featureTransformerStage.getData())
       val numClasses = data.take(1)(0).getLabels.length
-      val classificationNet = ClassificationModel.trainClassificationNetwork(data, numClasses, epochs)
+      val classificationNet = ClassificationModel.trainClassificationNetwork(data, numClasses, epochs, path + "/checkpoints")
       ClassificationModel.save(path, classificationNet)
     }
   }
@@ -54,7 +54,7 @@ class ClassificationModelStage(path: String, featureTransformerStage: FeatureTra
 
 object ClassificationModel {
 
-  def trainClassificationNetwork(rawData: RDD[DataSet], numClasses: Int, epochs: Int)
+  def trainClassificationNetwork(rawData: RDD[DataSet], numClasses: Int, epochs: Int, checkpointPath: String)
                                 (implicit sqlContext: SQLContext): MultiLayerNetwork = {
 
     val filtered = rawData.filter(_.getLabels().getDouble(0) != 1)
@@ -116,6 +116,9 @@ object ClassificationModel {
         log.info(s"$i\tRecall: ${evaluation.recall(i)}\t Precision: ${evaluation.precision(i)}\t F1: ${evaluation.f1(i)}")
       log.info(s"T\tRecall: ${evaluation.recall}\t Precision: ${evaluation.precision}\t F1: ${evaluation.f1}\t Acc: ${evaluation.accuracy()}")
       log.info(s"\n${evaluation.confusionToString()}")
+
+      // Save checkpointed version of model
+      save(checkpointPath + s"/epoch=${i}_f1=${evaluation.f1()}", sparkNetwork.getNetwork)
     }
     log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
     log.info(sparkNetwork.getNetwork.summary())

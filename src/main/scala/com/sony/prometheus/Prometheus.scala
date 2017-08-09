@@ -53,14 +53,14 @@ object Prometheus {
     val sampleSize = opt[Double](
       descr = "use this to sample a fraction of the corpus",
       validate = x => (x > 0 && x <= 1),
-      default = Option(1.0))
+      default = Some(1.0))
     val probabilityCutoff = opt[Double](
       descr = "use this to set the cutoff probability for extractions",
       validate = x => (x >= 0 && x <= 1),
-      default = Option(RelationModel.THRESHOLD))
+      default = Some(RelationModel.THRESHOLD))
     val corefs = opt[Boolean](
       descr = "enable co-reference resolutions for annotation",
-      default = Option(false))
+      default = Some(false))
     val demoServer = opt[Boolean](
       descr = "start an HTTP server to receive text to extract relations from")
     val modelEvaluationFiles = opt[List[String]](descr = "path to model evaluation files")

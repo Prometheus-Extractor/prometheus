@@ -3,6 +3,7 @@ package com.sony.prometheus.evaluation
 import java.io.BufferedOutputStream
 
 import com.sony.prometheus.annotators.VildeAnnotater
+import com.sony.prometheus.Prometheus
 import com.sony.prometheus.stages.{Predictor, PredictorStage, _}
 import com.sony.prometheus.utils.{Coref, Utils}
 import com.sony.prometheus.utils.Utils.pathExists
@@ -97,7 +98,9 @@ object Evaluator {
       val df = sqlContext.read.parquet(cachePath)
       df.map(row => {
         val d = MemoryDocumentIO.getInstance().fromBytes(row.getAs(0): Array[Byte]): Document
-        Coref.propagateCorefs(d)
+        if (Prometheus.conf.corefs()) {
+          Coref.propagateCorefs(d)
+        }
         d
       })
     } else {
