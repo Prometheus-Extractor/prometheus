@@ -5,7 +5,7 @@ import org.apache.spark.SparkContext
 import com.sony.prometheus.stages._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SQLContext
-import com.sony.prometheus.annotaters.VildeAnnotater
+import com.sony.prometheus.annotators.VildeAnnotater
 import org.apache.log4j.LogManager
 import play.api.libs.json.Json
 import se.lth.cs.docforia.Document

@@ -1,4 +1,4 @@
-package com.sony.prometheus.annotaters
+package com.sony.prometheus.annotators
 
 import com.sony.prometheus.Prometheus
 import com.sony.prometheus.utils.Coref

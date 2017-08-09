@@ -4,7 +4,7 @@ import org.http4s._
 import org.http4s.dsl._
 import org.http4s.headers.`Content-Type`
 import org.http4s.MediaType._
-import com.sony.prometheus.annotaters._
+import com.sony.prometheus.annotators._
 import com.sony.prometheus.stages.Predictor
 import org.apache.log4j.LogManager
 import org.apache.spark.SparkContext

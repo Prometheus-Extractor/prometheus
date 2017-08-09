@@ -2,7 +2,7 @@ package com.sony.prometheus.evaluation
 
 import java.io.BufferedOutputStream
 
-import com.sony.prometheus.annotaters.VildeAnnotater
+import com.sony.prometheus.annotators.VildeAnnotater
 import com.sony.prometheus.stages.{Predictor, PredictorStage, _}
 import com.sony.prometheus.utils.{Coref, Utils}
 import com.sony.prometheus.utils.Utils.pathExists

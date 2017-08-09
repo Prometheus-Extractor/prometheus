@@ -1,4 +1,4 @@
-package com.sony.prometheus.annotaters
+package com.sony.prometheus.annotators
 
 import se.lth.cs.docforia.Document
 
