@@ -96,9 +96,10 @@ object Evaluator {
     if (Utils.pathExists(cachePath)) {
       log.info(s"Using cached Vilde-annotated $file")
       val df = sqlContext.read.parquet(cachePath)
+      val applyCoref = Prometheus.conf.corefs()
       df.map(row => {
         val d = MemoryDocumentIO.getInstance().fromBytes(row.getAs(0): Array[Byte]): Document
-        if (Prometheus.conf.corefs()) {
+        if (applyCoref) {
           Coref.propagateCorefs(d)
         }
         d
