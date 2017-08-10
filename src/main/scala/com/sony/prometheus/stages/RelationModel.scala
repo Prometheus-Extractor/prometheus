@@ -64,6 +64,7 @@ class RelationModel(val filterModel: LogisticRegressionModel, val classModel: Mu
 
   filterModel.clearThreshold()
   classModel.conf().setUseDropConnect(false)
+  classModel.conf().setUseRegularization(false)
 
   def predict(vector: Vector, threshold: Double): Prediction = {
     val filterProb = filterModel.predict(vector)
