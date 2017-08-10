@@ -1,6 +1,7 @@
 package com.sony.prometheus.stages
 
-import java.io.BufferedOutputStream
+import java.io.{BufferedOutputStream, File}
+import java.util.Collections
 
 import com.sony.prometheus.stages.RelationModel.{balanceData, log, splitToTestTrain}
 import com.sony.prometheus.utils.Utils.pathExists
@@ -61,12 +62,11 @@ object ClassificationModel {
     def getClass = (d: DataSet) => Nd4j.argMax(d.getLabels).getInt(0).toLong
 
     val (trainData, testData) = splitToTestTrain(filtered, 0.10)
-    val balancedTrain = balanceData(trainData, false, getClass)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
     val trainingMaster = new ParameterAveragingTrainingMaster.Builder(examplesPerDataSetObject)
-      .batchSizePerWorker(256) // Up to 2048 is possible on AWS and boosts performance. 256 works on semantica.
+      .batchSizePerWorker(1024) // Up to 2048 is possible on AWS and boosts performance. 256 works on semantica.
       .averagingFrequency(5)
       .workerPrefetchNumBatches(2)
       .rddTrainingApproach(RDDTrainingApproach.Direct)
@@ -88,7 +88,7 @@ object ClassificationModel {
       //.momentum(0.9)
       .epsilon(1.0E-8)
       .dropOut(0.5)
-      .regularization(true)
+      .regularization(false)
       .list()
       .layer(0, new DenseLayer.Builder().nIn(input_size).nOut(512).build())
       .layer(1, new DenseLayer.Builder().nIn(512).nOut(256).build())
@@ -107,7 +107,11 @@ object ClassificationModel {
     for(i <- (1 to epochs)){
       log.info(s"Epoch: $i/$epochs")
       val start = System.currentTimeMillis
+
+      val balancedTrain = balanceData(trainData, true, getClass)
       sparkNetwork.fit(balancedTrain)
+      balancedTrain.unpersist()
+
       log.info(s"Epoch finished in ${(System.currentTimeMillis() - start) / 1000}s")
 
       evaluation = sparkNetwork.evaluate(testData)
@@ -123,7 +127,6 @@ object ClassificationModel {
     log.info(s"Training done! Network score: ${sparkNetwork.getScore}")
     log.info(sparkNetwork.getNetwork.summary())
 
-    balancedTrain.unpersist(true)
     sparkNetwork.getNetwork
   }
 
