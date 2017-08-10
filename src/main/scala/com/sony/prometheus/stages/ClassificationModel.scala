@@ -61,7 +61,8 @@ object ClassificationModel {
     val filtered = rawData.filter(_.getLabels().getDouble(0) != 1)
     def getClass = (d: DataSet) => Nd4j.argMax(d.getLabels).getInt(0).toLong
 
-    val (trainData, testData) = splitToTestTrain(filtered, 0.10)
+    val (_, testData) = splitToTestTrain(balanceData(filtered, true,getClass), 0.10)
+    val trainData = filtered.subtract(testData)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
