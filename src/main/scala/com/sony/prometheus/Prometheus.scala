@@ -84,6 +84,10 @@ object Prometheus {
       descr = "Custom Spark application name",
       default = Some("")
     )
+    val modelSuffix = opt[String](
+      descr = "Custom prefix for the model directories",
+      default = Some("")
+    )
 
     verify()
 
@@ -180,13 +184,13 @@ object Prometheus {
 
         // Train models
         val classificationModelStage = new ClassificationModelStage(
-          tempDataPath + "/classification_model",
+          tempDataPath + "/classification_model" + conf.modelSuffix(),
           featureTransformerStage,
           conf.epochs()
         )
 
         val filterModelStage = new FilterModelStage(
-          tempDataPath + "/filter_model",
+          tempDataPath + "/filter_model" + conf.modelSuffix(),
           featureTransformerStage
         )
 
