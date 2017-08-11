@@ -63,6 +63,8 @@ object ClassificationModel {
 
     val (_, testData) = splitToTestTrain(balanceData(filtered, true,getClass), 0.10)
     val trainData = filtered.subtract(testData)
+    filtered.unpersist(true)
+    testData.persist(StorageLevel.MEMORY_ONLY_SER)
 
     //Create the TrainingMaster instance
     val examplesPerDataSetObject = 1
@@ -111,7 +113,7 @@ object ClassificationModel {
 
       val balancedTrain = balanceData(trainData, true, getClass)
       sparkNetwork.fit(balancedTrain)
-      balancedTrain.unpersist()
+      balancedTrain.unpersist(true)
 
       log.info(s"Epoch finished in ${(System.currentTimeMillis() - start) / 1000}s")
 
