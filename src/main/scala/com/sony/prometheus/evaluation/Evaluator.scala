@@ -400,20 +400,25 @@ object Evaluator {
                                    nbrTrueDataPoints: Double,
                                    n: Int): (Double, Double, Double) = {
     log.info(s"Evaluating for $n most probable...")
-    val cutOff = predictedRelations
+    val cutOffOption = predictedRelations
       .flatMap(rs => rs.map(_.probability))
       .takeOrdered(n)(math.Ordering.Double.reverse)
-      .last
-    log.info(s"cutOff is: $cutOff")
-    val trueProb = truePositives.map(_.probability).collect()
-    val falseProb = falsePositives.map(_.probability).collect()
-    val newTP = trueProb.count(_ >= cutOff)
-    val newFP = falseProb.count(_ >= cutOff)
-    val recall = newTP / nbrTrueDataPoints
-    val precision = newTP / (newTP + newFP).toDouble
-    val f1 = computeF1(recall, precision)
-    log.info(s"\tWith $n most probable => precision: $precision, recall: $recall, f1: $f1")
-    (precision, recall, f1)
+      .lastOption
+    if (cutOffOption.isDefined) {
+      val cutOff = cutOffOption.get
+      log.info(s"cutOff is: $cutOff")
+      val trueProb = truePositives.map(_.probability).collect()
+      val falseProb = falsePositives.map(_.probability).collect()
+      val newTP = trueProb.count(_ >= cutOff)
+      val newFP = falseProb.count(_ >= cutOff)
+      val recall = newTP / nbrTrueDataPoints
+      val precision = newTP / (newTP + newFP).toDouble
+      val f1 = computeF1(recall, precision)
+      log.info(s"\tWith $n most probable => precision: $precision, recall: $recall, f1: $f1")
+      (precision, recall, f1)
+    } else {
+      (Double.NaN, Double.NaN, Double.NaN)
+    }
   }
 
   private def suggestThreshold(truePositives: RDD[ExtractedRelation], falsePositives: RDD[ExtractedRelation],
