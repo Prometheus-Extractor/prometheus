@@ -67,7 +67,7 @@ class DataEvaluationStage(
     val knownRelations = EntityPairExtractor.load(entityPairs.getData())
     val extractions = Predictor.load(predictions.getData())
     val results = Evaluator.evaluateData(knownRelations, extractions, nBest)
-    val header = "probability threshold\tname\tnumber of extractions\tfound percentage\tverified percentage\tprecision for n most probable"
+    val header = "probability threshold\tname\tnumber of extractions\tfound percentage\tverified percentage\tprecision for n most probable\n"
     Evaluator.save(header + results.mkString("\n"), path)
   }
 }
