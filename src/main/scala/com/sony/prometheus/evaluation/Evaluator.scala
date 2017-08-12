@@ -160,10 +160,12 @@ object Evaluator {
     val results = relationTypes.flatMap{ case (id, name) => {
       log.info(s"----- Evaluating data for $name... -------")
 
-      // Key the extractions for this relation by subject-predicate
-      val keyedExtractions = extractions
-        .filter(_.probability >= modelThreshold)
+      val extractionsForRelation = extractions
         .filter(_.predictedPredicate == id)
+        .filter(_.probability >= modelThreshold)
+
+      // Key the extractions for this relation by subject-predicate
+      val keyedExtractions = extractionsForRelation
         .map(e => (s"${e.subject}${e.predictedPredicate}", e))
         .groupByKey()
 
@@ -209,20 +211,21 @@ object Evaluator {
       log.info(s"There are ${formatter.format(nbrConflicting)} conflicting pairMatches for $name")
 
       // Proportion of Wikidata entries that we find at least a partial match
-      val foundProportion: Double =  nbrPairMatches / nbrExtractions.toDouble
+      val foundProportion: Double =  nbrTotalMatches / nbrExtractions.toDouble
       val foundPercentage = f"${foundProportion * 100}%4.2f"
       val verifiedProportion: Double =  nbrVerified / nbrTotalMatches.toDouble
       val verifiedPercentage = f"${verifiedProportion * 100}%4.2f"
       log.info(s"Found suggestions for $foundPercentage% of the extractions")
       log.info(s"Correctly verified $verifiedPercentage% of the matching extractions")
 
+      // All found triples that at least partially matches entries in Wikidata
       val theseMatches = pairMatches
         .flatMap{case (_, (es, _)) => es}
         .filter(_.probability >= modelThreshold)
 
       val nMostPrecision = nMostProbable.map(n => {
         val predictions = theseMatches.map(Seq(_))
-        val (precision, _, _) = nMostProbableOutcome(predictions, verifiedCorrect, conflictingMatches, nbrValidations, n)
+        val (precision, _, _) = nMostProbableOutcome(predictions, verifiedCorrect, conflictingMatches, nbrExtractions, n)
         log.info(s"$n most probable precision: $precision")
         precision
       })
@@ -231,10 +234,9 @@ object Evaluator {
       val end = 1.0
       val step = (end - modelThreshold) / 20
 
-      val theseResults = (modelThreshold + step to end by step).map(threshold => {
-        log.info(s"Computing outcome if probability threshold was: ${f"$threshold%4.2f"}...")
-        val outcome = outcomeByThreshold(name, threshold, theseMatches, verifiedCorrect, nbrValidations.toInt)
-        log.info(s"\tVerified percentage: ${f"${outcome.verifiedPercentage}%4.2f"}")
+      println("Probability threshold\tRelation\t# Extractions\t% found in Wikidata\t % of extractions verified")
+      val theseResults = (modelThreshold to end by step).map(threshold => {
+        val outcome = outcomeByThreshold(name, threshold, extractionsForRelation, theseMatches, verifiedCorrect)
         println(outcome)
         outcome
       })
@@ -248,13 +250,16 @@ object Evaluator {
   }
 
   private def outcomeByThreshold(name: String, threshold: Double, extractions: RDD[ExtractedRelation],
-                                 verifiedExtractions: RDD[ExtractedRelation], nbrRelations: Int): RelationEvaluationResult = {
+                                 matches: RDD[ExtractedRelation], verifiedExtractions: RDD[ExtractedRelation]
+                                ): RelationEvaluationResult = {
 
     val newExtractions = extractions.filter(_.probability >= threshold)
     val nbrExtractions = newExtractions.count()
-    val newFoundPercentage: Double = nbrExtractions / nbrRelations.toDouble
+    val newMatches = matches.filter(_.probability >= threshold)
+    val nbrMatches = newMatches.count()
+    val newFoundPercentage: Double = nbrMatches / nbrExtractions.toDouble
     val newVerifiedExtractions = verifiedExtractions.filter(_.probability >= threshold)
-    val newVerifiedPercentage: Double = newVerifiedExtractions.count() /  nbrRelations.toDouble
+    val newVerifiedPercentage: Double = newVerifiedExtractions.count() /  nbrExtractions.toDouble
 
     RelationEvaluationResult(threshold, name, nbrExtractions.toInt, newFoundPercentage, newVerifiedPercentage, None)
   }
@@ -440,7 +445,7 @@ object Evaluator {
         val recall = newTP / nbrTrueDataPoints
         val precision = newTP / (newTP + newFP).toDouble
         val f1 = computeF1(recall, precision)
-        log.info(s"\tWith probability cutoff $cutoff => recall: $recall, precision: $precision, f1: $f1")
+        println(s"prob $cutoff => tp: $newTP, fp: $newFP, recall: $recall, precision: $precision, f1: $f1")
       }
     }
   }
